@@ -41,11 +41,24 @@ jobs:
         with:
           version: latest
 
-      # Boots Postgres, PostgREST, Auth, Storage and Realtime in Docker, then
+      # Boots Postgres, PostgREST, Auth and the API gateway in Docker, then
       # applies every migration. Both the database tests and the integration
       # tests run against this.
+      #
+      # A full `supabase start` pulls ~9 GB of images on a cold runner, and the
+      # suite touches barely a third of it. Excluding what the tests never call
+      # leaves ~2.8 GB. Add each service back when the feature that needs it
+      # lands:
+      #
+      #   mailpit      → F4  (password-reset e2e reads the local mailbox)
+      #   storage-api  → F9  (business photo uploads)
+      #   realtime     → F30 (notification bell subscription)
+      #
+      # The rest — studio, postgres-meta, edge-runtime, logflare, vector,
+      # imgproxy, supavisor — are developer tooling with no test that touches
+      # them, and stay off.
       - name: Start local Supabase stack
-        run: supabase start
+        run: supabase start -x studio,postgres-meta,storage-api,imgproxy,realtime,edge-runtime,logflare,vector,mailpit,supavisor
 
       - name: Write test environment
         run: npm run env:test
