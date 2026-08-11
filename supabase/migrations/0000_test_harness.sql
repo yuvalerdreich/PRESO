@@ -1,0 +1,11 @@
+-- pgTAP — the assertion library `supabase test db` runs against.
+--
+-- Deliberately numbered 0000 and kept OUT of the application schema series
+-- (0001–0011, TECHNICAL_DESIGN.md §1): it belongs to the test harness, not to
+-- the product. It is installed into the `extensions` schema so it never
+-- shadows an application function name.
+--
+-- Everything the database guarantees — the exclusion constraint, the
+-- availability engine, every RLS policy — is proved here rather than from
+-- TypeScript, because that is where ARCHITECTURE.md §11 puts correctness.
+create extension if not exists pgtap with schema extensions;
