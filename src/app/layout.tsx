@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { Toaster } from 'sonner';
 
 import { Providers } from '@/app/providers';
+import { LOCALE_COOKIE_KEY } from '@/lib/i18n/language-provider';
+import { isLocale, localeDetails } from '@/lib/i18n/types';
 import { siteConfig, siteUrl } from '@/lib/site';
 
 import './globals.css';
@@ -16,14 +19,20 @@ export const metadata: Metadata = {
   description: siteConfig.description,
 };
 
-export default function RootLayout({ children }: LayoutProps<'/'>) {
+export default async function RootLayout({ children }: LayoutProps<'/'>) {
+  const cookieStore = await cookies();
+  const cookieLocale = cookieStore.get(LOCALE_COOKIE_KEY)?.value;
+  const locale = isLocale(cookieLocale) ? cookieLocale : 'he';
+  const { direction, htmlLang } = localeDetails[locale];
+
   return (
     <html
-      lang="en"
+      lang={htmlLang}
+      dir={direction}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Providers>{children}</Providers>
+        <Providers initialLocale={locale}>{children}</Providers>
         <Toaster richColors closeButton position="top-center" />
       </body>
     </html>
