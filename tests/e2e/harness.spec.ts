@@ -31,6 +31,17 @@ test('search filters business cards by category', async ({ page }) => {
   await expect(page.getByText('מספרת זוהר - Studio Zohar')).not.toBeVisible();
 });
 
+test('discovery navigates to a business and its employee-specific services', async ({ page }) => {
+  await page.goto('/search?category=hair-beauty');
+
+  await page.getByRole('link', { name: 'לפרטי העסק' }).click();
+  await expect(page).toHaveURL(/\/b\/b18f6ca9-0c44-45b8-a8d9-3e1a2c6a1001$/);
+
+  await page.getByRole('link', { name: /לשירותים של זוהר לוי/ }).click();
+  await expect(page).toHaveURL(/\/b\/b18f6ca9-0c44-45b8-a8d9-3e1a2c6a1001\/e\/e-zohar$/);
+  await expect(page.getByRole('heading', { level: 2, name: /תספורת ועיצוב שיער/ })).toBeVisible();
+});
+
 test('an unknown path renders the not-found page, not a crash', async ({ page }) => {
   await page.goto('/this-route-does-not-exist');
 
