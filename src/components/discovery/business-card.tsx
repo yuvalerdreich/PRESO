@@ -1,14 +1,16 @@
 'use client';
 
 import { MapPin, UsersRound } from 'lucide-react';
+import Link from 'next/link';
+import Image from 'next/image';
 
 import { useLanguage } from '@/lib/i18n/language-provider';
 import type { DiscoveryBusiness } from '@/types/domain';
 
-const imageVariants = {
-  studio: 'from-[#161d3e] via-[#465076] to-[#d4bfb3]',
-  clinic: 'from-[#6b405f] via-[#d79b8f] to-[#f5dfba]',
-  fitness: 'from-[#171d31] via-[#5f625e] to-[#dba561]',
+const coverImages = {
+  studio: '/images/discovery/studio-cover.png',
+  clinic: '/images/discovery/clinic-cover.png',
+  fitness: '/images/discovery/fitness-cover.png',
 } as const;
 
 export function BusinessCard({ business }: { business: DiscoveryBusiness }) {
@@ -16,9 +18,16 @@ export function BusinessCard({ business }: { business: DiscoveryBusiness }) {
 
   return (
     <article className="group overflow-hidden rounded-[1.7rem] border border-[var(--line)] bg-white shadow-[0_10px_28px_rgba(37,42,92,.07)] transition duration-300 hover:-translate-y-1 hover:border-violet-200 hover:shadow-[0_20px_40px_rgba(69,54,180,.14)] focus-within:ring-2 focus-within:ring-[var(--brand)]">
-      <div className={`relative flex h-56 flex-col items-start justify-end overflow-hidden bg-gradient-to-br p-5 sm:h-60 ${imageVariants[business.imageVariant]}`}>
-        <div className="absolute -top-10 -end-7 size-35 rounded-full bg-white/20 blur-2xl transition duration-500 group-hover:scale-125" />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(11,13,34,.02)_12%,rgba(10,14,37,.82)_100%)]" />
+      <div className="relative flex h-56 flex-col items-start justify-end overflow-hidden bg-[var(--brand-dark)] p-5 sm:h-60">
+        <Image
+          src={coverImages[business.imageVariant]}
+          alt=""
+          fill
+          sizes="(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw"
+          className="object-cover transition duration-700 group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(11,13,34,.04)_12%,rgba(10,14,37,.86)_100%)]" />
+        <div className="absolute -top-10 -end-7 size-35 rounded-full bg-violet-300/20 blur-2xl transition duration-500 group-hover:scale-125" />
         <span className="relative rounded-lg border border-white/15 bg-[var(--brand)] px-3 py-1.5 text-xs font-bold text-white shadow-lg shadow-indigo-950/25">
           {business.category.name[locale]}
         </span>
@@ -37,7 +46,12 @@ export function BusinessCard({ business }: { business: DiscoveryBusiness }) {
             <UsersRound aria-hidden="true" size={16} className="text-[var(--brand)]" strokeWidth={2.4} />
             {business.employeeCount} {copy.discovery.staffCount}
           </span>
-          <span className="text-end text-xs font-bold text-[var(--brand)]">{copy.discovery.detailsSoon}</span>
+          <Link
+            href={`/b/${business.id}`}
+            className="rounded-lg text-end text-xs font-bold text-[var(--brand)] transition hover:text-[var(--brand-deep)] focus-visible:outline-2 focus-visible:outline-[var(--brand)]"
+          >
+            {copy.discovery.viewBusiness}
+          </Link>
         </div>
       </div>
     </article>

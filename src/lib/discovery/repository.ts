@@ -1,4 +1,11 @@
-import type { DiscoveryArea, DiscoveryBusiness, DiscoveryCategory } from '@/types/domain';
+import type {
+  BusinessEmployee,
+  BusinessProfile,
+  DiscoveryArea,
+  DiscoveryBusiness,
+  DiscoveryCategory,
+  EmployeeService,
+} from '@/types/domain';
 
 import { mockDiscoveryRepository } from '@/lib/discovery/mock-repository';
 
@@ -16,6 +23,10 @@ export type DiscoveryRepository = {
   listCategories(): Promise<DiscoveryCategory[]>;
   listAreas(): Promise<DiscoveryArea[]>;
   searchBusinesses(filters: DiscoveryFilters): Promise<DiscoveryBusiness[]>;
+  getBusinessProfile(businessId: string): Promise<BusinessProfile | null>;
+  listBusinessEmployees(businessId: string): Promise<BusinessEmployee[]>;
+  getBusinessEmployee(businessId: string, employeeId: string): Promise<BusinessEmployee | null>;
+  listEmployeeServices(businessId: string, employeeId: string): Promise<EmployeeService[]>;
 };
 
 export const discoveryRepository: DiscoveryRepository = mockDiscoveryRepository;

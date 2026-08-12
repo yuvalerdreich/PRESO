@@ -25,3 +25,34 @@ export type DiscoveryBusiness = {
   imageVariant: BusinessImageVariant;
   employeeCount: number;
 };
+
+export type BusinessHours = {
+  day: LocalizedText;
+  opensAt: string;
+  closesAt: string;
+};
+
+export type BusinessProfile = DiscoveryBusiness & {
+  phone: string;
+  hours: BusinessHours[];
+};
+
+export type EmployeeAvatarVariant = 'violet' | 'rose' | 'amber' | 'teal';
+
+export type BusinessEmployee = {
+  id: string;
+  businessId: string;
+  name: LocalizedText;
+  position: LocalizedText;
+  introduction: LocalizedText;
+  avatarVariant: EmployeeAvatarVariant;
+};
+
+export type EmployeeService = {
+  id: string;
+  employeeId: string;
+  name: LocalizedText;
+  description: LocalizedText;
+  durationMinutes: number;
+  price: number;
+};
