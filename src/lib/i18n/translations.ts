@@ -2,9 +2,9 @@ import type { Locale } from '@/lib/i18n/types';
 
 export const translations = {
   he: {
-    brand: { name: 'תורים', version: 'MVP V1.0' },
+    brand: { name: 'Preso', version: 'MVP V1.0' },
     header: {
-      tagline: 'מערכת חכמה לתיאום תורים, ניהול צוותים ורשימות המתנה',
+      tagline: 'Your spot. Secured.',
       discovery: 'אזור ללקוחות',
       browse: 'חיפוש עסקים',
       switchToEnglish: 'Switch to English',
@@ -32,9 +32,9 @@ export const translations = {
     },
   },
   en: {
-    brand: { name: 'Torim', version: 'MVP V1.0' },
+    brand: { name: 'Preso', version: 'MVP V1.0' },
     header: {
-      tagline: 'A smart system for appointments, team management, and waitlists',
+      tagline: 'Your spot. Secured.',
       discovery: 'Client area',
       browse: 'Browse businesses',
       switchToEnglish: 'עברית',

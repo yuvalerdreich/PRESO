@@ -20,7 +20,7 @@ function LanguageProbe() {
 describe('language provider', () => {
   afterEach(() => {
     localStorage.clear();
-    document.cookie = 'torim_locale=; path=/; max-age=0';
+    document.cookie = 'preso_locale=; path=/; max-age=0';
   });
 
   it('switches copy, direction, and persisted locale immediately', () => {
@@ -32,10 +32,10 @@ describe('language provider', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Switch to English' }));
 
-    expect(screen.getByText('Torim')).toBeInTheDocument();
+    expect(screen.getByText('Preso')).toBeInTheDocument();
     expect(screen.getByText('ltr')).toBeInTheDocument();
     expect(document.documentElement.dir).toBe('ltr');
     expect(document.documentElement.lang).toBe('en');
-    expect(localStorage.getItem('torim.locale')).toBe('en');
+    expect(localStorage.getItem('preso.locale')).toBe('en');
   });
 });

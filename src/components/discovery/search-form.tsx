@@ -15,7 +15,7 @@ export function SearchForm({ categories, areas, initialValues }: SearchFormProps
   const { locale, copy } = useLanguage();
 
   return (
-    <form action="/search" className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_13rem_13rem_auto]">
+    <form action="/search" className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_12rem_12rem_auto]">
       <label className="sr-only" htmlFor="business-query">
         {copy.discovery.searchPlaceholder}
       </label>
@@ -25,7 +25,7 @@ export function SearchForm({ categories, areas, initialValues }: SearchFormProps
         type="search"
         defaultValue={initialValues?.q}
         placeholder={copy.discovery.searchPlaceholder}
-        className="min-h-13 rounded-2xl border border-white/20 bg-white/10 px-5 text-sm text-white outline-none placeholder:text-white/50 focus:border-white/50"
+        className="min-h-14 rounded-2xl border border-white/15 bg-white/[.12] px-5 text-sm text-white shadow-inner shadow-black/5 outline-none transition placeholder:text-white/55 hover:bg-white/[.16] focus:border-white/70 focus:bg-white/[.18] focus:ring-4 focus:ring-white/10"
       />
       <label className="sr-only" htmlFor="business-category">
         {copy.discovery.categoryPlaceholder}
@@ -34,7 +34,7 @@ export function SearchForm({ categories, areas, initialValues }: SearchFormProps
         id="business-category"
         name="category"
         defaultValue={initialValues?.category ?? ''}
-        className="min-h-13 rounded-2xl border border-white/20 bg-white/10 px-4 text-sm text-white outline-none focus:border-white/50"
+        className="min-h-14 rounded-2xl border border-white/15 bg-white/[.12] px-4 text-sm text-white shadow-inner shadow-black/5 outline-none transition hover:bg-white/[.16] focus:border-white/70 focus:bg-white/[.18] focus:ring-4 focus:ring-white/10"
       >
         <option value="" className="text-[var(--foreground)]">{copy.discovery.categoryPlaceholder}</option>
         {categories.map((category) => (
@@ -50,7 +50,7 @@ export function SearchForm({ categories, areas, initialValues }: SearchFormProps
         id="business-area"
         name="area"
         defaultValue={initialValues?.area ?? ''}
-        className="min-h-13 rounded-2xl border border-white/20 bg-white/10 px-4 text-sm text-white outline-none focus:border-white/50"
+        className="min-h-14 rounded-2xl border border-white/15 bg-white/[.12] px-4 text-sm text-white shadow-inner shadow-black/5 outline-none transition hover:bg-white/[.16] focus:border-white/70 focus:bg-white/[.18] focus:ring-4 focus:ring-white/10"
       >
         <option value="" className="text-[var(--foreground)]">{copy.discovery.areaPlaceholder}</option>
         {areas.map((area) => (
@@ -61,7 +61,7 @@ export function SearchForm({ categories, areas, initialValues }: SearchFormProps
       </select>
       <button
         type="submit"
-        className="inline-flex min-h-13 items-center justify-center gap-2 rounded-2xl bg-white px-6 text-sm font-bold text-[var(--brand-dark)] shadow-lg shadow-black/15 transition hover:bg-violet-50"
+        className="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-white px-6 text-sm font-black text-[var(--brand-deep)] shadow-[0_12px_24px_rgba(9,12,41,.2)] transition duration-200 hover:-translate-y-0.5 hover:bg-violet-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
       >
         <Search aria-hidden="true" size={18} />
         {copy.discovery.searchButton}

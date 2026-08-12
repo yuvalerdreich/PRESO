@@ -5,8 +5,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { localeDetails, isLocale, type Direction, type Locale } from '@/lib/i18n/types';
 import { translations, type Translation } from '@/lib/i18n/translations';
 
-const LOCALE_STORAGE_KEY = 'torim.locale';
-export const LOCALE_COOKIE_KEY = 'torim_locale';
+const LOCALE_STORAGE_KEY = 'preso.locale';
+export const LOCALE_COOKIE_KEY = 'preso_locale';
 
 type LanguageContextValue = {
   locale: Locale;

@@ -8,7 +8,7 @@ export function BusinessResults({ businesses }: { businesses: DiscoveryBusiness[
   if (businesses.length === 0) return <EmptyState />;
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+    <div className="grid gap-5 md:grid-cols-2 lg:gap-6 xl:grid-cols-3">
       {businesses.map((business) => (
         <BusinessCard key={business.id} business={business} />
       ))}
