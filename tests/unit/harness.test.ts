@@ -14,12 +14,12 @@ describe('unit test harness', () => {
   });
 
   it('resolves modules through the @/* path alias', () => {
-    expect(siteConfig.name).toBe('Perso');
+    expect(siteConfig.name).toBe('Preso');
   });
 
   it('siteUrl() prefers the explicit origin and strips a trailing slash', () => {
-    process.env.NEXT_PUBLIC_SITE_URL = 'https://perso.example.com/';
-    expect(siteUrl()).toBe('https://perso.example.com');
+    process.env.NEXT_PUBLIC_SITE_URL = 'https://preso.example.com/';
+    expect(siteUrl()).toBe('https://preso.example.com');
   });
 
   it('siteUrl() falls back to localhost when nothing is configured', () => {

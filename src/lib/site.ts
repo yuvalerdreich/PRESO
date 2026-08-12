@@ -3,8 +3,8 @@
  * absolute origin used by auth redirects and email links.
  */
 export const siteConfig = {
-  name: 'Perso',
-  tagline: 'Book appointments with the person who does the work.',
+  name: 'Preso',
+  tagline: 'Your spot. Secured.',
   description:
     'Find a business, pick the staff member you want, see the times they actually have free, and book.',
 } as const;
