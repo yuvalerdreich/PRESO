@@ -5,6 +5,7 @@ export const translations = {
     brand: { name: 'Preso', version: 'MVP V1.0' },
     header: {
       tagline: 'Your spot. Secured.',
+      subtitle: 'מערכת חכמה לתיאום תורים, ניהול צוותים ורשימות המתנה',
       discovery: 'אזור ללקוחות',
       browse: 'חיפוש עסקים',
       appointments: 'התורים שלי',
@@ -29,9 +30,9 @@ export const translations = {
     },
     discovery: {
       eyebrow: 'מערכת קביעת תורים לעסקים רב-צוותיים',
-      title: 'מצא עסק, תור ואיש צוות, וקבע תור מידי בזמן אמת',
-      description: 'התאמה מלאה בין לוח הזמנים האישי של העובד, השירות המבוקש וזמינות התורים הפנויים.',
-      searchPlaceholder: 'חפש עסק, שירות, קטגוריה או עיר...',
+      title: 'קביעת תורים מהירה לכל העסקים והמטפלים המובילים',
+      description: 'חפש לפי שם עסק, שם בעל העסק או עובד, קטגוריה ועיר. בחר נותן שירות וצפה בשעות הפנויות בזמן אמת.',
+      searchPlaceholder: 'חפש לפי שם עסק, שם בעל עסק/מטפל, עיר או קטגוריה...',
       categoryPlaceholder: 'כל הקטגוריות',
       areaPlaceholder: 'כל הערים והאזורים',
       searchButton: 'חיפוש',
@@ -139,6 +140,7 @@ export const translations = {
     brand: { name: 'Preso', version: 'MVP V1.0' },
     header: {
       tagline: 'Your spot. Secured.',
+      subtitle: 'Smart scheduling, team management, and waitlists',
       discovery: 'Client area',
       browse: 'Browse businesses',
       appointments: 'My appointments',
@@ -163,9 +165,9 @@ export const translations = {
     },
     discovery: {
       eyebrow: 'Appointment scheduling for multi-staff businesses',
-      title: 'Find a business, a service, and the right person for your next appointment',
-      description: 'Match the staff member’s schedule, the service you need, and available appointment times.',
-      searchPlaceholder: 'Search a business, service, category, or city…',
+      title: 'Fast appointment booking for every leading business and provider',
+      description: 'Search by business name, owner or staff name, category, and city. Choose a provider and see real-time availability.',
+      searchPlaceholder: 'Search by business name, owner/provider name, city, or category…',
       categoryPlaceholder: 'All categories',
       areaPlaceholder: 'All cities and areas',
       searchButton: 'Search',
