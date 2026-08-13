@@ -1,58 +1,55 @@
-import type { Locale } from '@/lib/i18n/types';
+export type LocalizedText = { he: string; en: string };
 
-export type LocalizedText = Record<Locale, string>;
+export type CategoryIconId = 'graduation-cap' | 'stethoscope' | 'dumbbell' | 'sparkles' | 'scissors';
 
-export type DiscoveryCategory = {
+export type Category = {
   id: string;
-  slug: string;
+  icon: CategoryIconId;
   name: LocalizedText;
 };
 
-export type DiscoveryArea = {
+export type BusinessArea = {
   id: string;
   name: LocalizedText;
 };
 
-export type BusinessImageVariant = 'studio' | 'clinic' | 'fitness';
-
-export type DiscoveryBusiness = {
+export type BusinessSummary = {
   id: string;
   name: LocalizedText;
-  description: LocalizedText;
-  category: DiscoveryCategory;
-  area: DiscoveryArea;
+  categoryId: string;
+  area: BusinessArea;
   address: LocalizedText;
-  imageVariant: BusinessImageVariant;
+  description: LocalizedText;
+  photoUrl: string;
   employeeCount: number;
+  employeeAvatarUrls: string[];
 };
 
-export type BusinessHours = {
-  day: LocalizedText;
-  opensAt: string;
-  closesAt: string;
-};
-
-export type BusinessProfile = DiscoveryBusiness & {
+export type BusinessProfile = BusinessSummary & {
   phone: string;
-  hours: BusinessHours[];
 };
 
-export type EmployeeAvatarVariant = 'violet' | 'rose' | 'amber' | 'teal';
-
-export type BusinessEmployee = {
+export type EmployeeSummary = {
   id: string;
   businessId: string;
-  name: LocalizedText;
-  position: LocalizedText;
-  introduction: LocalizedText;
-  avatarVariant: EmployeeAvatarVariant;
+  fullName: LocalizedText;
+  positionTitle: LocalizedText;
+  avatarUrl: string;
 };
 
-export type EmployeeService = {
+export type ServiceSummary = {
   id: string;
   employeeId: string;
   name: LocalizedText;
   description: LocalizedText;
-  durationMinutes: number;
   price: number;
+  durationMinutes: number;
+  bufferMinutes: number;
+  status: 'ACTIVE' | 'INACTIVE';
+};
+
+export type BusinessSearchFilters = {
+  q?: string;
+  category?: string;
+  area?: string;
 };

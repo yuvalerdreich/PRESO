@@ -1,32 +1,26 @@
 import type {
-  BusinessEmployee,
   BusinessProfile,
-  DiscoveryArea,
-  DiscoveryBusiness,
-  DiscoveryCategory,
-  EmployeeService,
+  BusinessSearchFilters,
+  BusinessSummary,
+  Category,
+  EmployeeSummary,
+  ServiceSummary,
 } from '@/types/domain';
 
 import { mockDiscoveryRepository } from '@/lib/discovery/mock-repository';
 
-export type DiscoveryFilters = {
-  q?: string;
-  category?: string;
-  area?: string;
-};
-
-/**
- * Public pages depend on this contract rather than fixture arrays. A later
- * Supabase/API implementation can replace the mock without rewriting the UI.
- */
 export type DiscoveryRepository = {
-  listCategories(): Promise<DiscoveryCategory[]>;
-  listAreas(): Promise<DiscoveryArea[]>;
-  searchBusinesses(filters: DiscoveryFilters): Promise<DiscoveryBusiness[]>;
+  listCategories(): Promise<Category[]>;
+  searchBusinesses(filters?: BusinessSearchFilters): Promise<BusinessSummary[]>;
   getBusinessProfile(businessId: string): Promise<BusinessProfile | null>;
-  listBusinessEmployees(businessId: string): Promise<BusinessEmployee[]>;
-  getBusinessEmployee(businessId: string, employeeId: string): Promise<BusinessEmployee | null>;
-  listEmployeeServices(businessId: string, employeeId: string): Promise<EmployeeService[]>;
+  listBusinessEmployees(businessId: string): Promise<EmployeeSummary[]>;
+  getBusinessEmployee(businessId: string, employeeId: string): Promise<EmployeeSummary | null>;
+  listEmployeeServices(businessId: string, employeeId: string): Promise<ServiceSummary[]>;
+  /** ISO (YYYY-MM-DD) dates with at least one slot in that month. Mock stand-in for `get_available_slots()` — see mock-repository.ts. */
+  getMonthAvailability(employeeId: string, serviceId: string, monthISO: string): Promise<string[]>;
+  /** "HH:mm" start times for one date; empty when closed. */
+  getDaySlots(employeeId: string, serviceId: string, dateISO: string): Promise<string[]>;
 };
 
+// Swap this for a real @supabase/ssr-backed implementation once the schema exists (CLAUDE.md §8).
 export const discoveryRepository: DiscoveryRepository = mockDiscoveryRepository;

@@ -1,13 +1,30 @@
-import { mockDashboardRepository } from '@/lib/dashboard/mock-repository';
-import type { DashboardAppointment, DashboardBusiness, DashboardEmployee, DashboardKpi, DashboardService } from '@/types/dashboard';
+import type {
+  DashboardAppointment,
+  DashboardBusiness,
+  DashboardEmployee,
+  DashboardKpi,
+  DashboardService,
+} from '@/types/dashboard';
 
-/** Public UI mock data only. Future RLS-scoped reads replace this contract. */
-export type DashboardRepository = {
-  getCurrentBusinessDashboard(): Promise<DashboardBusiness>;
-  listDashboardEmployees(): Promise<DashboardEmployee[]>;
-  listDashboardAppointments(): Promise<DashboardAppointment[]>;
-  listDashboardKpis(): Promise<DashboardKpi[]>;
-  listDashboardServices(): Promise<DashboardService[]>;
+/**
+ * Typecheck-only placeholder — unblocks `tsc` and the module graph. The real
+ * business dashboard read model isn't built yet (CLAUDE.md §8); behavior here
+ * is intentionally empty, not a working implementation.
+ */
+export const dashboardRepository = {
+  async getCurrentBusinessDashboard(): Promise<DashboardBusiness> {
+    return { id: 'studio-zohar' };
+  },
+  async listDashboardEmployees(): Promise<DashboardEmployee[]> {
+    return [];
+  },
+  async listDashboardServices(): Promise<DashboardService[]> {
+    return [];
+  },
+  async listDashboardAppointments(): Promise<DashboardAppointment[]> {
+    return [];
+  },
+  async listDashboardKpis(): Promise<DashboardKpi[]> {
+    return [];
+  },
 };
-
-export const dashboardRepository: DashboardRepository = mockDashboardRepository;

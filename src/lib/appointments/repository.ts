@@ -1,14 +1,15 @@
-import { mockAppointmentsRepository } from '@/lib/appointments/mock-repository';
 import type { ClientAppointment, ClientWaitlistEntry } from '@/types/appointments';
 
 /**
- * A future implementation will derive the client from the authenticated
- * session and read RLS-scoped appointment data. This mock contract stays
- * read-only: local UI demo state must never be confused with persistence.
+ * Typecheck-only placeholder — unblocks `tsc` and the module graph. The real
+ * client appointments read model isn't built yet (CLAUDE.md §8); behavior
+ * here is intentionally empty, not a working implementation.
  */
-export type AppointmentsRepository = {
-  listCurrentClientAppointments(): Promise<ClientAppointment[]>;
-  listCurrentClientWaitlistEntries(): Promise<ClientWaitlistEntry[]>;
+export const appointmentsRepository = {
+  async listCurrentClientAppointments(): Promise<ClientAppointment[]> {
+    return [];
+  },
+  async listCurrentClientWaitlistEntries(): Promise<ClientWaitlistEntry[]> {
+    return [];
+  },
 };
-
-export const appointmentsRepository: AppointmentsRepository = mockAppointmentsRepository;

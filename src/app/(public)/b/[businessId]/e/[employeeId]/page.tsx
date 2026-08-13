@@ -1,22 +1,30 @@
 import { notFound } from 'next/navigation';
 
-import { EmployeeProfile } from '@/components/discovery/employee-profile';
+import { BusinessProfile } from '@/components/public/business-profile';
 import { discoveryRepository } from '@/lib/discovery/repository';
 
-type EmployeePageProps = {
-  params: Promise<{ businessId: string; employeeId: string }>;
-};
-
-export default async function EmployeePage({ params }: EmployeePageProps) {
+export default async function EmployeePage({ params }: PageProps<'/b/[businessId]/e/[employeeId]'>) {
   const { businessId, employeeId } = await params;
-  const [business, employee] = await Promise.all([
+
+  const [business, categories, employees, selectedEmployee, services] = await Promise.all([
     discoveryRepository.getBusinessProfile(businessId),
+    discoveryRepository.listCategories(),
+    discoveryRepository.listBusinessEmployees(businessId),
     discoveryRepository.getBusinessEmployee(businessId, employeeId),
+    discoveryRepository.listEmployeeServices(businessId, employeeId),
   ]);
 
-  if (!business || !employee) notFound();
+  if (!business || !selectedEmployee) notFound();
 
-  const services = await discoveryRepository.listEmployeeServices(businessId, employeeId);
+  const category = categories.find((c) => c.id === business.categoryId);
 
-  return <EmployeeProfile business={business} employee={employee} services={services} />;
+  return (
+    <BusinessProfile
+      business={business}
+      category={category}
+      employees={employees}
+      selectedEmployee={selectedEmployee}
+      services={services}
+    />
+  );
 }

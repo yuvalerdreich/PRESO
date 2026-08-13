@@ -1,12 +1,17 @@
-import { DiscoveryHome } from '@/components/discovery/discovery-home';
+import { BusinessResults } from '@/components/public/business-results';
+import { DiscoveryHome } from '@/components/public/discovery-home';
 import { discoveryRepository } from '@/lib/discovery/repository';
 
 export default async function HomePage() {
-  const [categories, areas, businesses] = await Promise.all([
+  const [categories, businesses] = await Promise.all([
     discoveryRepository.listCategories(),
-    discoveryRepository.listAreas(),
-    discoveryRepository.searchBusinesses({}),
+    discoveryRepository.searchBusinesses(),
   ]);
 
-  return <DiscoveryHome categories={categories} areas={areas} businesses={businesses} />;
+  return (
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-8 sm:px-6">
+      <DiscoveryHome />
+      <BusinessResults businesses={businesses} categories={categories} />
+    </div>
+  );
 }

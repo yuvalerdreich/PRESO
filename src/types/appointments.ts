@@ -1,24 +1,3 @@
-import type { LocalizedText } from '@/types/domain';
-
-export type AppointmentStatus = 'confirmed' | 'pending' | 'cancelled';
-export type AppointmentPeriod = 'upcoming' | 'history';
-
-export type ClientAppointment = {
-  id: string;
-  period: AppointmentPeriod;
-  status: AppointmentStatus;
-  businessName: LocalizedText;
-  employeeName: LocalizedText;
-  serviceName: LocalizedText;
-  address: LocalizedText;
-  date: LocalizedText;
-  time: string;
-};
-
-export type ClientWaitlistEntry = {
-  id: string;
-  businessName: LocalizedText;
-  serviceName: LocalizedText;
-  employeeName: LocalizedText;
-  requestedRange: LocalizedText;
-};
+/** Typecheck-only placeholder shape — the real client appointments model isn't built yet. */
+export type ClientAppointment = { id: string; status: string } & Record<string, unknown>;
+export type ClientWaitlistEntry = { id: string } & Record<string, unknown>;

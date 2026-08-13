@@ -1,20 +1,13 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
-import { BusinessProfile } from '@/components/discovery/business-profile';
 import { discoveryRepository } from '@/lib/discovery/repository';
 
-type BusinessPageProps = {
-  params: Promise<{ businessId: string }>;
-};
-
-export default async function BusinessPage({ params }: BusinessPageProps) {
+export default async function BusinessPage({ params }: PageProps<'/b/[businessId]'>) {
   const { businessId } = await params;
-  const [business, employees] = await Promise.all([
-    discoveryRepository.getBusinessProfile(businessId),
-    discoveryRepository.listBusinessEmployees(businessId),
-  ]);
+  const employees = await discoveryRepository.listBusinessEmployees(businessId);
+  const [firstEmployee] = employees;
 
-  if (!business) notFound();
+  if (!firstEmployee) notFound();
 
-  return <BusinessProfile business={business} employees={employees} />;
+  redirect(`/b/${businessId}/e/${firstEmployee.id}`);
 }

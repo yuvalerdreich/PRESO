@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import JoinRoute from '@/app/(public)/join/page';
-import OnboardingRoute from '@/app/(public)/onboarding/page';
+import JoinRoute from '@/app/(business)/join/page';
+import OnboardingRoute from '@/app/(business)/onboarding/page';
 import { LanguageProvider } from '@/lib/i18n/language-provider';
 
 describe('business-entry pages', () => {

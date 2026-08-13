@@ -1,12 +1,10 @@
-import type { ReactNode } from 'react';
-
 import { PublicHeader } from '@/components/common/public-header';
 
-export default async function PublicLayout({ children }: { children: ReactNode }) {
+export default function PublicLayout({ children }: LayoutProps<'/'>) {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-full flex-col">
       <PublicHeader />
-      {children}
+      <main className="flex-1">{children}</main>
     </div>
   );
 }

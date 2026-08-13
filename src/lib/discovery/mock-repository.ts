@@ -1,281 +1,322 @@
-import type { DiscoveryFilters, DiscoveryRepository } from '@/lib/discovery/repository';
 import type {
-  BusinessEmployee,
   BusinessProfile,
-  DiscoveryArea,
-  DiscoveryBusiness,
-  DiscoveryCategory,
-  EmployeeService,
+  BusinessSearchFilters,
+  BusinessSummary,
+  Category,
+  EmployeeSummary,
+  ServiceSummary,
 } from '@/types/domain';
 
-const categories: DiscoveryCategory[] = [
-  { id: 'hair-beauty', slug: 'hair-beauty', name: { he: 'מספרות ומכוני יופי', en: 'Hair & beauty' } },
-  { id: 'cosmetics', slug: 'cosmetics', name: { he: 'מכוני קוסמטיקה וטיפוח', en: 'Cosmetics & skincare' } },
-  { id: 'fitness', slug: 'fitness', name: { he: 'סטודיו לכושר ומאמנים', en: 'Fitness & trainers' } },
-  { id: 'clinics', slug: 'clinics', name: { he: 'קליניקות וטיפולים', en: 'Clinics & treatments' } },
-  { id: 'consulting', slug: 'consulting', name: { he: 'שיעורים פרטיים וייעוץ', en: 'Tutoring & consulting' } },
+/**
+ * Local fixture data standing in for Supabase reads (CLAUDE.md §8). IDs are
+ * fixed so `tests/unit/discovery-repository.test.ts` (and the business/employee
+ * profile pages once built) can address specific rows.
+ */
+
+const STUDIO_ZOHAR_ID = 'b18f6ca9-0c44-45b8-a8d9-3e1a2c6a1001';
+const GLOW_CLINIC_ID = 'b18f6ca9-0c44-45b8-a8d9-3e1a2c6a1002';
+const APEX_FITNESS_ID = 'b18f6ca9-0c44-45b8-a8d9-3e1a2c6a1000';
+
+const categories: Category[] = [
+  { id: 'beauty', icon: 'scissors', name: { he: 'מספרות ומכוני יופי', en: 'Hair salons & beauty' } },
+  { id: 'cosmetics', icon: 'sparkles', name: { he: 'קוסמטיקה וציפורניים', en: 'Cosmetics & nails' } },
+  { id: 'fitness', icon: 'dumbbell', name: { he: 'כושר ופילאטיס', en: 'Fitness & pilates' } },
+  { id: 'clinics', icon: 'stethoscope', name: { he: 'קליניקות וטיפולים', en: 'Clinics & treatments' } },
+  { id: 'lessons', icon: 'graduation-cap', name: { he: 'שיעורים וייעוץ', en: 'Lessons & consulting' } },
 ];
 
-const areas: DiscoveryArea[] = [
-  { id: 'tel-aviv', name: { he: 'תל אביב', en: 'Tel Aviv' } },
-  { id: 'herzliya', name: { he: 'הרצליה', en: 'Herzliya' } },
-  { id: 'haifa', name: { he: 'חיפה', en: 'Haifa' } },
-];
-
-const businesses: DiscoveryBusiness[] = [
+const businesses: (BusinessProfile & { employeeAvatarUrls: string[] })[] = [
   {
-    id: 'b18f6ca9-0c44-45b8-a8d9-3e1a2c6a1001',
-    name: { he: 'מספרת זוהר - Studio Zohar', en: 'Studio Zohar' },
-    description: { he: 'סטודיו לעיצוב שיער, טיפולים מתקדמים, גוונים ותספורות גברים ונשים.', en: 'A hair studio for cuts, colour, styling, and modern treatments.' },
-    category: categories[0],
-    area: areas[0],
-    address: { he: 'רחוב דיזנגוף 142, תל אביב', en: '142 Dizengoff Street, Tel Aviv' },
-    imageVariant: 'studio',
+    id: APEX_FITNESS_ID,
+    name: { he: 'Apex Fitness סטודיו כושר ופילאטיס', en: 'Apex Fitness' },
+    categoryId: 'fitness',
+    area: { id: 'haifa', name: { he: 'חיפה', en: 'Haifa' } },
+    address: { he: 'דרך יפו 45, חיפה', en: '45 Yafo Rd, Haifa' },
+    description: {
+      he: 'אימונים אישיים, שיקום תנועתי ופילאטיס מכשירים אחד על אחד.',
+      en: 'Personal training, movement rehab, and one-on-one equipment pilates.',
+    },
+    photoUrl: 'https://picsum.photos/seed/apex-fitness/640/480',
+    phone: '04-8112233',
+    employeeCount: 1,
+    employeeAvatarUrls: ['https://i.pravatar.cc/64?img=12'],
+  },
+  {
+    id: GLOW_CLINIC_ID,
+    name: { he: 'Glow Clinic קליניקת אסתטיקה', en: 'Glow Clinic' },
+    categoryId: 'cosmetics',
+    area: { id: 'herzliya', name: { he: 'הרצליה', en: 'Herzliya' } },
+    address: { he: 'שדרות אבא אבן 8, הרצליה', en: '8 Aba Even Blvd, Herzliya' },
+    description: {
+      he: 'טיפולי פנים מתקדמים, מניקור פדיקור רפואי ואסתטיקה פרא-רפואית.',
+      en: 'Advanced facials, medical mani-pedi, and paramedical aesthetics.',
+    },
+    photoUrl: 'https://picsum.photos/seed/glow-clinic/640/480',
+    phone: '09-9556677',
     employeeCount: 2,
+    employeeAvatarUrls: ['https://i.pravatar.cc/64?img=32', 'https://i.pravatar.cc/64?img=45'],
   },
   {
-    id: 'b18f6ca9-0c44-45b8-a8d9-3e1a2c6a1002',
-    name: { he: 'קליניקת אסתטיקה Glow Clinic', en: 'Glow Clinic' },
-    description: { he: 'טיפולי פנים מתקדמים, מיקרו פיגמנטציה ואסתטיקה פרא-רפואית.', en: 'Advanced facials, micro-pigmentation, and paramedical aesthetics.' },
-    category: categories[1],
-    area: areas[1],
-    address: { he: 'שדרות אבא אבן 8, הרצליה', en: '8 Abba Eban Boulevard, Herzliya' },
-    imageVariant: 'clinic',
-    employeeCount: 2,
-  },
-  {
-    id: 'b18f6ca9-0c44-45b8-a8d9-3e1a2c6a1003',
-    name: { he: 'סטודיו כושר ופילאטיס Apex Fitness', en: 'Apex Fitness Studio' },
-    description: { he: 'אימונים אישיים, שיקום תנועתי ופילאטיס מכשירים אחד על אחד.', en: 'Personal training, movement recovery, and one-to-one reformer Pilates.' },
-    category: categories[2],
-    area: areas[2],
-    address: { he: 'דרך הים 45, חיפה', en: '45 HaYam Road, Haifa' },
-    imageVariant: 'fitness',
-    employeeCount: 3,
-  },
-];
-
-const businessProfiles: BusinessProfile[] = [
-  {
-    ...businesses[0],
+    id: STUDIO_ZOHAR_ID,
+    name: { he: 'Studio Zohar - מספרת זוהר', en: 'Studio Zohar' },
+    categoryId: 'beauty',
+    area: { id: 'tel-aviv', name: { he: 'תל אביב', en: 'Tel Aviv' } },
+    address: { he: 'רחוב דיזנגוף 142, תל אביב', en: '142 Dizengoff St, Tel Aviv' },
+    description: {
+      he: 'סטודיו לעיצוב שיער, כימיקלים מתקדמים, גוונים ותספורות גברים ונשים.',
+      en: 'Hair design studio — advanced color, balayage, and cuts for everyone.',
+    },
+    photoUrl: 'https://picsum.photos/seed/studio-zohar/640/480',
     phone: '03-6001122',
-    hours: [
-      { day: { he: 'ראשון', en: 'Sunday' }, opensAt: '09:00', closesAt: '19:00' },
-      { day: { he: 'שני', en: 'Monday' }, opensAt: '09:00', closesAt: '19:00' },
-      { day: { he: 'שלישי', en: 'Tuesday' }, opensAt: '09:00', closesAt: '20:00' },
-      { day: { he: 'רביעי', en: 'Wednesday' }, opensAt: '09:00', closesAt: '20:00' },
-      { day: { he: 'חמישי', en: 'Thursday' }, opensAt: '09:00', closesAt: '20:00' },
-      { day: { he: 'שישי', en: 'Friday' }, opensAt: '09:00', closesAt: '14:00' },
-    ],
-  },
-  {
-    ...businesses[1],
-    phone: '09-7654321',
-    hours: [
-      { day: { he: 'ראשון', en: 'Sunday' }, opensAt: '10:00', closesAt: '18:00' },
-      { day: { he: 'שני', en: 'Monday' }, opensAt: '10:00', closesAt: '19:00' },
-      { day: { he: 'שלישי', en: 'Tuesday' }, opensAt: '10:00', closesAt: '19:00' },
-      { day: { he: 'רביעי', en: 'Wednesday' }, opensAt: '10:00', closesAt: '19:00' },
-      { day: { he: 'חמישי', en: 'Thursday' }, opensAt: '10:00', closesAt: '20:00' },
-      { day: { he: 'שישי', en: 'Friday' }, opensAt: '09:00', closesAt: '13:00' },
-    ],
-  },
-  {
-    ...businesses[2],
-    phone: '04-8123456',
-    hours: [
-      { day: { he: 'ראשון', en: 'Sunday' }, opensAt: '07:00', closesAt: '21:00' },
-      { day: { he: 'שני', en: 'Monday' }, opensAt: '07:00', closesAt: '21:00' },
-      { day: { he: 'שלישי', en: 'Tuesday' }, opensAt: '07:00', closesAt: '21:00' },
-      { day: { he: 'רביעי', en: 'Wednesday' }, opensAt: '07:00', closesAt: '21:00' },
-      { day: { he: 'חמישי', en: 'Thursday' }, opensAt: '07:00', closesAt: '21:00' },
-      { day: { he: 'שישי', en: 'Friday' }, opensAt: '08:00', closesAt: '13:00' },
-    ],
+    employeeCount: 2,
+    employeeAvatarUrls: ['https://i.pravatar.cc/64?img=51', 'https://i.pravatar.cc/64?img=47'],
   },
 ];
 
-const employees: BusinessEmployee[] = [
+const employees: EmployeeSummary[] = [
+  {
+    id: 'e-apex-1',
+    businessId: APEX_FITNESS_ID,
+    fullName: { he: 'עידן ברק', en: 'Idan Barak' },
+    positionTitle: { he: 'מאמן אישי', en: 'Personal trainer' },
+    avatarUrl: 'https://i.pravatar.cc/96?img=12',
+  },
+  {
+    id: 'e-glow-1',
+    businessId: GLOW_CLINIC_ID,
+    fullName: { he: 'דנה כהן', en: 'Dana Cohen' },
+    positionTitle: { he: 'קוסמטיקאית רפואית', en: 'Medical aesthetician' },
+    avatarUrl: 'https://i.pravatar.cc/96?img=32',
+  },
+  {
+    id: 'e-glow-2',
+    businessId: GLOW_CLINIC_ID,
+    fullName: { he: 'ליאור שדה', en: 'Lior Sade' },
+    positionTitle: { he: 'מניקוריסטית', en: 'Nail technician' },
+    avatarUrl: 'https://i.pravatar.cc/96?img=45',
+  },
   {
     id: 'e-zohar',
-    businessId: businesses[0].id,
-    name: { he: 'זוהר לוי', en: 'Zohar Levi' },
-    position: { he: 'מעצבת שיער', en: 'Hair stylist' },
-    introduction: { he: 'מתמחה בתספורות, צבע ועיצוב אישי עם תשומת לב לפרטים.', en: 'Specialises in cuts, colour, and considered personal styling.' },
-    avatarVariant: 'violet',
+    businessId: STUDIO_ZOHAR_ID,
+    fullName: { he: 'זוהר לוי', en: 'Zohar Levi' },
+    positionTitle: { he: 'מעצב שיער ראשי ומנהל', en: 'Lead hairstylist & manager' },
+    avatarUrl: 'https://i.pravatar.cc/96?img=51',
   },
   {
-    id: 'e-noa',
-    businessId: businesses[0].id,
-    name: { he: 'נועה גולן', en: 'Noa Golan' },
-    position: { he: 'צבע וטיפולי שיער', en: 'Colour and hair care' },
-    introduction: { he: 'טיפולי שיער, גוונים ושיקום למראה טבעי ומדויק.', en: 'Hair treatments, highlights, and restorative care with a natural finish.' },
-    avatarVariant: 'rose',
-  },
-  {
-    id: 'e-maya',
-    businessId: businesses[1].id,
-    name: { he: 'מאיה כהן', en: 'Maya Cohen' },
-    position: { he: 'קוסמטיקאית פרא-רפואית', en: 'Paramedical aesthetician' },
-    introduction: { he: 'טיפולי פנים מתקדמים ותכניות טיפוח מדויקות לעור שלך.', en: 'Advanced facials and considered skincare plans for your skin.' },
-    avatarVariant: 'amber',
-  },
-  {
-    id: 'e-rina',
-    businessId: businesses[1].id,
-    name: { he: 'רינה בר', en: 'Rina Bar' },
-    position: { he: 'מומחית מיקרופיגמנטציה', en: 'Micropigmentation specialist' },
-    introduction: { he: 'גישה רגועה ומדויקת לטיפולים אסתטיים אישיים.', en: 'A calm, precise approach to personal aesthetic treatments.' },
-    avatarVariant: 'teal',
-  },
-  {
-    id: 'e-daniel',
-    businessId: businesses[2].id,
-    name: { he: 'דניאל אביב', en: 'Daniel Aviv' },
-    position: { he: 'מאמן כושר אישי', en: 'Personal trainer' },
-    introduction: { he: 'אימונים אישיים שמתחילים בדיוק מהמקום שבו אתם נמצאים.', en: 'Personal training that starts exactly where you are.' },
-    avatarVariant: 'teal',
-  },
-  {
-    id: 'e-yael',
-    businessId: businesses[2].id,
-    name: { he: 'יעל שי', en: 'Yael Shai' },
-    position: { he: 'מדריכת פילאטיס', en: 'Pilates instructor' },
-    introduction: { he: 'פילאטיס מכשירים בגישה אישית ומחזקת.', en: 'Reformer Pilates with a personal, confidence-building approach.' },
-    avatarVariant: 'rose',
-  },
-  {
-    id: 'e-omer',
-    businessId: businesses[2].id,
-    name: { he: 'עומר ברק', en: 'Omer Barak' },
-    position: { he: 'מאמן תנועה ושיקום', en: 'Movement and recovery coach' },
-    introduction: { he: 'תנועה מדויקת, חיזוק ושיקום בקצב שמתאים לכם.', en: 'Thoughtful movement, strength, and recovery at your own pace.' },
-    avatarVariant: 'amber',
+    id: 'e-miya',
+    businessId: STUDIO_ZOHAR_ID,
+    fullName: { he: 'מיה כהן', en: 'Miya Cohen' },
+    positionTitle: { he: 'מומחית גוונים וכימיקלים', en: 'Color & chemical treatment specialist' },
+    avatarUrl: 'https://i.pravatar.cc/96?img=47',
   },
 ];
 
-const services: EmployeeService[] = [
+const services: ServiceSummary[] = [
   {
-    id: 's-zohar-cut',
-    employeeId: 'e-zohar',
-    name: { he: 'תספורת ועיצוב שיער', en: 'Haircut and styling' },
-    description: { he: 'ייעוץ קצר, תספורת ועיצוב שמתאימים לך.', en: 'A short consultation, cut, and styling tailored to you.' },
+    id: 's-apex-1',
+    employeeId: 'e-apex-1',
+    name: { he: 'אימון אישי', en: 'Personal training session' },
+    description: {
+      he: 'אימון פרטני מותאם למטרות שלך, כולל בניית תוכנית עבודה.',
+      en: 'A one-on-one session tailored to your goals, including a training plan.',
+    },
+    price: 150,
     durationMinutes: 60,
-    price: 180,
+    bufferMinutes: 10,
+    status: 'ACTIVE',
   },
   {
-    id: 's-zohar-colour',
-    employeeId: 'e-zohar',
-    name: { he: 'חידוש צבע', en: 'Colour refresh' },
-    description: { he: 'רענון צבע וגוונים למראה חי וטבעי.', en: 'A colour and highlight refresh for a lively, natural finish.' },
-    durationMinutes: 120,
-    price: 420,
-  },
-  {
-    id: 's-noa-treatment',
-    employeeId: 'e-noa',
-    name: { he: 'טיפול שיקום לשיער', en: 'Restorative hair treatment' },
-    description: { he: 'טיפול עומק להזנה, ברק ורכות.', en: 'A deep treatment for nourishment, shine, and softness.' },
-    durationMinutes: 45,
-    price: 220,
-  },
-  {
-    id: 's-noa-highlights',
-    employeeId: 'e-noa',
-    name: { he: 'גוונים עדינים', en: 'Soft highlights' },
-    description: { he: 'גוונים מותאמים אישית עם מעבר טבעי.', en: 'Personalised highlights with a natural blend.' },
-    durationMinutes: 150,
-    price: 520,
-  },
-  {
-    id: 's-maya-facial',
-    employeeId: 'e-maya',
+    id: 's-glow-1',
+    employeeId: 'e-glow-1',
     name: { he: 'טיפול פנים מתקדם', en: 'Advanced facial' },
-    description: { he: 'טיפול פנים מותאם למצב העור ולמטרות שלך.', en: 'A facial tailored to your skin’s needs and goals.' },
-    durationMinutes: 75,
-    price: 390,
-  },
-  {
-    id: 's-rina-pigmentation',
-    employeeId: 'e-rina',
-    name: { he: 'ייעוץ מיקרופיגמנטציה', en: 'Micropigmentation consultation' },
-    description: { he: 'פגישת היכרות ותכנון מותאם אישי.', en: 'An introductory consultation and personal treatment plan.' },
-    durationMinutes: 45,
-    price: 180,
-  },
-  {
-    id: 's-daniel-training',
-    employeeId: 'e-daniel',
-    name: { he: 'אימון כושר אישי', en: 'Personal training' },
-    description: { he: 'אימון אישי ממוקד מטרות וחיזוק.', en: 'Goal-focused personal training for strength and confidence.' },
-    durationMinutes: 60,
-    price: 260,
-  },
-  {
-    id: 's-yael-pilates',
-    employeeId: 'e-yael',
-    name: { he: 'פילאטיס מכשירים אישי', en: 'Private reformer Pilates' },
-    description: { he: 'שיעור אישי לחיזוק, יציבה ותנועה איכותית.', en: 'A private session for strength, posture, and quality movement.' },
-    durationMinutes: 55,
-    price: 240,
-  },
-  {
-    id: 's-omer-recovery',
-    employeeId: 'e-omer',
-    name: { he: 'אימון תנועה ושיקום', en: 'Movement and recovery session' },
-    description: { he: 'עבודה אישית על תנועה, חיזוק ושיקום.', en: 'One-to-one work on movement, strength, and recovery.' },
-    durationMinutes: 60,
+    description: {
+      he: 'ניקוי עמוק, פילינג ומסכה מותאמים אישית לסוג העור.',
+      en: 'Deep cleansing, peeling, and a mask tailored to your skin type.',
+    },
     price: 250,
+    durationMinutes: 50,
+    bufferMinutes: 10,
+    status: 'ACTIVE',
+  },
+  {
+    id: 's-glow-2',
+    employeeId: 'e-glow-2',
+    name: { he: 'מניקור פדיקור רפואי', en: 'Medical mani-pedi' },
+    description: {
+      he: 'טיפול רפואי לציפורניים ולעור סביבן, כולל הסרת עור קשה.',
+      en: 'Medical treatment for nails and surrounding skin, including callus removal.',
+    },
+    price: 180,
+    durationMinutes: 45,
+    bufferMinutes: 10,
+    status: 'ACTIVE',
+  },
+  {
+    id: 's-zohar-1',
+    employeeId: 'e-zohar',
+    name: { he: 'עיצוב זקן וגילוח מסורתי', en: 'Traditional beard styling & shave' },
+    description: {
+      he: 'פיסול זקן, מגבות חמות וטיפוח עור הפנים.',
+      en: 'Beard sculpting, hot towels, and facial skin care.',
+    },
+    price: 70,
+    durationMinutes: 20,
+    bufferMinutes: 5,
+    status: 'ACTIVE',
+  },
+  {
+    id: 's-zohar-2',
+    employeeId: 'e-zohar',
+    name: { he: 'תספורת ועיצוב שיער (גברים/נשים)', en: 'Haircut and styling' },
+    description: {
+      he: 'חפיפה מפנקת, תספורת מותאמת אישית ועיצוב בפן או חומר עיצוב.',
+      en: 'A pampering wash, a personalized cut, and a blow-dry or styling finish.',
+    },
+    price: 120,
+    durationMinutes: 30,
+    bufferMinutes: 10,
+    status: 'ACTIVE',
+  },
+  {
+    id: 's-zohar-3',
+    employeeId: 'e-zohar',
+    name: { he: 'פראפארט ופליקס לשיקום השיער', en: 'Paraffin & plex hair restoration' },
+    description: {
+      he: 'טיפול עמוק לשיער פגום עם חומצות אמינו.',
+      en: 'A deep treatment for damaged hair with amino acids.',
+    },
+    price: 180,
+    durationMinutes: 45,
+    bufferMinutes: 10,
+    status: 'ACTIVE',
+  },
+  {
+    id: 's-miya-1',
+    employeeId: 'e-miya',
+    name: { he: 'גוונים וצבע אורגני מקצועי', en: 'Organic professional color & tones' },
+    description: {
+      he: "טכניקת בליאז'/גוונים מקיפה כולל טיפול שיקום וברק.",
+      en: 'Full balayage/color technique, including a restorative gloss treatment.',
+    },
+    price: 380,
+    durationMinutes: 90,
+    bufferMinutes: 15,
+    status: 'ACTIVE',
+  },
+  {
+    id: 's-miya-2',
+    employeeId: 'e-miya',
+    name: { he: 'תספורת ועיצוב שיער (גברים/נשים)', en: 'Haircut and styling' },
+    description: {
+      he: 'חפיפה מפנקת, תספורת מותאמת אישית ועיצוב בפן או חומר עיצוב.',
+      en: 'A pampering wash, a personalized cut, and a blow-dry or styling finish.',
+    },
+    price: 120,
+    durationMinutes: 30,
+    bufferMinutes: 10,
+    status: 'ACTIVE',
+  },
+  {
+    id: 's-miya-3',
+    employeeId: 'e-miya',
+    name: { he: 'טיפול קרטין להחלקת שיער', en: 'Keratin hair-smoothing treatment' },
+    description: {
+      he: 'החלקה מקצועית להארכת חיי הסטיילינג והפחתת נפח.',
+      en: 'A professional smoothing treatment that extends styling life and reduces frizz.',
+    },
+    price: 320,
+    durationMinutes: 75,
+    bufferMinutes: 15,
+    status: 'ACTIVE',
   },
 ];
 
-function normalize(value: string) {
-  return value.trim().toLocaleLowerCase();
+/**
+ * Presentation-only mock standing in for `get_available_slots()` (TECHNICAL_DESIGN.md §6.1,
+ * §12.6) — NOT the real availability engine. It applies one uniform rule (closed Saturdays,
+ * a fixed daily slot list) regardless of employee/service, so the duration+buffer packing
+ * rule from §12.6 is not actually reflected yet. Kept behind the same repository interface
+ * so swapping in the real RPC later doesn't touch the calendar/slot-picker components.
+ */
+const MOCK_DAY_SLOTS = [
+  '08:30', '08:45', '09:00', '09:15', '09:30', '09:45', '10:00', '10:15', '10:30', '10:45',
+  '11:00', '11:15', '11:30', '11:45', '12:00', '12:15', '12:30', '13:45', '14:00',
+];
+
+function pad(value: number): string {
+  return String(value).padStart(2, '0');
 }
 
-function localizedValues(value: { he: string; en: string }) {
-  return `${value.he} ${value.en}`.toLocaleLowerCase();
+function toISODate(date: Date): string {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
-function matchesFilters(business: DiscoveryBusiness, filters: DiscoveryFilters) {
-  const query = filters.q ? normalize(filters.q) : '';
-  const searchable = [business.name, business.description, business.category.name, business.area.name]
-    .map(localizedValues)
-    .join(' ');
-
-  return (
-    (!query || searchable.includes(query)) &&
-    (!filters.category || business.category.slug === filters.category) &&
-    (!filters.area || business.area.id === filters.area)
-  );
+function isClosedDay(date: Date): boolean {
+  return date.getDay() === 6; // Saturday — no WEEKLY_WINDOW rule in the mock
 }
 
-export const mockDiscoveryRepository: DiscoveryRepository = {
-  async listCategories() {
-    return categories;
-  },
+async function getMonthAvailability(_employeeId: string, _serviceId: string, monthISO: string): Promise<string[]> {
+  const [year, month] = monthISO.split('-').map(Number);
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const dates: string[] = [];
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const date = new Date(year, month - 1, day);
+    if (!isClosedDay(date)) dates.push(toISODate(date));
+  }
+  return dates;
+}
 
-  async listAreas() {
-    return areas;
-  },
+async function getDaySlots(_employeeId: string, _serviceId: string, dateISO: string): Promise<string[]> {
+  const date = new Date(`${dateISO}T00:00:00`);
+  return isClosedDay(date) ? [] : MOCK_DAY_SLOTS;
+}
 
-  async searchBusinesses(filters) {
-    return businesses.filter((business) => matchesFilters(business, filters));
-  },
+function searchableText(business: BusinessSummary): string {
+  return [business.name.he, business.name.en, business.description.he, business.description.en]
+    .join(' ')
+    .toLowerCase();
+}
 
-  async getBusinessProfile(businessId) {
-    return businessProfiles.find((business) => business.id === businessId) ?? null;
-  },
+async function listCategories(): Promise<Category[]> {
+  return categories;
+}
 
-  async listBusinessEmployees(businessId) {
-    return employees.filter((employee) => employee.businessId === businessId);
-  },
+async function searchBusinesses(filters: BusinessSearchFilters = {}): Promise<BusinessSummary[]> {
+  const q = filters.q?.trim().toLowerCase();
 
-  async getBusinessEmployee(businessId, employeeId) {
-    return employees.find((employee) => employee.businessId === businessId && employee.id === employeeId) ?? null;
-  },
+  return businesses.filter((business) => {
+    if (q && !searchableText(business).includes(q)) return false;
+    if (filters.category && business.categoryId !== filters.category) return false;
+    if (filters.area && business.area.id !== filters.area) return false;
+    return true;
+  });
+}
 
-  async listEmployeeServices(businessId, employeeId) {
-    const employee = await this.getBusinessEmployee(businessId, employeeId);
-    return employee ? services.filter((service) => service.employeeId === employee.id) : [];
-  },
+async function getBusinessProfile(businessId: string): Promise<BusinessProfile | null> {
+  return businesses.find((business) => business.id === businessId) ?? null;
+}
+
+async function listBusinessEmployees(businessId: string): Promise<EmployeeSummary[]> {
+  return employees.filter((employee) => employee.businessId === businessId);
+}
+
+async function getBusinessEmployee(businessId: string, employeeId: string): Promise<EmployeeSummary | null> {
+  return employees.find((e) => e.id === employeeId && e.businessId === businessId) ?? null;
+}
+
+async function listEmployeeServices(businessId: string, employeeId: string): Promise<ServiceSummary[]> {
+  const employee = employees.find((e) => e.id === employeeId && e.businessId === businessId);
+  if (!employee) return [];
+  return services.filter((service) => service.employeeId === employeeId);
+}
+
+export const mockDiscoveryRepository = {
+  listCategories,
+  searchBusinesses,
+  getBusinessProfile,
+  listBusinessEmployees,
+  getBusinessEmployee,
+  listEmployeeServices,
+  getMonthAvailability,
+  getDaySlots,
 };

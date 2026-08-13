@@ -1,15 +1,18 @@
-import { mockBusinessEntryRepository } from '@/lib/business-entry/mock-repository';
-import type { BusinessEntryArea, BusinessEntryCategory, JoinableBusiness } from '@/types/business-entry';
+import type { BusinessArea, BusinessCategory, JoinableBusiness } from '@/types/business-entry';
 
 /**
- * This intentionally exposes only lookup data. Future server actions handle
- * business creation and join requests; local form states never represent a
- * persisted write.
+ * Typecheck-only placeholder — unblocks `tsc` and the module graph. The real
+ * business-entry read model isn't built yet (CLAUDE.md §8); behavior here is
+ * intentionally empty, not a working implementation.
  */
-export type BusinessEntryRepository = {
-  listCategories(): Promise<BusinessEntryCategory[]>;
-  listAreas(): Promise<BusinessEntryArea[]>;
-  listJoinableBusinesses(): Promise<JoinableBusiness[]>;
+export const businessEntryRepository = {
+  async listCategories(): Promise<BusinessCategory[]> {
+    return [];
+  },
+  async listAreas(): Promise<BusinessArea[]> {
+    return [];
+  },
+  async listJoinableBusinesses(): Promise<JoinableBusiness[]> {
+    return [];
+  },
 };
-
-export const businessEntryRepository: BusinessEntryRepository = mockBusinessEntryRepository;

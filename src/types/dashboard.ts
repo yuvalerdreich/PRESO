@@ -1,38 +1,6 @@
-import type { LocalizedText } from '@/types/domain';
-import type { AppointmentStatus } from '@/types/appointments';
-
-export type DashboardBusiness = {
-  id: string;
-  name: LocalizedText;
-  category: LocalizedText;
-  area: LocalizedText;
-  address: LocalizedText;
-  phone: string;
-};
-
-export type DashboardEmployee = { id: string; name: LocalizedText; position: LocalizedText };
-
-export type DashboardAppointment = {
-  id: string;
-  dateKey: string;
-  clientName: LocalizedText;
-  clientContact: string;
-  employeeId: string;
-  employeeName: LocalizedText;
-  serviceName: LocalizedText;
-  time: string;
-  status: AppointmentStatus;
-};
-
-export type DashboardKpi = { id: 'appointments' | 'staff' | 'pending' | 'revenue'; value: string; isMock: true };
-
-export type DashboardService = {
-  id: string;
-  employeeId: string;
-  name: LocalizedText;
-  description: LocalizedText;
-  durationMinutes: number;
-  bufferMinutes: number;
-  price: number;
-  status: 'active' | 'inactive';
-};
+/** Typecheck-only placeholder shape — the real business dashboard model isn't built yet. */
+export type DashboardBusiness = { id: string } & Record<string, unknown>;
+export type DashboardEmployee = { id: string } & Record<string, unknown>;
+export type DashboardService = { id: string; employeeId: string } & Record<string, unknown>;
+export type DashboardAppointment = { id: string } & Record<string, unknown>;
+export type DashboardKpi = { id: string; isMock?: boolean } & Record<string, unknown>;

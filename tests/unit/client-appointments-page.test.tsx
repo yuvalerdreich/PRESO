@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import ClientAppointmentsPage from '@/app/(public)/me/appointments/page';
+import ClientAppointmentsPage from '@/app/(client)/me/appointments/page';
 import { LanguageProvider } from '@/lib/i18n/language-provider';
 
 describe('client appointments page', () => {

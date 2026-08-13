@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { CreateBusinessForm } from '@/components/business-entry/create-business-form';
-import { JoinBusinessForm } from '@/components/business-entry/join-business-form';
+import { CreateBusinessForm } from '@/components/business/create-business-form';
+import { JoinBusinessForm } from '@/components/business/join-business-form';
 import { businessEntryRepository } from '@/lib/business-entry/repository';
 import { LanguageProvider } from '@/lib/i18n/language-provider';
 
