@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Building2, CalendarDays, ChevronRight, Search, ShieldCheck, UsersRound } from 'lucide-react';
+import { Building2, CalendarDays, Search, ShieldCheck, UsersRound, Wrench } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 import { LanguageSwitcher } from '@/components/common/language-switcher';
@@ -63,6 +63,7 @@ export function PublicHeader() {
   const isCustomerSearch = pathname === '/' || pathname === '/search' || pathname.startsWith('/b/');
   const isBusinessDashboard = pathname === '/dashboard';
   const isBusinessAppointments = pathname === '/dashboard/appointments';
+  const isBusinessServices = pathname === '/dashboard/services';
 
   return (
     <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-white/95 shadow-[0_1px_0_rgba(37,34,99,.04)] backdrop-blur-xl">
@@ -138,7 +139,7 @@ export function PublicHeader() {
               <NavigationItem href="/dashboard" icon={Building2} label={copy.header.businessDashboard} active={isBusinessDashboard} />
               <NavigationItem href="/dashboard/appointments" icon={CalendarDays} label={copy.header.businessAppointments} active={isBusinessAppointments} />
               <DisabledNavigationItem icon={UsersRound} label={copy.header.staff} />
-              <DisabledNavigationItem icon={ChevronRight} label={copy.header.services} />
+              <NavigationItem href="/dashboard/services" icon={Wrench} label={copy.header.services} active={isBusinessServices} />
               <DisabledNavigationItem icon={CalendarDays} label={copy.header.availability} />
             </>
           )}

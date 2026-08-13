@@ -25,3 +25,14 @@ export type DashboardAppointment = {
 };
 
 export type DashboardKpi = { id: 'appointments' | 'staff' | 'pending' | 'revenue'; value: string; isMock: true };
+
+export type DashboardService = {
+  id: string;
+  employeeId: string;
+  name: LocalizedText;
+  description: LocalizedText;
+  durationMinutes: number;
+  bufferMinutes: number;
+  price: number;
+  status: 'active' | 'inactive';
+};
