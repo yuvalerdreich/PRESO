@@ -61,3 +61,12 @@ test('client appointments route and header modal share the appointments experien
   await page.goto('/me/appointments');
   await expect(page.getByRole('heading', { level: 1, name: 'My appointments and requests' })).toBeVisible();
 });
+
+test('business onboarding navigates to the demo join flow', async ({ page }) => {
+  await page.goto('/onboarding');
+  await page.getByRole('button', { name: 'Switch to English' }).click();
+
+  await page.getByRole('link', { name: /find an existing business/i }).click();
+  await expect(page).toHaveURL(/\/join$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Request to join a business' })).toBeVisible();
+});
