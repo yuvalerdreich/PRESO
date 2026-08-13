@@ -41,8 +41,10 @@ export type ServiceSummary = {
   id: string;
   employeeId: string;
   name: LocalizedText;
+  description: LocalizedText;
   price: number;
   durationMinutes: number;
+  bufferMinutes: number;
   status: 'ACTIVE' | 'INACTIVE';
 };
 
