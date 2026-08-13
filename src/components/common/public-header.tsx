@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { CalendarDays, Search, UsersRound } from 'lucide-react';
+import { Building2, CalendarDays, Search, UsersRound } from 'lucide-react';
 import { useState } from 'react';
 
 import { AppointmentsPanel } from '@/components/appointments/appointments-panel';
@@ -39,6 +39,13 @@ export function PublicHeader({ appointments, waitlistEntries }: PublicHeaderProp
             <Search aria-hidden="true" size={16} />
             {copy.header.browse}
           </Link>
+          <Link
+            href="/onboarding"
+            className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:bg-white hover:text-[var(--brand)] focus-visible:outline-2 focus-visible:outline-[var(--brand)]"
+          >
+            <Building2 aria-hidden="true" size={16} />
+            {copy.header.businessEntry}
+          </Link>
         </nav>
         <div className="flex items-center gap-2">
           <Link
@@ -47,6 +54,13 @@ export function PublicHeader({ appointments, waitlistEntries }: PublicHeaderProp
           >
             <Search aria-hidden="true" size={16} />
             <span className="sr-only">{copy.header.browse}</span>
+          </Link>
+          <Link
+            href="/onboarding"
+            className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--line)] bg-white px-3 text-sm font-semibold text-[var(--brand)] shadow-sm md:hidden"
+          >
+            <Building2 aria-hidden="true" size={16} />
+            <span className="sr-only">{copy.header.businessEntry}</span>
           </Link>
           <button
             type="button"
