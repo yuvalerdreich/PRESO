@@ -46,6 +46,13 @@ export function PublicHeader({ appointments, waitlistEntries }: PublicHeaderProp
             <Building2 aria-hidden="true" size={16} />
             {copy.header.businessEntry}
           </Link>
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:bg-white hover:text-[var(--brand)] focus-visible:outline-2 focus-visible:outline-[var(--brand)]"
+          >
+            <Building2 aria-hidden="true" size={16} />
+            {copy.header.businessDashboard}
+          </Link>
         </nav>
         <div className="flex items-center gap-2">
           <Link
@@ -61,6 +68,13 @@ export function PublicHeader({ appointments, waitlistEntries }: PublicHeaderProp
           >
             <Building2 aria-hidden="true" size={16} />
             <span className="sr-only">{copy.header.businessEntry}</span>
+          </Link>
+          <Link
+            href="/dashboard"
+            className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--line)] bg-white px-3 text-sm font-semibold text-[var(--brand)] shadow-sm md:hidden"
+          >
+            <Building2 aria-hidden="true" size={16} />
+            <span className="sr-only">{copy.header.businessDashboard}</span>
           </Link>
           <button
             type="button"

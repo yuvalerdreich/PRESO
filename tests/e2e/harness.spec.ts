@@ -70,3 +70,18 @@ test('business onboarding navigates to the demo join flow', async ({ page }) => 
   await expect(page).toHaveURL(/\/join$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Request to join a business' })).toBeVisible();
 });
+
+test('business dashboard navigates from overview to detailed appointments', async ({ page }) => {
+  await page.goto('/dashboard');
+  await page.getByRole('button', { name: 'Switch to English' }).click();
+  await page.getByRole('link', { name: /view all appointments/i }).click();
+  await expect(page).toHaveURL(/\/dashboard\/appointments$/);
+  await expect(page.getByRole('heading', { level: 2, name: 'Scheduled appointments' })).toBeVisible();
+});
+
+test('public header navigates to the business dashboard', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Switch to English' }).click();
+  await page.getByRole('link', { name: 'Business dashboard' }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+});

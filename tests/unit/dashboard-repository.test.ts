@@ -1,0 +1,3 @@
+import { describe, expect, it } from 'vitest';
+import { dashboardRepository } from '@/lib/dashboard/repository';
+describe('mock dashboard repository', () => { it('returns only dashboard display data', async () => { await expect(dashboardRepository.getCurrentBusinessDashboard()).resolves.toMatchObject({ id: 'studio-zohar' }); await expect(dashboardRepository.listDashboardEmployees()).resolves.toHaveLength(2); await expect(dashboardRepository.listDashboardAppointments()).resolves.toHaveLength(3); await expect(dashboardRepository.listDashboardKpis()).resolves.toEqual(expect.arrayContaining([expect.objectContaining({ id: 'revenue', isMock: true })])); }); });

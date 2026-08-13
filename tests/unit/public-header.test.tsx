@@ -14,5 +14,6 @@ describe('public header', () => {
     render(<LanguageProvider initialLocale="en"><PublicHeader appointments={appointments} waitlistEntries={waitlistEntries} /></LanguageProvider>);
 
     expect(screen.getAllByRole('link', { name: 'For businesses' })[0]).toHaveAttribute('href', '/onboarding');
+    expect(screen.getAllByRole('link', { name: 'Business dashboard' })[0]).toHaveAttribute('href', '/dashboard');
   });
 });

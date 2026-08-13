@@ -10,6 +10,7 @@ export const translations = {
       appointments: 'התורים שלי',
       openAppointments: 'פתיחת התורים שלי',
       businessEntry: 'לעסקים',
+      businessDashboard: 'לוח בקרה עסקי',
       switchToEnglish: 'Switch to English',
     },
     discovery: {
@@ -111,6 +112,9 @@ export const translations = {
       chooseBusinessError: 'יש לבחור עסק כדי להמשיך',
       demoNotice: 'הדגמת ממשק מקומית בלבד — לא נשלחת ולא נשמרת בקשה.',
     },
+    dashboard: {
+      eyebrow: 'פורטל עסקי — הדגמת ממשק', title: 'לוח הבקרה של העסק', overview: 'סקירה', appointments: 'תורים', today: 'היום', appointmentOverview: 'תורים להיום', viewAll: 'לכל התורים', date: 'תאריך', employee: 'עובד/ת', allEmployees: 'כל העובדים', mockNotice: 'נתוני הדגמה מקומיים בלבד', revenueMock: 'הכנסות להצגה בלבד', appointmentsKpi: 'תורים היום', staffKpi: 'אנשי צוות פעילים', pendingKpi: 'ממתינים לאישור', revenueKpi: 'הכנסות מדומות', detailsTitle: 'תורים מתוכננים', detailsDescription: 'סינון מקומי של נתוני הדגמה בלבד. לא מתבצע שינוי, אישור או שמירה.', client: 'לקוח/ה', contact: 'יצירת קשר', service: 'שירות', noAppointments: 'אין תורים תואמים לסינון שנבחר.',
+    },
     emptyState: {
       title: 'לא נמצאו עסקים מתאימים',
       description: 'נסה לחפש ביטוי אחר, קטגוריה אחרת או אזור אחר.',
@@ -126,6 +130,7 @@ export const translations = {
       appointments: 'My appointments',
       openAppointments: 'Open my appointments',
       businessEntry: 'For businesses',
+      businessDashboard: 'Business dashboard',
       switchToEnglish: 'עברית',
     },
     discovery: {
@@ -226,6 +231,9 @@ export const translations = {
       requiredField: 'This field is required',
       chooseBusinessError: 'Choose a business to continue',
       demoNotice: 'Local UI demonstration only — no request is sent or saved.',
+    },
+    dashboard: {
+      eyebrow: 'Business portal — UI demo', title: 'Business dashboard', overview: 'Overview', appointments: 'Appointments', today: 'Today', appointmentOverview: 'Today’s appointments', viewAll: 'View all appointments', date: 'Date', employee: 'Employee', allEmployees: 'All employees', mockNotice: 'Local demonstration data only', revenueMock: 'Display-only revenue', appointmentsKpi: 'Appointments today', staffKpi: 'Active staff', pendingKpi: 'Pending approval', revenueKpi: 'Mock revenue', detailsTitle: 'Scheduled appointments', detailsDescription: 'Local filtering of demonstration data only. No changes, approvals, or information are saved.', client: 'Client', contact: 'Contact', service: 'Service', noAppointments: 'No appointments match the selected filters.',
     },
     emptyState: {
       title: 'No businesses match those filters',
