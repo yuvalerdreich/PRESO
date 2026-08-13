@@ -1,4 +1,4 @@
-import { DiscoverySearchPage } from '@/components/discovery/discovery-search-page';
+import { DiscoverySearchPage } from '@/components/public/discovery-search-page';
 import { discoveryRepository, type DiscoveryFilters } from '@/lib/discovery/repository';
 
 type SearchPageProps = {

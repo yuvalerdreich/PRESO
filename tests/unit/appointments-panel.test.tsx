@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { AppointmentsPanel } from '@/components/appointments/appointments-panel';
+import { AppointmentsPanel } from '@/components/client/appointments-panel';
 import { appointmentsRepository } from '@/lib/appointments/repository';
 import { LanguageProvider } from '@/lib/i18n/language-provider';
 

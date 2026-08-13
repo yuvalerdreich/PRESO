@@ -1,4 +1,4 @@
-import { DiscoveryHome } from '@/components/discovery/discovery-home';
+import { DiscoveryHome } from '@/components/public/discovery-home';
 import { discoveryRepository } from '@/lib/discovery/repository';
 
 export default async function HomePage() {

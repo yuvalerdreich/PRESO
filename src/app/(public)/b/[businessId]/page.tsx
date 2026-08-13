@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 
-import { BusinessProfile } from '@/components/discovery/business-profile';
+import { BusinessProfile } from '@/components/public/business-profile';
 import { discoveryRepository } from '@/lib/discovery/repository';
 
 type BusinessPageProps = {

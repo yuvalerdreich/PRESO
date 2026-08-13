@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 
-import { EmployeeProfile } from '@/components/discovery/employee-profile';
+import { EmployeeProfile } from '@/components/public/employee-profile';
 import { discoveryRepository } from '@/lib/discovery/repository';
 
 type EmployeePageProps = {
