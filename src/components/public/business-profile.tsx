@@ -3,8 +3,10 @@
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight, MapPin, Phone } from 'lucide-react';
 
+import { AvailabilityCalendar } from '@/components/public/availability-calendar';
 import { EmployeeList } from '@/components/public/employee-list';
 import { EmployeeServiceList } from '@/components/public/employee-service-list';
+import { SlotPicker } from '@/components/public/slot-picker';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import type { BusinessProfile as BusinessProfileType, Category, EmployeeSummary, ServiceSummary } from '@/types/domain';
 
@@ -14,12 +16,18 @@ export function BusinessProfile({
   employees,
   selectedEmployee,
   services,
+  selectedServiceId,
+  calendar,
+  slots,
 }: {
   business: BusinessProfileType;
   category?: Category;
   employees: EmployeeSummary[];
   selectedEmployee: EmployeeSummary;
   services: ServiceSummary[];
+  selectedServiceId?: string;
+  calendar?: { monthISO: string; selectedDate: string; availableDates: string[] };
+  slots?: { dateISO: string; selectedSlot?: string; times: string[] };
 }) {
   const { copy, locale, direction } = useLanguage();
   const BackArrow = direction === 'rtl' ? ArrowRight : ArrowLeft;
@@ -60,7 +68,33 @@ export function BusinessProfile({
       </div>
 
       <EmployeeList businessId={business.id} employees={employees} selectedEmployeeId={selectedEmployee.id} />
-      <EmployeeServiceList employee={selectedEmployee} services={services} />
+      <EmployeeServiceList
+        businessId={business.id}
+        employee={selectedEmployee}
+        services={services}
+        selectedServiceId={selectedServiceId}
+      />
+
+      {calendar && selectedServiceId ? (
+        <AvailabilityCalendar
+          basePath={`/b/${business.id}/e/${selectedEmployee.id}/s/${selectedServiceId}`}
+          employeeName={selectedEmployee.fullName[locale]}
+          monthISO={calendar.monthISO}
+          selectedDate={calendar.selectedDate}
+          availableDates={calendar.availableDates}
+        />
+      ) : null}
+
+      {slots && selectedServiceId ? (
+        <SlotPicker
+          basePath={`/b/${business.id}/e/${selectedEmployee.id}/s/${selectedServiceId}`}
+          monthISO={calendar?.monthISO ?? ''}
+          dateISO={slots.dateISO}
+          employeeName={selectedEmployee.fullName[locale]}
+          slots={slots.times}
+          selectedSlot={slots.selectedSlot}
+        />
+      ) : null}
     </div>
   );
 }

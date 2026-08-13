@@ -231,6 +231,46 @@ const services: ServiceSummary[] = [
   },
 ];
 
+/**
+ * Presentation-only mock standing in for `get_available_slots()` (TECHNICAL_DESIGN.md §6.1,
+ * §12.6) — NOT the real availability engine. It applies one uniform rule (closed Saturdays,
+ * a fixed daily slot list) regardless of employee/service, so the duration+buffer packing
+ * rule from §12.6 is not actually reflected yet. Kept behind the same repository interface
+ * so swapping in the real RPC later doesn't touch the calendar/slot-picker components.
+ */
+const MOCK_DAY_SLOTS = [
+  '08:30', '08:45', '09:00', '09:15', '09:30', '09:45', '10:00', '10:15', '10:30', '10:45',
+  '11:00', '11:15', '11:30', '11:45', '12:00', '12:15', '12:30', '13:45', '14:00',
+];
+
+function pad(value: number): string {
+  return String(value).padStart(2, '0');
+}
+
+function toISODate(date: Date): string {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function isClosedDay(date: Date): boolean {
+  return date.getDay() === 6; // Saturday — no WEEKLY_WINDOW rule in the mock
+}
+
+async function getMonthAvailability(_employeeId: string, _serviceId: string, monthISO: string): Promise<string[]> {
+  const [year, month] = monthISO.split('-').map(Number);
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const dates: string[] = [];
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const date = new Date(year, month - 1, day);
+    if (!isClosedDay(date)) dates.push(toISODate(date));
+  }
+  return dates;
+}
+
+async function getDaySlots(_employeeId: string, _serviceId: string, dateISO: string): Promise<string[]> {
+  const date = new Date(`${dateISO}T00:00:00`);
+  return isClosedDay(date) ? [] : MOCK_DAY_SLOTS;
+}
+
 function searchableText(business: BusinessSummary): string {
   return [business.name.he, business.name.en, business.description.he, business.description.en]
     .join(' ')
@@ -277,4 +317,6 @@ export const mockDiscoveryRepository = {
   listBusinessEmployees,
   getBusinessEmployee,
   listEmployeeServices,
+  getMonthAvailability,
+  getDaySlots,
 };
