@@ -10,7 +10,13 @@ export type DashboardBusiness = {
   phone: string;
 };
 
-export type DashboardEmployee = { id: string; name: LocalizedText; position: LocalizedText };
+export type DashboardEmployee = {
+  id: string;
+  name: LocalizedText;
+  position: LocalizedText;
+  contactLabel: string;
+  status: 'active' | 'inactive';
+};
 
 export type DashboardAppointment = {
   id: string;

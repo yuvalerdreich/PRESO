@@ -64,6 +64,7 @@ export function PublicHeader() {
   const isBusinessDashboard = pathname === '/dashboard';
   const isBusinessAppointments = pathname === '/dashboard/appointments';
   const isBusinessServices = pathname === '/dashboard/services';
+  const isBusinessStaff = pathname === '/dashboard/staff';
 
   return (
     <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-white/95 shadow-[0_1px_0_rgba(37,34,99,.04)] backdrop-blur-xl">
@@ -138,7 +139,7 @@ export function PublicHeader() {
             <>
               <NavigationItem href="/dashboard" icon={Building2} label={copy.header.businessDashboard} active={isBusinessDashboard} />
               <NavigationItem href="/dashboard/appointments" icon={CalendarDays} label={copy.header.businessAppointments} active={isBusinessAppointments} />
-              <DisabledNavigationItem icon={UsersRound} label={copy.header.staff} />
+              <NavigationItem href="/dashboard/staff" icon={UsersRound} label={copy.header.staff} active={isBusinessStaff} />
               <NavigationItem href="/dashboard/services" icon={Wrench} label={copy.header.services} active={isBusinessServices} />
               <DisabledNavigationItem icon={CalendarDays} label={copy.header.availability} />
             </>

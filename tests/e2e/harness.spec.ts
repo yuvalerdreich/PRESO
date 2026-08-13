@@ -89,3 +89,11 @@ test('business portal navigates to employee-linked services', async ({ page }) =
   await expect(page).toHaveURL(/\/dashboard\/services$/);
   await expect(page.getByRole('heading', { level: 2, name: 'Service management' })).toBeVisible();
 });
+
+test('business portal navigates to read-only staff', async ({ page }) => {
+  await page.goto('/dashboard');
+  await page.getByRole('button', { name: 'Switch to English' }).click();
+  await page.getByRole('link', { name: 'Staff' }).first().click();
+  await expect(page).toHaveURL(/\/dashboard\/staff$/);
+  await expect(page.getByRole('heading', { level: 2, name: 'Business staff' })).toBeVisible();
+});
