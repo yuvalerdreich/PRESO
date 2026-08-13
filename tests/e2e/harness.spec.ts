@@ -50,15 +50,11 @@ test('an unknown path renders the not-found page, not a crash', async ({ page })
   ).toBeVisible();
 });
 
-test('client appointments route and header modal share the appointments experience', async ({ page }) => {
+test('client appointments route is available from customer navigation', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Switch to English' }).click();
 
-  await page.getByRole('button', { name: 'Open my appointments' }).click();
-  await expect(page.getByRole('dialog', { name: 'My appointments and requests' })).toBeVisible();
-  await expect(page.getByRole('dialog').getByText('Studio Zohar')).toBeVisible();
-
-  await page.goto('/me/appointments');
+  await page.getByRole('link', { name: 'My appointments' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'My appointments and requests' })).toBeVisible();
 });
 
@@ -69,4 +65,19 @@ test('business onboarding navigates to the demo join flow', async ({ page }) => 
   await page.getByRole('link', { name: /find an existing business/i }).click();
   await expect(page).toHaveURL(/\/join$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Request to join a business' })).toBeVisible();
+});
+
+test('business dashboard navigates from overview to detailed appointments', async ({ page }) => {
+  await page.goto('/dashboard');
+  await page.getByRole('button', { name: 'Switch to English' }).click();
+  await page.getByRole('link', { name: /view all appointments/i }).click();
+  await expect(page).toHaveURL(/\/dashboard\/appointments$/);
+  await expect(page.getByRole('heading', { level: 2, name: 'Scheduled appointments' })).toBeVisible();
+});
+
+test('public header navigates to the business dashboard', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Switch to English' }).click();
+  await page.getByRole('link', { name: 'Business owners & staff' }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
 });
