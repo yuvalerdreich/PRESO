@@ -81,3 +81,11 @@ test('public header navigates to the business dashboard', async ({ page }) => {
   await page.getByRole('link', { name: 'Business owners & staff' }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
 });
+
+test('business portal navigates to employee-linked services', async ({ page }) => {
+  await page.goto('/dashboard');
+  await page.getByRole('button', { name: 'Switch to English' }).click();
+  await page.getByRole('link', { name: 'Services' }).first().click();
+  await expect(page).toHaveURL(/\/dashboard\/services$/);
+  await expect(page.getByRole('heading', { level: 2, name: 'Service management' })).toBeVisible();
+});

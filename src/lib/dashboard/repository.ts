@@ -1,5 +1,5 @@
 import { mockDashboardRepository } from '@/lib/dashboard/mock-repository';
-import type { DashboardAppointment, DashboardBusiness, DashboardEmployee, DashboardKpi } from '@/types/dashboard';
+import type { DashboardAppointment, DashboardBusiness, DashboardEmployee, DashboardKpi, DashboardService } from '@/types/dashboard';
 
 /** Public UI mock data only. Future RLS-scoped reads replace this contract. */
 export type DashboardRepository = {
@@ -7,6 +7,7 @@ export type DashboardRepository = {
   listDashboardEmployees(): Promise<DashboardEmployee[]>;
   listDashboardAppointments(): Promise<DashboardAppointment[]>;
   listDashboardKpis(): Promise<DashboardKpi[]>;
+  listDashboardServices(): Promise<DashboardService[]>;
 };
 
 export const dashboardRepository: DashboardRepository = mockDashboardRepository;

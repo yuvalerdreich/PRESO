@@ -13,10 +13,16 @@ const appointments = [
 const kpis = [
   { id: 'appointments', value: '4', isMock: true }, { id: 'staff', value: '2', isMock: true }, { id: 'pending', value: '1', isMock: true }, { id: 'revenue', value: '₪1,000', isMock: true },
 ] as const;
+const services = [
+  { id: 'service-cut', employeeId: 'zohar', name: { he: 'תספורת ועיצוב שיער', en: 'Haircut and styling' }, description: { he: 'תספורת אישית ועיצוב מותאם', en: 'A personal cut with tailored styling' }, durationMinutes: 30, bufferMinutes: 10, price: 120, status: 'active' },
+  { id: 'service-colour', employeeId: 'noa', name: { he: 'גוונים וצבע אומברה', en: 'Highlights and ombré colour' }, description: { he: 'טיפול צבע וגוונים בהתאמה אישית', en: 'Personalised colour and highlights treatment' }, durationMinutes: 90, bufferMinutes: 15, price: 380, status: 'active' },
+  { id: 'service-refresh', employeeId: 'zohar', name: { he: 'חידוש צבע', en: 'Colour refresh' }, description: { he: 'רענון צבע בין טיפולים מלאים', en: 'A colour refresh between full treatments' }, durationMinutes: 45, bufferMinutes: 10, price: 180, status: 'inactive' },
+] as const;
 
 export const mockDashboardRepository: DashboardRepository = {
   async getCurrentBusinessDashboard() { return business; },
   async listDashboardEmployees() { return [...employees]; },
   async listDashboardAppointments() { return [...appointments]; },
   async listDashboardKpis() { return [...kpis]; },
+  async listDashboardServices() { return [...services]; },
 };
