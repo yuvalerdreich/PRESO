@@ -1,14 +1,24 @@
 'use client';
 
 import Link from 'next/link';
-import { Search, UsersRound } from 'lucide-react';
+import { CalendarDays, Search, UsersRound } from 'lucide-react';
+import { useState } from 'react';
 
+import { AppointmentsPanel } from '@/components/appointments/appointments-panel';
 import { LanguageSwitcher } from '@/components/common/language-switcher';
+import { Modal } from '@/components/common/modal';
 import { PresoLogo } from '@/components/common/preso-logo';
 import { useLanguage } from '@/lib/i18n/language-provider';
+import type { ClientAppointment, ClientWaitlistEntry } from '@/types/appointments';
 
-export function PublicHeader() {
+type PublicHeaderProps = {
+  appointments: ClientAppointment[];
+  waitlistEntries: ClientWaitlistEntry[];
+};
+
+export function PublicHeader({ appointments, waitlistEntries }: PublicHeaderProps) {
   const { copy } = useLanguage();
+  const [appointmentsOpen, setAppointmentsOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-white/90 backdrop-blur-xl">
@@ -30,17 +40,29 @@ export function PublicHeader() {
             {copy.header.browse}
           </Link>
         </nav>
-        <div className="flex items-center gap-2 md:hidden">
+        <div className="flex items-center gap-2">
           <Link
             href="/search"
-            className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--line)] bg-white px-3 text-sm font-semibold text-[var(--brand)] shadow-sm"
+            className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--line)] bg-white px-3 text-sm font-semibold text-[var(--brand)] shadow-sm md:hidden"
           >
             <Search aria-hidden="true" size={16} />
             <span className="sr-only">{copy.header.browse}</span>
           </Link>
+          <button
+            type="button"
+            onClick={() => setAppointmentsOpen(true)}
+            className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-violet-100 bg-violet-50 px-3 text-sm font-bold text-[var(--brand)] shadow-sm transition hover:-translate-y-0.5 hover:bg-violet-100 hover:text-[var(--brand-deep)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]"
+            aria-label={copy.header.openAppointments}
+          >
+            <CalendarDays aria-hidden="true" size={17} />
+            <span className="hidden lg:inline">{copy.header.appointments}</span>
+          </button>
         </div>
         <LanguageSwitcher />
       </div>
+      <Modal isOpen={appointmentsOpen} label={copy.appointments.title} closeLabel={copy.appointments.close} onClose={() => setAppointmentsOpen(false)}>
+        <AppointmentsPanel appointments={appointments} waitlistEntries={waitlistEntries} variant="modal" />
+      </Modal>
     </header>
   );
 }
