@@ -49,3 +49,15 @@ test('an unknown path renders the not-found page, not a crash', async ({ page })
     page.getByRole('heading', { name: /couldn't find that page/i }),
   ).toBeVisible();
 });
+
+test('client appointments route and header modal share the appointments experience', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Switch to English' }).click();
+
+  await page.getByRole('button', { name: 'Open my appointments' }).click();
+  await expect(page.getByRole('dialog', { name: 'My appointments and requests' })).toBeVisible();
+  await expect(page.getByRole('dialog').getByText('Studio Zohar')).toBeVisible();
+
+  await page.goto('/me/appointments');
+  await expect(page.getByRole('heading', { level: 1, name: 'My appointments and requests' })).toBeVisible();
+});
