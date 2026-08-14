@@ -6,10 +6,12 @@ import { X } from 'lucide-react';
 export function Modal({
   onClose,
   closeLabel,
+  ariaLabel,
   children,
 }: {
   onClose: () => void;
   closeLabel: string;
+  ariaLabel?: string;
   children: ReactNode;
 }) {
   useEffect(() => {
@@ -28,6 +30,7 @@ export function Modal({
       <div
         role="dialog"
         aria-modal="true"
+        aria-label={ariaLabel}
         onClick={(event) => event.stopPropagation()}
         className="relative flex max-h-[90vh] w-full max-w-lg flex-col gap-5 overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl"
       >
