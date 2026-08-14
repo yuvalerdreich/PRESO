@@ -40,6 +40,11 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: latest
+        env:
+          # Authenticates this step's GitHub API calls (resolving "latest") so
+          # it draws from the repo's 5,000/hour budget instead of the shared
+          # 60/hour unauthenticated limit every runner IP pool competes for.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # Boots Postgres, PostgREST, Auth and the API gateway in Docker, then
       # applies every migration. Both the database tests and the integration
