@@ -40,6 +40,7 @@ const businesses: (BusinessProfile & { employeeAvatarUrls: string[] })[] = [
     phone: '04-8112233',
     employeeCount: 1,
     employeeAvatarUrls: ['https://i.pravatar.cc/64?img=12'],
+    approvalPolicy: 'AUTO',
   },
   {
     id: GLOW_CLINIC_ID,
@@ -55,6 +56,9 @@ const businesses: (BusinessProfile & { employeeAvatarUrls: string[] })[] = [
     phone: '09-9556677',
     employeeCount: 2,
     employeeAvatarUrls: ['https://i.pravatar.cc/64?img=32', 'https://i.pravatar.cc/64?img=45'],
+    // MANUAL on purpose: this is the only business in the fixture whose bookings land PENDING,
+    // so the booking confirm flow can demonstrate both outcomes.
+    approvalPolicy: 'MANUAL',
   },
   {
     id: STUDIO_ZOHAR_ID,
@@ -70,6 +74,7 @@ const businesses: (BusinessProfile & { employeeAvatarUrls: string[] })[] = [
     phone: '03-6001122',
     employeeCount: 2,
     employeeAvatarUrls: ['https://i.pravatar.cc/64?img=51', 'https://i.pravatar.cc/64?img=47'],
+    approvalPolicy: 'AUTO',
   },
 ];
 
@@ -310,6 +315,17 @@ async function listEmployeeServices(businessId: string, employeeId: string): Pro
   return services.filter((service) => service.employeeId === employeeId);
 }
 
+// Looked up without a businessId, unlike listBusinessEmployees/listEmployeeServices above —
+// this mirrors a plain `select ... where id = $1`, which is all POST /api/appointments has
+// to go on per its documented request body (TECHNICAL_DESIGN.md §5.4).
+async function getEmployeeById(employeeId: string): Promise<EmployeeSummary | null> {
+  return employees.find((employee) => employee.id === employeeId) ?? null;
+}
+
+async function getServiceById(serviceId: string): Promise<ServiceSummary | null> {
+  return services.find((service) => service.id === serviceId) ?? null;
+}
+
 export const mockDiscoveryRepository = {
   listCategories,
   searchBusinesses,
@@ -317,6 +333,8 @@ export const mockDiscoveryRepository = {
   listBusinessEmployees,
   getBusinessEmployee,
   listEmployeeServices,
+  getEmployeeById,
+  getServiceById,
   getMonthAvailability,
   getDaySlots,
 };

@@ -16,6 +16,10 @@ export type DiscoveryRepository = {
   listBusinessEmployees(businessId: string): Promise<EmployeeSummary[]>;
   getBusinessEmployee(businessId: string, employeeId: string): Promise<EmployeeSummary | null>;
   listEmployeeServices(businessId: string, employeeId: string): Promise<ServiceSummary[]>;
+  /** Looked up by id alone — what `POST /api/appointments` has to resolve from `employeeId`. */
+  getEmployeeById(employeeId: string): Promise<EmployeeSummary | null>;
+  /** Looked up by id alone — what `POST /api/appointments` has to resolve from `serviceId`. */
+  getServiceById(serviceId: string): Promise<ServiceSummary | null>;
   /** ISO (YYYY-MM-DD) dates with at least one slot in that month. Mock stand-in for `get_available_slots()` — see mock-repository.ts. */
   getMonthAvailability(employeeId: string, serviceId: string, monthISO: string): Promise<string[]>;
   /** "HH:mm" start times for one date; empty when closed. */

@@ -23,3 +23,6 @@ export type ClientWaitlistEntry = {
   requestedDateISO: string;
   requestedRange: string;
 };
+
+/** Everything needed to create a `ClientAppointment` row, minus its generated `id`. */
+export type CreateAppointmentInput = Omit<ClientAppointment, 'id'>;
