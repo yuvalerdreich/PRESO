@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Check, Clock, HelpCircle, X } from 'lucide-react';
+import { Check, Clock, X } from 'lucide-react';
 
 import { Modal } from '@/components/common/modal';
 import { useLanguage } from '@/lib/i18n/language-provider';
@@ -82,17 +82,9 @@ export function BookingConfirmDialog({
 
   return (
     <Modal onClose={close} closeLabel={copy.bookingConfirm.close} ariaLabel={copy.bookingConfirm.title}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-bold text-[var(--foreground)]">{copy.bookingConfirm.title}</h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">{copy.bookingConfirm.description}</p>
-        </div>
-        <span
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--brand)] text-white"
-          aria-hidden="true"
-        >
-          <HelpCircle className="h-5 w-5" />
-        </span>
+      <div>
+        <h2 className="text-lg font-bold text-[var(--foreground)]">{copy.bookingConfirm.title}</h2>
+        <p className="mt-1 text-sm text-[var(--muted)]">{copy.bookingConfirm.description}</p>
       </div>
 
       <div className="flex flex-col gap-3 rounded-2xl bg-[var(--soft-violet)] p-4 text-sm">
