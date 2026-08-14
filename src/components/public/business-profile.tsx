@@ -7,6 +7,7 @@ import { AvailabilityCalendar } from '@/components/public/availability-calendar'
 import { EmployeeList } from '@/components/public/employee-list';
 import { EmployeeServiceList } from '@/components/public/employee-service-list';
 import { SlotPicker } from '@/components/public/slot-picker';
+import { WaitlistJoinModal } from '@/components/public/waitlist-join-modal';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import type { BusinessProfile as BusinessProfileType, Category, EmployeeSummary, ServiceSummary } from '@/types/domain';
 
@@ -19,6 +20,7 @@ export function BusinessProfile({
   selectedServiceId,
   calendar,
   slots,
+  waitlistOpen,
 }: {
   business: BusinessProfileType;
   category?: Category;
@@ -28,6 +30,7 @@ export function BusinessProfile({
   selectedServiceId?: string;
   calendar?: { monthISO: string; selectedDate: string; availableDates: string[] };
   slots?: { dateISO: string; selectedSlot?: string; times: string[] };
+  waitlistOpen?: boolean;
 }) {
   const { copy, locale, direction } = useLanguage();
   const BackArrow = direction === 'rtl' ? ArrowRight : ArrowLeft;
@@ -95,6 +98,30 @@ export function BusinessProfile({
           selectedSlot={slots.selectedSlot}
         />
       ) : null}
+
+      {waitlistOpen && slots && selectedServiceId
+        ? (() => {
+            const selectedService = services.find((service) => service.id === selectedServiceId);
+            if (!selectedService) return null;
+
+            const basePath = `/b/${business.id}/e/${selectedEmployee.id}/s/${selectedServiceId}`;
+            const closeParams = new URLSearchParams();
+            if (calendar?.monthISO) closeParams.set('month', calendar.monthISO);
+            closeParams.set('date', slots.dateISO);
+            if (slots.selectedSlot) closeParams.set('slot', slots.selectedSlot);
+
+            return (
+              <WaitlistJoinModal
+                closeHref={`${basePath}?${closeParams.toString()}`}
+                businessName={business.name[locale]}
+                employeeName={selectedEmployee.fullName[locale]}
+                serviceName={selectedService.name[locale]}
+                servicePrice={selectedService.price}
+                dateISO={slots.dateISO}
+              />
+            );
+          })()
+        : null}
     </div>
   );
 }
