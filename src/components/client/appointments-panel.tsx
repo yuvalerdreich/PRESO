@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { CalendarDays, CalendarX } from 'lucide-react';
+import { CalendarX } from 'lucide-react';
 
 import { AppointmentCard } from '@/components/client/appointment-card';
 import { AppointmentsTabs, type AppointmentsTabId } from '@/components/client/appointments-tabs';
@@ -52,14 +52,9 @@ export function AppointmentsPanel({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-lg font-bold text-[var(--foreground)]">{copy.appointments.title}</h1>
-          <p className="text-sm text-[var(--muted)]">{copy.appointments.description}</p>
-        </div>
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--brand)] text-white">
-          <CalendarDays className="h-5 w-5" aria-hidden="true" />
-        </span>
+      <div>
+        <h1 className="text-lg font-bold text-[var(--foreground)]">{copy.appointments.title}</h1>
+        <p className="text-sm text-[var(--muted)]">{copy.appointments.description}</p>
       </div>
 
       <AppointmentsTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
