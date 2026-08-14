@@ -23,6 +23,8 @@ export type BusinessSummary = {
   photoUrl: string;
   employeeCount: number;
   employeeAvatarUrls: string[];
+  /** `AUTO` confirms a booking immediately; `MANUAL` leaves it `PENDING` until the business approves it (TECHNICAL_DESIGN.md §6.2 step 5). */
+  approvalPolicy: 'AUTO' | 'MANUAL';
 };
 
 export type BusinessProfile = BusinessSummary & {

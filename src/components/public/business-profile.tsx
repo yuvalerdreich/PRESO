@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight, MapPin, Phone } from 'lucide-react';
 
+import { BookingConfirmDialog } from '@/components/booking/booking-confirm-dialog';
 import { AvailabilityCalendar } from '@/components/public/availability-calendar';
 import { EmployeeList } from '@/components/public/employee-list';
 import { EmployeeServiceList } from '@/components/public/employee-service-list';
@@ -118,6 +119,34 @@ export function BusinessProfile({
                 serviceName={selectedService.name[locale]}
                 servicePrice={selectedService.price}
                 dateISO={slots.dateISO}
+              />
+            );
+          })()
+        : null}
+
+      {!waitlistOpen && slots?.selectedSlot && selectedServiceId
+        ? (() => {
+            const selectedService = services.find((service) => service.id === selectedServiceId);
+            if (!selectedService) return null;
+
+            const basePath = `/b/${business.id}/e/${selectedEmployee.id}/s/${selectedServiceId}`;
+            const closeParams = new URLSearchParams();
+            if (calendar?.monthISO) closeParams.set('month', calendar.monthISO);
+            closeParams.set('date', slots.dateISO);
+            const closeQuery = closeParams.toString();
+
+            return (
+              <BookingConfirmDialog
+                closeHref={closeQuery ? `${basePath}?${closeQuery}` : basePath}
+                employeeId={selectedEmployee.id}
+                serviceId={selectedService.id}
+                businessName={business.name[locale]}
+                employeeName={selectedEmployee.fullName[locale]}
+                serviceName={selectedService.name[locale]}
+                servicePrice={selectedService.price}
+                durationMinutes={selectedService.durationMinutes}
+                dateISO={slots.dateISO}
+                time={slots.selectedSlot}
               />
             );
           })()
