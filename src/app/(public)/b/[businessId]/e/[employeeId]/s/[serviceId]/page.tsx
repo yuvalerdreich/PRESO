@@ -41,6 +41,7 @@ export default async function ServiceAvailabilityPage({
   const monthISO = typeof search.month === 'string' ? search.month : currentMonthISO();
   const dateISO = typeof search.date === 'string' ? search.date : defaultDateForMonth(monthISO);
   const selectedSlot = typeof search.slot === 'string' ? search.slot : undefined;
+  const waitlistOpen = search.waitlist === '1';
 
   const [business, categories, employees, selectedEmployee, services, availableDates, daySlots] = await Promise.all([
     discoveryRepository.getBusinessProfile(businessId),
@@ -69,6 +70,7 @@ export default async function ServiceAvailabilityPage({
       selectedServiceId={selectedService.id}
       calendar={{ monthISO, selectedDate: dateISO, availableDates }}
       slots={{ dateISO, selectedSlot, times: daySlots }}
+      waitlistOpen={waitlistOpen}
     />
   );
 }
