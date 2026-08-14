@@ -6,15 +6,16 @@ name: verify
 #                  suite and marks the PR red or green before you merge it.
 #                  This is the check that decides whether a feature is done.
 #
-#   push to main → a net, not a gate. It runs AFTER a merge has landed, so it
-#                  cannot block anything; it exists to catch a merge that was
-#                  made locally and pushed without ever opening a PR.
+# There is deliberately no `push: branches: [main]` trigger. That would re-run
+# the whole suite a second time after every merge, purely as a net to catch a
+# push straight to main that skipped the PR gate — a workflow this repo
+# doesn't use (every change lands through a PR), so the second run would just
+# re-validate what the PR check already confirmed green. Add it back if that
+# ever stops being true (e.g. a second contributor who might push directly).
 #
 # Locally the equivalent single command is `npm run verify`.
 on:
   pull_request:
-    branches: [main]
-  push:
     branches: [main]
 
 concurrency:
