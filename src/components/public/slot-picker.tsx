@@ -86,9 +86,9 @@ export function SlotPicker({
           <div className="flex justify-center border-t border-[var(--line)] pt-3">
             <Link
               href={waitlistHref}
-              className="flex items-center gap-1.5 text-sm font-medium text-amber-700 hover:underline"
+              className="flex items-center gap-2 rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600"
             >
-              <Bell className="h-3.5 w-3.5" aria-hidden="true" />
+              <Bell className="h-4 w-4" aria-hidden="true" />
               {copy.businessProfile.differentTimeWaitlistPrompt}
             </Link>
           </div>
