@@ -13,7 +13,7 @@ export function CancelAppointmentDialog({
   onConfirm: () => void;
   onClose: () => void;
 }) {
-  const { copy, locale } = useLanguage();
+  const { copy } = useLanguage();
 
   return (
     <Modal onClose={onClose} closeLabel={copy.appointments.close} ariaLabel={copy.appointments.cancelTitle}>
@@ -23,9 +23,9 @@ export function CancelAppointmentDialog({
       </div>
 
       <div className="rounded-2xl bg-[var(--soft-violet)] p-4 text-sm">
-        <p className="font-semibold text-[var(--foreground)]">{appointment.serviceName[locale]}</p>
+        <p className="font-semibold text-[var(--foreground)]">{appointment.serviceName}</p>
         <p className="text-[var(--brand-deep)]">
-          {appointment.businessName[locale]} • {appointment.dateISO} {appointment.time}
+          {appointment.businessName} • {appointment.dateISO} {appointment.time}
         </p>
       </div>
 

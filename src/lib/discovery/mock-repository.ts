@@ -28,14 +28,11 @@ const categories: Category[] = [
 const businesses: (BusinessProfile & { employeeAvatarUrls: string[] })[] = [
   {
     id: APEX_FITNESS_ID,
-    name: { he: 'Apex Fitness סטודיו כושר ופילאטיס', en: 'Apex Fitness' },
+    name: 'Apex Fitness סטודיו כושר ופילאטיס',
     categoryId: 'fitness',
-    area: { id: 'haifa', name: { he: 'חיפה', en: 'Haifa' } },
-    address: { he: 'דרך יפו 45, חיפה', en: '45 Yafo Rd, Haifa' },
-    description: {
-      he: 'אימונים אישיים, שיקום תנועתי ופילאטיס מכשירים אחד על אחד.',
-      en: 'Personal training, movement rehab, and one-on-one equipment pilates.',
-    },
+    area: 'חיפה',
+    address: 'דרך יפו 45, חיפה',
+    description: 'אימונים אישיים, שיקום תנועתי ופילאטיס מכשירים אחד על אחד.',
     photoUrl: 'https://picsum.photos/seed/apex-fitness/640/480',
     phone: '04-8112233',
     employeeCount: 1,
@@ -44,14 +41,11 @@ const businesses: (BusinessProfile & { employeeAvatarUrls: string[] })[] = [
   },
   {
     id: GLOW_CLINIC_ID,
-    name: { he: 'Glow Clinic קליניקת אסתטיקה', en: 'Glow Clinic' },
+    name: 'Glow Clinic קליניקת אסתטיקה',
     categoryId: 'cosmetics',
-    area: { id: 'herzliya', name: { he: 'הרצליה', en: 'Herzliya' } },
-    address: { he: 'שדרות אבא אבן 8, הרצליה', en: '8 Aba Even Blvd, Herzliya' },
-    description: {
-      he: 'טיפולי פנים מתקדמים, מניקור פדיקור רפואי ואסתטיקה פרא-רפואית.',
-      en: 'Advanced facials, medical mani-pedi, and paramedical aesthetics.',
-    },
+    area: 'הרצליה',
+    address: 'שדרות אבא אבן 8, הרצליה',
+    description: 'טיפולי פנים מתקדמים, מניקור פדיקור רפואי ואסתטיקה פרא-רפואית.',
     photoUrl: 'https://picsum.photos/seed/glow-clinic/640/480',
     phone: '09-9556677',
     employeeCount: 2,
@@ -62,14 +56,11 @@ const businesses: (BusinessProfile & { employeeAvatarUrls: string[] })[] = [
   },
   {
     id: STUDIO_ZOHAR_ID,
-    name: { he: 'Studio Zohar - מספרת זוהר', en: 'Studio Zohar' },
+    name: 'Studio Zohar - מספרת זוהר',
     categoryId: 'beauty',
-    area: { id: 'tel-aviv', name: { he: 'תל אביב', en: 'Tel Aviv' } },
-    address: { he: 'רחוב דיזנגוף 142, תל אביב', en: '142 Dizengoff St, Tel Aviv' },
-    description: {
-      he: 'סטודיו לעיצוב שיער, כימיקלים מתקדמים, גוונים ותספורות גברים ונשים.',
-      en: 'Hair design studio — advanced color, balayage, and cuts for everyone.',
-    },
+    area: 'תל אביב',
+    address: 'רחוב דיזנגוף 142, תל אביב',
+    description: 'סטודיו לעיצוב שיער, כימיקלים מתקדמים, גוונים ותספורות גברים ונשים.',
     photoUrl: 'https://picsum.photos/seed/studio-zohar/640/480',
     phone: '03-6001122',
     employeeCount: 2,
@@ -82,36 +73,36 @@ const employees: EmployeeSummary[] = [
   {
     id: 'e-apex-1',
     businessId: APEX_FITNESS_ID,
-    fullName: { he: 'עידן ברק', en: 'Idan Barak' },
-    positionTitle: { he: 'מאמן אישי', en: 'Personal trainer' },
+    fullName: 'עידן ברק',
+    positionTitle: 'מאמן אישי',
     avatarUrl: 'https://i.pravatar.cc/96?img=12',
   },
   {
     id: 'e-glow-1',
     businessId: GLOW_CLINIC_ID,
-    fullName: { he: 'דנה כהן', en: 'Dana Cohen' },
-    positionTitle: { he: 'קוסמטיקאית רפואית', en: 'Medical aesthetician' },
+    fullName: 'דנה כהן',
+    positionTitle: 'קוסמטיקאית רפואית',
     avatarUrl: 'https://i.pravatar.cc/96?img=32',
   },
   {
     id: 'e-glow-2',
     businessId: GLOW_CLINIC_ID,
-    fullName: { he: 'ליאור שדה', en: 'Lior Sade' },
-    positionTitle: { he: 'מניקוריסטית', en: 'Nail technician' },
+    fullName: 'ליאור שדה',
+    positionTitle: 'מניקוריסטית',
     avatarUrl: 'https://i.pravatar.cc/96?img=45',
   },
   {
     id: 'e-zohar',
     businessId: STUDIO_ZOHAR_ID,
-    fullName: { he: 'זוהר לוי', en: 'Zohar Levi' },
-    positionTitle: { he: 'מעצב שיער ראשי ומנהל', en: 'Lead hairstylist & manager' },
+    fullName: 'זוהר לוי',
+    positionTitle: 'מעצב שיער ראשי ומנהל',
     avatarUrl: 'https://i.pravatar.cc/96?img=51',
   },
   {
     id: 'e-miya',
     businessId: STUDIO_ZOHAR_ID,
-    fullName: { he: 'מיה כהן', en: 'Miya Cohen' },
-    positionTitle: { he: 'מומחית גוונים וכימיקלים', en: 'Color & chemical treatment specialist' },
+    fullName: 'מיה כהן',
+    positionTitle: 'מומחית גוונים וכימיקלים',
     avatarUrl: 'https://i.pravatar.cc/96?img=47',
   },
 ];
@@ -120,11 +111,8 @@ const services: ServiceSummary[] = [
   {
     id: 's-apex-1',
     employeeId: 'e-apex-1',
-    name: { he: 'אימון אישי', en: 'Personal training session' },
-    description: {
-      he: 'אימון פרטני מותאם למטרות שלך, כולל בניית תוכנית עבודה.',
-      en: 'A one-on-one session tailored to your goals, including a training plan.',
-    },
+    name: 'אימון אישי',
+    description: 'אימון פרטני מותאם למטרות שלך, כולל בניית תוכנית עבודה.',
     price: 150,
     durationMinutes: 60,
     bufferMinutes: 10,
@@ -133,11 +121,8 @@ const services: ServiceSummary[] = [
   {
     id: 's-glow-1',
     employeeId: 'e-glow-1',
-    name: { he: 'טיפול פנים מתקדם', en: 'Advanced facial' },
-    description: {
-      he: 'ניקוי עמוק, פילינג ומסכה מותאמים אישית לסוג העור.',
-      en: 'Deep cleansing, peeling, and a mask tailored to your skin type.',
-    },
+    name: 'טיפול פנים מתקדם',
+    description: 'ניקוי עמוק, פילינג ומסכה מותאמים אישית לסוג העור.',
     price: 250,
     durationMinutes: 50,
     bufferMinutes: 10,
@@ -146,11 +131,8 @@ const services: ServiceSummary[] = [
   {
     id: 's-glow-2',
     employeeId: 'e-glow-2',
-    name: { he: 'מניקור פדיקור רפואי', en: 'Medical mani-pedi' },
-    description: {
-      he: 'טיפול רפואי לציפורניים ולעור סביבן, כולל הסרת עור קשה.',
-      en: 'Medical treatment for nails and surrounding skin, including callus removal.',
-    },
+    name: 'מניקור פדיקור רפואי',
+    description: 'טיפול רפואי לציפורניים ולעור סביבן, כולל הסרת עור קשה.',
     price: 180,
     durationMinutes: 45,
     bufferMinutes: 10,
@@ -159,11 +141,8 @@ const services: ServiceSummary[] = [
   {
     id: 's-zohar-1',
     employeeId: 'e-zohar',
-    name: { he: 'עיצוב זקן וגילוח מסורתי', en: 'Traditional beard styling & shave' },
-    description: {
-      he: 'פיסול זקן, מגבות חמות וטיפוח עור הפנים.',
-      en: 'Beard sculpting, hot towels, and facial skin care.',
-    },
+    name: 'עיצוב זקן וגילוח מסורתי',
+    description: 'פיסול זקן, מגבות חמות וטיפוח עור הפנים.',
     price: 70,
     durationMinutes: 20,
     bufferMinutes: 5,
@@ -172,11 +151,8 @@ const services: ServiceSummary[] = [
   {
     id: 's-zohar-2',
     employeeId: 'e-zohar',
-    name: { he: 'תספורת ועיצוב שיער (גברים/נשים)', en: 'Haircut and styling' },
-    description: {
-      he: 'חפיפה מפנקת, תספורת מותאמת אישית ועיצוב בפן או חומר עיצוב.',
-      en: 'A pampering wash, a personalized cut, and a blow-dry or styling finish.',
-    },
+    name: 'תספורת ועיצוב שיער (גברים/נשים)',
+    description: 'חפיפה מפנקת, תספורת מותאמת אישית ועיצוב בפן או חומר עיצוב.',
     price: 120,
     durationMinutes: 30,
     bufferMinutes: 10,
@@ -185,11 +161,8 @@ const services: ServiceSummary[] = [
   {
     id: 's-zohar-3',
     employeeId: 'e-zohar',
-    name: { he: 'פראפארט ופליקס לשיקום השיער', en: 'Paraffin & plex hair restoration' },
-    description: {
-      he: 'טיפול עמוק לשיער פגום עם חומצות אמינו.',
-      en: 'A deep treatment for damaged hair with amino acids.',
-    },
+    name: 'פראפארט ופליקס לשיקום השיער',
+    description: 'טיפול עמוק לשיער פגום עם חומצות אמינו.',
     price: 180,
     durationMinutes: 45,
     bufferMinutes: 10,
@@ -198,11 +171,8 @@ const services: ServiceSummary[] = [
   {
     id: 's-miya-1',
     employeeId: 'e-miya',
-    name: { he: 'גוונים וצבע אורגני מקצועי', en: 'Organic professional color & tones' },
-    description: {
-      he: "טכניקת בליאז'/גוונים מקיפה כולל טיפול שיקום וברק.",
-      en: 'Full balayage/color technique, including a restorative gloss treatment.',
-    },
+    name: 'גוונים וצבע אורגני מקצועי',
+    description: "טכניקת בליאז'/גוונים מקיפה כולל טיפול שיקום וברק.",
     price: 380,
     durationMinutes: 90,
     bufferMinutes: 15,
@@ -211,11 +181,8 @@ const services: ServiceSummary[] = [
   {
     id: 's-miya-2',
     employeeId: 'e-miya',
-    name: { he: 'תספורת ועיצוב שיער (גברים/נשים)', en: 'Haircut and styling' },
-    description: {
-      he: 'חפיפה מפנקת, תספורת מותאמת אישית ועיצוב בפן או חומר עיצוב.',
-      en: 'A pampering wash, a personalized cut, and a blow-dry or styling finish.',
-    },
+    name: 'תספורת ועיצוב שיער (גברים/נשים)',
+    description: 'חפיפה מפנקת, תספורת מותאמת אישית ועיצוב בפן או חומר עיצוב.',
     price: 120,
     durationMinutes: 30,
     bufferMinutes: 10,
@@ -224,11 +191,8 @@ const services: ServiceSummary[] = [
   {
     id: 's-miya-3',
     employeeId: 'e-miya',
-    name: { he: 'טיפול קרטין להחלקת שיער', en: 'Keratin hair-smoothing treatment' },
-    description: {
-      he: 'החלקה מקצועית להארכת חיי הסטיילינג והפחתת נפח.',
-      en: 'A professional smoothing treatment that extends styling life and reduces frizz.',
-    },
+    name: 'טיפול קרטין להחלקת שיער',
+    description: 'החלקה מקצועית להארכת חיי הסטיילינג והפחתת נפח.',
     price: 320,
     durationMinutes: 75,
     bufferMinutes: 15,
@@ -277,9 +241,7 @@ async function getDaySlots(_employeeId: string, _serviceId: string, dateISO: str
 }
 
 function searchableText(business: BusinessSummary): string {
-  return [business.name.he, business.name.en, business.description.he, business.description.en]
-    .join(' ')
-    .toLowerCase();
+  return [business.name, business.description].join(' ').toLowerCase();
 }
 
 async function listCategories(): Promise<Category[]> {
@@ -288,11 +250,12 @@ async function listCategories(): Promise<Category[]> {
 
 async function searchBusinesses(filters: BusinessSearchFilters = {}): Promise<BusinessSummary[]> {
   const q = filters.q?.trim().toLowerCase();
+  const area = filters.area?.trim().toLowerCase();
 
   return businesses.filter((business) => {
     if (q && !searchableText(business).includes(q)) return false;
     if (filters.category && business.categoryId !== filters.category) return false;
-    if (filters.area && business.area.id !== filters.area) return false;
+    if (area && business.area.toLowerCase() !== area) return false;
     return true;
   });
 }

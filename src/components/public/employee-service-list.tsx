@@ -7,7 +7,7 @@ import { useLanguage } from '@/lib/i18n/language-provider';
 import type { EmployeeSummary, ServiceSummary } from '@/types/domain';
 
 function ServiceCard({ service, href, selected }: { service: ServiceSummary; href: string; selected: boolean }) {
-  const { copy, locale } = useLanguage();
+  const { copy } = useLanguage();
 
   return (
     <div
@@ -18,14 +18,14 @@ function ServiceCard({ service, href, selected }: { service: ServiceSummary; hre
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
-            <h3 className="text-base font-bold text-[var(--foreground)]">{service.name[locale]}</h3>
+            <h3 className="text-base font-bold text-[var(--foreground)]">{service.name}</h3>
             {selected ? (
               <span className="rounded-full bg-[var(--brand)] px-2 py-0.5 text-xs font-semibold text-white">
                 {copy.businessProfile.serviceSelectedBadge}
               </span>
             ) : null}
           </div>
-          <p className="text-sm text-[var(--muted)]">{service.description[locale]}</p>
+          <p className="text-sm text-[var(--muted)]">{service.description}</p>
         </div>
         <span className="shrink-0 text-lg font-bold text-[var(--brand)]">
           {service.price}
@@ -66,7 +66,7 @@ export function EmployeeServiceList({
   services: ServiceSummary[];
   selectedServiceId?: string;
 }) {
-  const { copy, locale } = useLanguage();
+  const { copy } = useLanguage();
 
   return (
     <section className="flex flex-col gap-4 rounded-2xl border border-[var(--line)] bg-white p-6">
@@ -75,7 +75,7 @@ export function EmployeeServiceList({
           <h2 className="text-lg font-bold text-[var(--foreground)]">{copy.businessProfile.treatmentTypesTitle}</h2>
           <p className="text-sm text-[var(--brand-deep)]">
             {copy.businessProfile.treatmentsForPrefix}
-            {employee.fullName[locale]} ({services.length})
+            {employee.fullName} ({services.length})
           </p>
         </div>
         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--brand)] text-xs font-semibold text-white">

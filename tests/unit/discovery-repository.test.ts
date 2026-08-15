@@ -8,7 +8,7 @@ describe('mock discovery repository', () => {
       { id: 'b18f6ca9-0c44-45b8-a8d9-3e1a2c6a1002' },
     ]);
     await expect(discoveryRepository.searchBusinesses({ category: 'fitness' })).resolves.toHaveLength(1);
-    await expect(discoveryRepository.searchBusinesses({ area: 'tel-aviv' })).resolves.toHaveLength(1);
+    await expect(discoveryRepository.searchBusinesses({ area: 'תל אביב' })).resolves.toHaveLength(1);
   });
 
   it('returns no result for unmatched filters', async () => {

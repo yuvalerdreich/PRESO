@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { Check } from 'lucide-react';
 
-import { useLanguage } from '@/lib/i18n/language-provider';
 import type { EmployeeSummary } from '@/types/domain';
 
 export function EmployeeCard({
@@ -15,8 +14,6 @@ export function EmployeeCard({
   href: string;
   selected: boolean;
 }) {
-  const { locale } = useLanguage();
-
   return (
     <Link
       href={href}
@@ -40,8 +37,8 @@ export function EmployeeCard({
           </span>
         ) : null}
       </span>
-      <span className="text-sm font-bold text-[var(--foreground)]">{employee.fullName[locale]}</span>
-      <span className="text-xs text-[var(--brand-deep)]">{employee.positionTitle[locale]}</span>
+      <span className="text-sm font-bold text-[var(--foreground)]">{employee.fullName}</span>
+      <span className="text-xs text-[var(--brand-deep)]">{employee.positionTitle}</span>
     </Link>
   );
 }

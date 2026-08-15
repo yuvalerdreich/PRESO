@@ -9,10 +9,10 @@ import type { ClientAppointment, ClientWaitlistEntry } from '@/types/appointment
 function appointment(overrides: Partial<ClientAppointment>): ClientAppointment {
   return {
     id: 'a',
-    businessName: { he: 'סטודיו זוהר', en: 'Studio Zohar' },
-    employeeName: { he: 'זוהר לוי', en: 'Zohar Levi' },
-    serviceName: { he: 'תספורת', en: 'Haircut' },
-    address: { he: 'דיזנגוף 142, תל אביב', en: '142 Dizengoff St, Tel Aviv' },
+    businessName: 'Studio Zohar - מספרת זוהר',
+    employeeName: 'זוהר לוי',
+    serviceName: 'תספורת',
+    address: 'רחוב דיזנגוף 142, תל אביב',
     dateISO: '2999-01-01',
     time: '10:00',
     status: 'confirmed',
@@ -49,9 +49,9 @@ describe('public header', () => {
       appointment({ id: 'upcoming-cancelled', dateISO: '2999-01-01', status: 'cancelled' }),
       appointment({ id: 'past', dateISO: '2000-01-01', status: 'confirmed' }),
     ];
-    const glowClinic = { he: 'Glow Clinic', en: 'Glow Clinic' };
-    const noaGolan = { he: 'נועה גולן', en: 'Noa Golan' };
-    const softHighlights = { he: 'גוונים רכים', en: 'Soft highlights' };
+    const glowClinic = 'Glow Clinic קליניקת אסתטיקה';
+    const noaGolan = 'נועה גולן';
+    const softHighlights = 'גוונים רכים';
     const waitlistEntries: ClientWaitlistEntry[] = [
       { id: 'w1', businessName: glowClinic, employeeName: noaGolan, serviceName: softHighlights, requestedDateISO: '2999-01-01', requestedRange: '' },
       { id: 'w2', businessName: glowClinic, employeeName: noaGolan, serviceName: softHighlights, requestedDateISO: '2999-01-01', requestedRange: '' },

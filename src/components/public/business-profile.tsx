@@ -57,14 +57,14 @@ export function BusinessProfile({
               {category.name[locale]}
             </span>
           ) : null}
-          <h1 className="text-2xl font-bold text-white sm:text-3xl">{business.name[locale]}</h1>
+          <h1 className="text-2xl font-bold text-white sm:text-3xl">{business.name}</h1>
           <div className="flex flex-wrap items-center gap-4 text-sm text-white/90">
             <span className="flex items-center gap-1.5">
               {business.phone}
               <Phone className="h-4 w-4" aria-hidden="true" />
             </span>
             <span className="flex items-center gap-1.5">
-              {business.address[locale]}
+              {business.address}
               <MapPin className="h-4 w-4" aria-hidden="true" />
             </span>
           </div>
@@ -82,7 +82,7 @@ export function BusinessProfile({
       {calendar && selectedServiceId ? (
         <AvailabilityCalendar
           basePath={`/b/${business.id}/e/${selectedEmployee.id}/s/${selectedServiceId}`}
-          employeeName={selectedEmployee.fullName[locale]}
+          employeeName={selectedEmployee.fullName}
           monthISO={calendar.monthISO}
           selectedDate={calendar.selectedDate}
           availableDates={calendar.availableDates}
@@ -94,7 +94,7 @@ export function BusinessProfile({
           basePath={`/b/${business.id}/e/${selectedEmployee.id}/s/${selectedServiceId}`}
           monthISO={calendar?.monthISO ?? ''}
           dateISO={slots.dateISO}
-          employeeName={selectedEmployee.fullName[locale]}
+          employeeName={selectedEmployee.fullName}
           slots={slots.times}
           selectedSlot={slots.selectedSlot}
         />
@@ -114,9 +114,9 @@ export function BusinessProfile({
             return (
               <WaitlistJoinModal
                 closeHref={`${basePath}?${closeParams.toString()}`}
-                businessName={business.name[locale]}
-                employeeName={selectedEmployee.fullName[locale]}
-                serviceName={selectedService.name[locale]}
+                businessName={business.name}
+                employeeName={selectedEmployee.fullName}
+                serviceName={selectedService.name}
                 servicePrice={selectedService.price}
                 dateISO={slots.dateISO}
               />
@@ -140,10 +140,10 @@ export function BusinessProfile({
                 closeHref={closeQuery ? `${basePath}?${closeQuery}` : basePath}
                 employeeId={selectedEmployee.id}
                 serviceId={selectedService.id}
-                businessName={business.name[locale]}
-                employeeName={selectedEmployee.fullName[locale]}
+                businessName={business.name}
+                employeeName={selectedEmployee.fullName}
                 employeeAvatarUrl={selectedEmployee.avatarUrl}
-                serviceName={selectedService.name[locale]}
+                serviceName={selectedService.name}
                 servicePrice={selectedService.price}
                 durationMinutes={selectedService.durationMinutes}
                 dateISO={slots.dateISO}

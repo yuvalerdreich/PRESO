@@ -20,7 +20,7 @@ export function AppointmentCard({
   cancelledInDemo?: boolean;
   onCancel?: () => void;
 }) {
-  const { copy, locale } = useLanguage();
+  const { copy } = useLanguage();
 
   const statusLabel = cancelledInDemo ? copy.appointments.cancelledDemo : copy.appointments[appointment.status];
   const statusStyle = STATUS_STYLES[appointment.status];
@@ -30,9 +30,9 @@ export function AppointmentCard({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-bold text-[var(--foreground)]">
-            {copy.appointments.serviceWith} {appointment.employeeName[locale]} · {appointment.businessName[locale]}
+            {copy.appointments.serviceWith} {appointment.employeeName} · {appointment.businessName}
           </p>
-          <p className="text-sm text-[var(--brand-deep)]">{appointment.serviceName[locale]}</p>
+          <p className="text-sm text-[var(--brand-deep)]">{appointment.serviceName}</p>
         </div>
         <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${statusStyle}`}>
           {statusLabel}
@@ -48,7 +48,7 @@ export function AppointmentCard({
         </span>
         <span className="flex items-center gap-1.5">
           <MapPin className="h-4 w-4" aria-hidden="true" />
-          {appointment.address[locale]}
+          {appointment.address}
         </span>
       </div>
 
