@@ -153,6 +153,7 @@ begin
       v_released := v_released + 1;
     else
       update waitlist_entries set status = 'EXPIRED' where id = v_entry.id;
+      v_expired := v_expired + 1;
     end if;
   end loop;
 
@@ -162,13 +163,15 @@ $$;
 
 -- claim_waitlist_entry() [+] §12.31 — POST /api/waitlist/[id]/claim's backing RPC (§4.4:
 -- "→ same RPC" meaning book_appointment(), but something has to also flip the waitlist
--- entry MATCHED→CLAIMED on success, or MATCHED→ACTIVE on a lost race (§6.9: "second gets
--- 409, its entry returns to ACTIVE") — and per RLS (0010_rls.sql), waitlist_entries has no
+-- entry MATCHED→CLAIMED on success) — and per RLS (0010_rls.sql), waitlist_entries has no
 -- client-facing UPDATE policy at all (status changes are matcher/cron/claim-driven only),
 -- so that bookkeeping needs a security-definer RPC same as approve/reject_appointment did
 -- for appointments (§12.30). p_service_id is accepted explicitly because the entry itself
 -- may have none (`service_id is null` = "any service") — the concrete service being
 -- claimed is only known from the WAITLIST_MATCHED notification that drove the client here.
+-- On a LOST race (§6.9: "second gets 409, its entry returns to ACTIVE"), the entry stays
+-- MATCHED rather than reverting synchronously — see the comment on the call below for why
+-- that can't be done here, and sweep_waitlist_expiry() above for the fallback it relies on.
 create or replace function claim_waitlist_entry(
   p_waitlist_entry_id uuid,
   p_employee_id       uuid,
@@ -198,16 +201,18 @@ begin
     raise exception 'match_expired';   -- §5.4: 410 Gone
   end if;
 
-  begin
-    v_appt := book_appointment(p_actor_profile_id, p_employee_id, p_service_id, p_starts_at,
-                                p_actor_profile_id);
-  exception when others then
-    -- first claimer already won (409) or the match went stale (422) — release this entry
-    -- back to ACTIVE immediately rather than waiting up to 60 minutes for the cron sweep,
-    -- then re-raise so the caller still sees the original error
-    update waitlist_entries set status = 'ACTIVE' where id = p_waitlist_entry_id;
-    raise;
-  end;
+  -- No try/catch around book_appointment() here on purpose (§12.31 amended): Postgres has
+  -- no partial commit within one transaction. An exception handler that updates
+  -- waitlist_entries back to ACTIVE and then re-raises looks reasonable but cannot work —
+  -- once the re-raised error propagates out of this function uncaught, the ENTIRE
+  -- transaction rolls back, undoing that compensating UPDATE along with everything else
+  -- (confirmed by a failing pgTAP test, not just reasoned about). If the first claimer
+  -- already won, this call raises 'slot_unavailable' (or a 23P01 exclusion violation) and
+  -- the entry is simply left MATCHED — sweep_waitlist_expiry() (above) already releases it
+  -- back to ACTIVE within 60 minutes of its claim window closing, which is the fallback
+  -- this leans on rather than a synchronous release true partial-commit would need.
+  v_appt := book_appointment(p_actor_profile_id, p_employee_id, p_service_id, p_starts_at,
+                              p_actor_profile_id);
 
   update waitlist_entries set status = 'CLAIMED' where id = p_waitlist_entry_id;
   return v_appt;
