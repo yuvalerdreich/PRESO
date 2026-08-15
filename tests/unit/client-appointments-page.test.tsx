@@ -8,10 +8,26 @@ describe('client appointments page', () => {
   it('renders the shared appointments panel on the route', async () => {
     render(
       <LanguageProvider initialLocale="en">
-        {await ClientAppointmentsPage()}
+        {await ClientAppointmentsPage({ params: Promise.resolve({}), searchParams: Promise.resolve({}) })}
       </LanguageProvider>,
     );
 
     expect(screen.getByRole('heading', { level: 1, name: 'My appointments and requests' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Back to business page/ })).not.toBeInTheDocument();
+  });
+
+  it('shows a back-to-business link when reached with a back param', async () => {
+    const backHref = '/b/business-1/e/employee-1/s/service-1?date=2026-08-17';
+    render(
+      <LanguageProvider initialLocale="en">
+        {await ClientAppointmentsPage({
+          params: Promise.resolve({}),
+          searchParams: Promise.resolve({ back: backHref }),
+        })}
+      </LanguageProvider>,
+    );
+
+    const link = screen.getByRole('link', { name: /Back to business page/ });
+    expect(link).toHaveAttribute('href', backHref);
   });
 });

@@ -142,6 +142,7 @@ export function BusinessProfile({
                 serviceId={selectedService.id}
                 businessName={business.name[locale]}
                 employeeName={selectedEmployee.fullName[locale]}
+                employeeAvatarUrl={selectedEmployee.avatarUrl}
                 serviceName={selectedService.name[locale]}
                 servicePrice={selectedService.price}
                 durationMinutes={selectedService.durationMinutes}

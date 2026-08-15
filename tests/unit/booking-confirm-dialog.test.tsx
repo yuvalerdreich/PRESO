@@ -50,7 +50,7 @@ describe('booking confirm dialog', () => {
     expect(screen.getByText('250₪')).toBeInTheDocument();
   });
 
-  it('posts the booking, shows the confirmed outcome, and navigates back on confirm', async () => {
+  it('posts the booking and shows the confirmed thank-you screen with a confirmed status', async () => {
     vi.mocked(fetch).mockResolvedValue({
       ok: true,
       json: async () => ({ id: 'appointment-demo-1', status: 'CONFIRMED' }),
@@ -59,7 +59,9 @@ describe('booking confirm dialog', () => {
     renderDialog();
     fireEvent.click(screen.getByRole('button', { name: /^Confirm$/ }));
 
-    await waitFor(() => expect(push).toHaveBeenCalledWith(closeHref));
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: /Thank you/ })).toBeInTheDocument(),
+    );
 
     expect(fetch).toHaveBeenCalledWith(
       '/api/appointments',
@@ -69,6 +71,29 @@ describe('booking confirm dialog', () => {
       }),
     );
     expect(refresh).toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
+    expect(screen.getByText('Confirmed')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /View "My appointments"/ }));
+    expect(push).toHaveBeenCalledWith(`/me/appointments?back=${encodeURIComponent(closeHref)}`);
+  });
+
+  it('posts the booking and shows the pending thank-you screen with a pending status', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: 'appointment-demo-2', status: 'PENDING' }),
+    } as Response);
+
+    renderDialog();
+    fireEvent.click(screen.getByRole('button', { name: /^Confirm$/ }));
+
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: /Thank you/ })).toBeInTheDocument(),
+    );
+    expect(screen.getByText('Pending approval')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Book another/ }));
+    expect(push).toHaveBeenCalledWith(closeHref);
   });
 
   it('shows an error toast and does not navigate away when the booking request fails', async () => {
