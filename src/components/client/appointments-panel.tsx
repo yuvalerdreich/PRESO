@@ -20,7 +20,7 @@ export function AppointmentsPanel({
   waitlistEntries: ClientWaitlistEntry[];
   backHref?: string;
 }) {
-  const { copy, locale, direction } = useLanguage();
+  const { copy, direction } = useLanguage();
   const BackArrow = direction === 'rtl' ? ArrowRight : ArrowLeft;
 
   const [activeTab, setActiveTab] = useState<AppointmentsTabId>('upcoming');
@@ -100,9 +100,9 @@ export function AppointmentsPanel({
               {waitlistEntries.map((entry) => (
                 <div key={entry.id} className="flex flex-col gap-1 rounded-2xl border border-[var(--line)] bg-white p-4">
                   <p className="text-sm font-bold text-[var(--foreground)]">
-                    {entry.serviceName[locale]} · {entry.employeeName[locale]}
+                    {entry.serviceName} · {entry.employeeName}
                   </p>
-                  <p className="text-sm text-[var(--brand-deep)]">{entry.businessName[locale]}</p>
+                  <p className="text-sm text-[var(--brand-deep)]">{entry.businessName}</p>
                   <p className="text-sm text-[var(--muted)]">
                     {copy.appointments.requestedRange}: {entry.requestedDateISO} · {entry.requestedRange}
                   </p>

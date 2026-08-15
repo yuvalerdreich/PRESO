@@ -1,3 +1,4 @@
+import { AppointmentsPanelProvider } from '@/components/common/appointments-panel-provider';
 import { PublicHeader } from '@/components/common/public-header';
 import { appointmentsRepository } from '@/lib/appointments/repository';
 
@@ -8,9 +9,11 @@ export default async function PublicLayout({ children }: LayoutProps<'/'>) {
   ]);
 
   return (
-    <div className="flex min-h-full flex-col">
-      <PublicHeader appointments={appointments} waitlistEntries={waitlistEntries} />
-      <main className="flex-1">{children}</main>
-    </div>
+    <AppointmentsPanelProvider appointments={appointments} waitlistEntries={waitlistEntries}>
+      <div className="flex min-h-full flex-col">
+        <PublicHeader appointments={appointments} />
+        <main className="flex-1">{children}</main>
+      </div>
+    </AppointmentsPanelProvider>
   );
 }

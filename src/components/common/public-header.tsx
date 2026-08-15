@@ -1,24 +1,16 @@
 'use client';
 
-import { useState } from 'react';
 import { CalendarDays } from 'lucide-react';
 
-import { AppointmentsPanel } from '@/components/client/appointments-panel';
-import { Modal } from '@/components/common/modal';
+import { useAppointmentsPanel } from '@/components/common/appointments-panel-context';
 import { PresoLogo } from '@/components/common/preso-logo';
 import { countUpcomingAppointments } from '@/lib/appointments/classify';
 import { useLanguage } from '@/lib/i18n/language-provider';
-import type { ClientAppointment, ClientWaitlistEntry } from '@/types/appointments';
+import type { ClientAppointment } from '@/types/appointments';
 
-export function PublicHeader({
-  appointments,
-  waitlistEntries,
-}: {
-  appointments: ClientAppointment[];
-  waitlistEntries: ClientWaitlistEntry[];
-}) {
+export function PublicHeader({ appointments }: { appointments: ClientAppointment[] }) {
   const { copy } = useLanguage();
-  const [isOpen, setIsOpen] = useState(false);
+  const { open } = useAppointmentsPanel();
   const upcomingCount = countUpcomingAppointments(appointments);
 
   return (
@@ -28,7 +20,7 @@ export function PublicHeader({
 
         <button
           type="button"
-          onClick={() => setIsOpen(true)}
+          onClick={open}
           aria-label={copy.header.openAppointments}
           className="flex items-center gap-2 rounded-full border border-[var(--brand)]/20 bg-[var(--soft-violet)] px-4 py-2 text-sm font-medium text-[var(--brand-deep)] transition-colors hover:bg-[var(--brand)]/10"
         >
@@ -41,12 +33,6 @@ export function PublicHeader({
           ) : null}
         </button>
       </div>
-
-      {isOpen ? (
-        <Modal onClose={() => setIsOpen(false)} closeLabel={copy.appointments.close}>
-          <AppointmentsPanel appointments={appointments} waitlistEntries={waitlistEntries} />
-        </Modal>
-      ) : null}
     </header>
   );
 }

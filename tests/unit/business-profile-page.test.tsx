@@ -26,10 +26,10 @@ describe('public business profile page (merged staff-picker + services)', () => 
       </LanguageProvider>,
     );
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Studio Zohar' })).toBeInTheDocument();
-    expect(screen.getByText('Zohar Levi')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 3, name: 'Haircut and styling' })).toBeInTheDocument();
-    expect(screen.queryByText('Organic professional color & tones')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Studio Zohar - מספרת זוהר' })).toBeInTheDocument();
+    expect(screen.getByText('זוהר לוי')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'תספורת ועיצוב שיער (גברים/נשים)' })).toBeInTheDocument();
+    expect(screen.queryByText('גוונים וצבע אורגני מקצועי')).not.toBeInTheDocument();
   });
 
   it('switches to another employee’s own services, keeping shared services visible', async () => {
@@ -42,10 +42,10 @@ describe('public business profile page (merged staff-picker + services)', () => 
       </LanguageProvider>,
     );
 
-    expect(screen.getByText('Miya Cohen')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 3, name: 'Organic professional color & tones' })).toBeInTheDocument();
-    expect(screen.queryByText('Traditional beard styling & shave')).not.toBeInTheDocument();
+    expect(screen.getByText('מיה כהן')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'גוונים וצבע אורגני מקצועי' })).toBeInTheDocument();
+    expect(screen.queryByText('עיצוב זקן וגילוח מסורתי')).not.toBeInTheDocument();
     // Both staff members independently offer this service — it should still show for Miya.
-    expect(screen.getByRole('heading', { level: 3, name: 'Haircut and styling' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'תספורת ועיצוב שיער (גברים/נשים)' })).toBeInTheDocument();
   });
 });

@@ -29,7 +29,7 @@ describe('appointments panel', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'My appointments and requests' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: /waitlist/i }));
-    expect(screen.getByText(/Soft highlights · Noa Golan/)).toBeInTheDocument();
+    expect(screen.getByText(/גוונים רכים · נועה גולן/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: /upcoming/i }));
     fireEvent.click(screen.getAllByRole('button', { name: 'Cancel appointment' })[0]);

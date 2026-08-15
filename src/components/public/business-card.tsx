@@ -19,7 +19,7 @@ export function BusinessCard({ business, category }: { business: BusinessSummary
         {/* eslint-disable-next-line @next/next/no-img-element -- mock photo host isn't in next.config's image remotePatterns */}
         <img
           src={business.photoUrl}
-          alt={business.name[locale]}
+          alt={business.name}
           className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
         />
       </div>
@@ -31,12 +31,12 @@ export function BusinessCard({ business, category }: { business: BusinessSummary
           </span>
         ) : null}
 
-        <h3 className="text-lg font-bold text-[var(--foreground)]">{business.name[locale]}</h3>
-        <p className="line-clamp-2 text-sm text-[var(--muted)]">{business.description[locale]}</p>
+        <h3 className="text-lg font-bold text-[var(--foreground)]">{business.name}</h3>
+        <p className="line-clamp-2 text-sm text-[var(--muted)]">{business.description}</p>
 
         <p className="flex items-center gap-1.5 text-sm text-[var(--muted)]">
           <MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />
-          {business.address[locale]}
+          {business.address}
         </p>
 
         <div className="mt-auto flex items-center justify-between border-t border-[var(--line)] pt-3">

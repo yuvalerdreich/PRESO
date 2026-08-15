@@ -8,18 +8,20 @@ export type Category = {
   name: LocalizedText;
 };
 
-export type BusinessArea = {
-  id: string;
-  name: LocalizedText;
-};
-
 export type BusinessSummary = {
   id: string;
-  name: LocalizedText;
+  /**
+   * Real business/employee/service content is whatever single language the business owner
+   * entered — the DB schema (TECHNICAL_DESIGN.md §3) has no per-field translation columns,
+   * unlike `Category.name` above, which stays `LocalizedText` because it's sourced from the
+   * app's own `src/lib/i18n/` dictionary, not the database.
+   */
+  name: string;
   categoryId: string;
-  area: BusinessArea;
-  address: LocalizedText;
-  description: LocalizedText;
+  /** Free text (TECHNICAL_DESIGN.md §12.20) — no curated `areas` table exists. */
+  area: string;
+  address: string;
+  description: string;
   photoUrl: string;
   employeeCount: number;
   employeeAvatarUrls: string[];
@@ -34,16 +36,16 @@ export type BusinessProfile = BusinessSummary & {
 export type EmployeeSummary = {
   id: string;
   businessId: string;
-  fullName: LocalizedText;
-  positionTitle: LocalizedText;
+  fullName: string;
+  positionTitle: string;
   avatarUrl: string;
 };
 
 export type ServiceSummary = {
   id: string;
   employeeId: string;
-  name: LocalizedText;
-  description: LocalizedText;
+  name: string;
+  description: string;
   price: number;
   durationMinutes: number;
   bufferMinutes: number;
