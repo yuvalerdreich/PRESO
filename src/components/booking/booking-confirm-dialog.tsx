@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { AlertCircle, ArrowLeft, ArrowRight, Check, CheckCircle2, Clock, List, X } from 'lucide-react';
 
+import { useAppointmentsPanel } from '@/components/common/appointments-panel-context';
 import { Modal } from '@/components/common/modal';
 import { useLanguage } from '@/lib/i18n/language-provider';
 
@@ -49,6 +50,7 @@ export function BookingConfirmDialog({
 }) {
   const { copy, direction } = useLanguage();
   const router = useRouter();
+  const { open: openAppointmentsPanel } = useAppointmentsPanel();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<{ status: 'CONFIRMED' | 'PENDING' } | null>(null);
 
@@ -142,7 +144,13 @@ export function BookingConfirmDialog({
           </button>
           <button
             type="button"
-            onClick={() => router.push(`/me/appointments?back=${encodeURIComponent(closeHref)}`)}
+            onClick={() => {
+              // Opens the shared panel in place rather than navigating to
+              // /me/appointments — proxy.ts gates that route on a real session
+              // and no (auth)/login page exists yet to satisfy it.
+              openAppointmentsPanel();
+              close();
+            }}
             className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--brand)] px-4 py-3 text-sm font-semibold text-white hover:bg-[var(--brand-deep)]"
           >
             <List className="h-4 w-4" aria-hidden="true" />

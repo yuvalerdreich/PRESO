@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
+import { AppointmentsPanelProvider } from '@/components/common/appointments-panel-provider';
 import { PublicHeader } from '@/components/common/public-header';
 import { LanguageProvider } from '@/lib/i18n/language-provider';
 import { translations } from '@/lib/i18n/translations';
@@ -27,7 +28,9 @@ describe('public header', () => {
 
     render(
       <LanguageProvider initialLocale="en">
-        <PublicHeader appointments={appointments} waitlistEntries={waitlistEntries} />
+        <AppointmentsPanelProvider appointments={appointments} waitlistEntries={waitlistEntries}>
+          <PublicHeader appointments={appointments} />
+        </AppointmentsPanelProvider>
       </LanguageProvider>,
     );
 
@@ -59,7 +62,9 @@ describe('public header', () => {
 
     render(
       <LanguageProvider initialLocale="en">
-        <PublicHeader appointments={appointments} waitlistEntries={waitlistEntries} />
+        <AppointmentsPanelProvider appointments={appointments} waitlistEntries={waitlistEntries}>
+          <PublicHeader appointments={appointments} />
+        </AppointmentsPanelProvider>
       </LanguageProvider>,
     );
 
@@ -71,7 +76,9 @@ describe('public header', () => {
   it('hides the count badge entirely when there are no upcoming appointments', () => {
     render(
       <LanguageProvider initialLocale="en">
-        <PublicHeader appointments={[]} waitlistEntries={[]} />
+        <AppointmentsPanelProvider appointments={[]} waitlistEntries={[]}>
+          <PublicHeader appointments={[]} />
+        </AppointmentsPanelProvider>
       </LanguageProvider>,
     );
 
