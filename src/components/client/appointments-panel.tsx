@@ -1,7 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { CalendarX } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowLeft, ArrowRight, CalendarX } from 'lucide-react';
 
 import { AppointmentCard } from '@/components/client/appointment-card';
 import { AppointmentsTabs, type AppointmentsTabId } from '@/components/client/appointments-tabs';
@@ -13,11 +14,14 @@ import type { ClientAppointment, ClientWaitlistEntry } from '@/types/appointment
 export function AppointmentsPanel({
   appointments,
   waitlistEntries,
+  backHref,
 }: {
   appointments: ClientAppointment[];
   waitlistEntries: ClientWaitlistEntry[];
+  backHref?: string;
 }) {
-  const { copy, locale } = useLanguage();
+  const { copy, locale, direction } = useLanguage();
+  const BackArrow = direction === 'rtl' ? ArrowRight : ArrowLeft;
 
   const [activeTab, setActiveTab] = useState<AppointmentsTabId>('upcoming');
   // Appointments cancelled through this panel's demo flow. Kept separate from
@@ -52,6 +56,16 @@ export function AppointmentsPanel({
 
   return (
     <div className="flex flex-col gap-5">
+      {backHref ? (
+        <Link
+          href={backHref}
+          className="flex w-fit items-center gap-2 rounded-full border border-[var(--line)] bg-white px-4 py-2 text-sm font-medium text-[var(--foreground)] hover:border-[var(--brand)]/40"
+        >
+          <BackArrow className="h-4 w-4" aria-hidden="true" />
+          {copy.appointments.backToBusiness}
+        </Link>
+      ) : null}
+
       <div>
         <h1 className="text-lg font-bold text-[var(--foreground)]">{copy.appointments.title}</h1>
         <p className="text-sm text-[var(--muted)]">{copy.appointments.description}</p>

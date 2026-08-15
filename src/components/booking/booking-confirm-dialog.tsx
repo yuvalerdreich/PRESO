@@ -142,7 +142,7 @@ export function BookingConfirmDialog({
           </button>
           <button
             type="button"
-            onClick={() => router.push('/me/appointments')}
+            onClick={() => router.push(`/me/appointments?back=${encodeURIComponent(closeHref)}`)}
             className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--brand)] px-4 py-3 text-sm font-semibold text-white hover:bg-[var(--brand-deep)]"
           >
             <List className="h-4 w-4" aria-hidden="true" />

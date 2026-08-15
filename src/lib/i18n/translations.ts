@@ -132,6 +132,7 @@ export const translations = {
     appointments: {
       title: 'התורים והבקשות שלי',
       description: 'נהלו תורים קרובים, בקשות המתנה והיסטוריית תורים במקום אחד.',
+      backToBusiness: 'חזרה לעמוד העסק',
       upcoming: 'תורים קרובים',
       waitlist: 'רשימת המתנה',
       history: 'היסטוריה',
@@ -334,6 +335,7 @@ export const translations = {
     appointments: {
       title: 'My appointments and requests',
       description: 'Keep upcoming appointments, waitlist requests, and appointment history in one place.',
+      backToBusiness: 'Back to business page',
       upcoming: 'Upcoming',
       waitlist: 'Waitlist',
       history: 'History',

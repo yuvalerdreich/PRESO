@@ -75,7 +75,7 @@ describe('booking confirm dialog', () => {
     expect(screen.getByText('Confirmed')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /View "My appointments"/ }));
-    expect(push).toHaveBeenCalledWith('/me/appointments');
+    expect(push).toHaveBeenCalledWith(`/me/appointments?back=${encodeURIComponent(closeHref)}`);
   });
 
   it('posts the booking and shows the pending thank-you screen with a pending status', async () => {
