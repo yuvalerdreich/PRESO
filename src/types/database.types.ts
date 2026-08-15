@@ -745,6 +745,23 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      claim_business_account_type: {
+        Args: never
+        Returns: {
+          account_type: Database["public"]["Enums"]["account_type"]
+          created_at: string
+          full_name: string
+          id: string
+          phone: string | null
+          status: Database["public"]["Enums"]["profile_status"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       claim_waitlist_entry: {
         Args: {
           p_actor_profile_id: string
