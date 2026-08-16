@@ -1,9 +1,14 @@
 import { z } from 'zod';
 
+import { fullName, phone } from '@/lib/validation/common';
+
 /**
  * Identity schemas (TECHNICAL_DESIGN.md §9.1). One schema per payload, used identically as
  * the RHF resolver on the client and (where a payload ever reaches a server boundary) to
  * re-parse server-side — client validation is UX, these are the source of truth.
+ *
+ * `fullName` and `phone` moved to `common.ts` once business details needed the same two rules;
+ * `email` and `password` stay local because nothing outside authentication takes them.
  */
 
 const email = z.email('Enter a valid email address').max(254);
@@ -14,17 +19,6 @@ const password = z
   .max(72)
   .regex(/[A-Za-z]/, 'Password must be at least 8 characters and include a letter and a number')
   .regex(/[0-9]/, 'Password must be at least 8 characters and include a letter and a number');
-
-const phone = z
-  .string()
-  .trim()
-  .regex(/^\+?[0-9\-\s]{9,15}$/, 'Enter a valid phone number');
-
-const fullName = z
-  .string()
-  .trim()
-  .min(2, 'Enter your full name')
-  .max(80, 'Enter your full name');
 
 export const loginInput = z.object({
   email,
@@ -79,3 +73,15 @@ export const resetPasswordInput = z
     path: ['confirmPassword'],
   });
 export type ResetPasswordInput = z.infer<typeof resetPasswordInput>;
+
+/**
+ * `updateProfile` (§5.5, Identity module) — the two columns a user may change about themselves.
+ * `account_type` and `status` are deliberately absent: `0010`'s
+ * `protect_profile_privileged_columns()` trigger rejects them for any self-service caller, so
+ * accepting them here would only produce a confusing 403 (§12.34).
+ */
+export const profileInput = z.object({
+  fullName,
+  phone: z.union([phone, z.literal('')]).optional(),
+});
+export type ProfileInput = z.infer<typeof profileInput>;
