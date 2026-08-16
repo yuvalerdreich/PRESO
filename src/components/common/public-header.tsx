@@ -7,6 +7,7 @@ import { useState } from 'react';
 
 import { useAppointmentsPanel } from '@/components/common/appointments-panel-context';
 import { PresoLogo } from '@/components/common/preso-logo';
+import { useProfileSettings } from '@/components/common/profile-settings-context';
 import { countUpcomingAppointments } from '@/lib/appointments/classify';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import { createClient } from '@/lib/supabase/client';
@@ -21,6 +22,7 @@ export function PublicHeader({
 }) {
   const { copy } = useLanguage();
   const { open } = useAppointmentsPanel();
+  const { open: openProfileSettings } = useProfileSettings();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
   const upcomingCount = countUpcomingAppointments(appointments);
@@ -56,9 +58,13 @@ export function PublicHeader({
 
           {currentUser ? (
             <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-[var(--foreground)]">
+              <button
+                type="button"
+                onClick={openProfileSettings}
+                className="text-sm font-medium text-[var(--foreground)] hover:underline"
+              >
                 {copy.header.greeting} {currentUser.fullName}
-              </span>
+              </button>
               <button
                 type="button"
                 onClick={handleLogout}

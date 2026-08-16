@@ -6,6 +6,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 import { AppointmentsPanelProvider } from '@/components/common/appointments-panel-provider';
+import { ProfileSettingsProvider } from '@/components/common/profile-settings-provider';
 import { PublicHeader } from '@/components/common/public-header';
 import { LanguageProvider } from '@/lib/i18n/language-provider';
 import { translations } from '@/lib/i18n/translations';
@@ -25,18 +26,24 @@ function appointment(overrides: Partial<ClientAppointment>): ClientAppointment {
   };
 }
 
+function renderHeader(appointments: ClientAppointment[], currentUser?: { fullName: string } | null) {
+  const waitlistEntries: ClientWaitlistEntry[] = [];
+
+  return render(
+    <LanguageProvider initialLocale="en">
+      <AppointmentsPanelProvider appointments={appointments} waitlistEntries={waitlistEntries}>
+        <ProfileSettingsProvider initialLocation="" initialDateOfBirth="" accountType="CLIENT">
+          <PublicHeader appointments={appointments} currentUser={currentUser} />
+        </ProfileSettingsProvider>
+      </AppointmentsPanelProvider>
+    </LanguageProvider>,
+  );
+}
+
 describe('public header', () => {
   it('renders the brand mark and a My Appointments button with an upcoming-count badge that opens the panel', () => {
     const appointments = [appointment({ id: 'upcoming-1' })];
-    const waitlistEntries: ClientWaitlistEntry[] = [];
-
-    render(
-      <LanguageProvider initialLocale="en">
-        <AppointmentsPanelProvider appointments={appointments} waitlistEntries={waitlistEntries}>
-          <PublicHeader appointments={appointments} />
-        </AppointmentsPanelProvider>
-      </LanguageProvider>,
-    );
+    renderHeader(appointments);
 
     expect(screen.getByText(translations.en.brand.name)).toBeInTheDocument();
     expect(screen.getByText(translations.en.header.subtitle)).toBeInTheDocument();
@@ -56,21 +63,7 @@ describe('public header', () => {
       appointment({ id: 'upcoming-cancelled', dateISO: '2999-01-01', status: 'cancelled' }),
       appointment({ id: 'past', dateISO: '2000-01-01', status: 'confirmed' }),
     ];
-    const glowClinic = 'Glow Clinic קליניקת אסתטיקה';
-    const noaGolan = 'נועה גולן';
-    const softHighlights = 'גוונים רכים';
-    const waitlistEntries: ClientWaitlistEntry[] = [
-      { id: 'w1', businessName: glowClinic, employeeName: noaGolan, serviceName: softHighlights, requestedDateISO: '2999-01-01', requestedRange: '' },
-      { id: 'w2', businessName: glowClinic, employeeName: noaGolan, serviceName: softHighlights, requestedDateISO: '2999-01-01', requestedRange: '' },
-    ];
-
-    render(
-      <LanguageProvider initialLocale="en">
-        <AppointmentsPanelProvider appointments={appointments} waitlistEntries={waitlistEntries}>
-          <PublicHeader appointments={appointments} />
-        </AppointmentsPanelProvider>
-      </LanguageProvider>,
-    );
+    renderHeader(appointments);
 
     expect(screen.getByText('1')).toBeInTheDocument();
     expect(screen.queryByText('2')).not.toBeInTheDocument();
@@ -78,42 +71,32 @@ describe('public header', () => {
   });
 
   it('hides the count badge entirely when there are no upcoming appointments', () => {
-    render(
-      <LanguageProvider initialLocale="en">
-        <AppointmentsPanelProvider appointments={[]} waitlistEntries={[]}>
-          <PublicHeader appointments={[]} />
-        </AppointmentsPanelProvider>
-      </LanguageProvider>,
-    );
+    renderHeader([]);
 
     const appointmentsButton = screen.getByRole('button', { name: translations.en.header.openAppointments });
     expect(appointmentsButton).not.toHaveTextContent('0');
   });
 
   it('shows a sign-in link when no one is logged in', () => {
-    render(
-      <LanguageProvider initialLocale="en">
-        <AppointmentsPanelProvider appointments={[]} waitlistEntries={[]}>
-          <PublicHeader appointments={[]} />
-        </AppointmentsPanelProvider>
-      </LanguageProvider>,
-    );
+    renderHeader([]);
 
     expect(screen.getByRole('link', { name: translations.en.header.signIn })).toHaveAttribute('href', '/login');
     expect(screen.queryByText(translations.en.header.logout)).not.toBeInTheDocument();
   });
 
   it('shows a greeting and a logout button instead of sign-in when a user is logged in', () => {
-    render(
-      <LanguageProvider initialLocale="en">
-        <AppointmentsPanelProvider appointments={[]} waitlistEntries={[]}>
-          <PublicHeader appointments={[]} currentUser={{ fullName: 'Noa Golan' }} />
-        </AppointmentsPanelProvider>
-      </LanguageProvider>,
-    );
+    renderHeader([], { fullName: 'Noa Golan' });
 
     expect(screen.getByText(`${translations.en.header.greeting} Noa Golan`)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: translations.en.header.logout })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: translations.en.header.signIn })).not.toBeInTheDocument();
+  });
+
+  it('opens the profile settings modal when the greeting is clicked', () => {
+    renderHeader([], { fullName: 'Noa Golan' });
+
+    expect(screen.queryByRole('heading', { name: translations.en.profileSettings.title })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText(`${translations.en.header.greeting} Noa Golan`));
+    expect(screen.getByRole('heading', { name: translations.en.profileSettings.title })).toBeInTheDocument();
   });
 });
