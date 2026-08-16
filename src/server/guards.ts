@@ -8,11 +8,12 @@ type Profile = Database['public']['Tables']['profiles']['Row'];
  * requireSession / requireEmployeeOf / requireOwnerOf / requireAdmin (TECHNICAL_DESIGN.md
  * §1) — the fine-grained checks proxy.ts's coarse gate defers to (§7.3), used from route
  * group layouts and server actions. Each throws an AppError on failure rather than
- * redirecting or returning an ActionResult directly, so the same guard works in both
- * contexts: a layout wraps the call and calls next/navigation's redirect() on catch, while
- * a server action's withAction() wrapper (lib/errors.ts, not built yet) converts the thrown
- * AppError into `{ ok: false, error }` (§5.5, §8.3 — actions never throw across the
- * boundary, but the guard itself doesn't need to know which caller it has).
+ * redirecting or returning an ActionResult directly, so the same guard works in all three
+ * contexts: a layout wraps the call and calls next/navigation's redirect() on catch, a
+ * server action's withAction() wrapper (server/action.ts) converts the thrown AppError into
+ * `{ ok: false, error }` (§5.5, §8.3 — actions never throw across the boundary), and a route
+ * handler's withErrorHandling() wrapper (lib/http.ts) maps it to a status code (§8.2). The
+ * guard itself doesn't need to know which caller it has.
  *
  * All four use the RLS-bound server client (lib/supabase/server.ts) — never admin.ts. RLS
  * re-checks everything these guards decide (ARCHITECTURE.md §3.3); a bug here narrows
