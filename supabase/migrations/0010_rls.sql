@@ -49,7 +49,16 @@ begin
   -- auth.role() is NULL/absent outside a PostgREST-mediated request (direct SQL access —
   -- e.g. provisioning the first-ever ADMIN, §5: "provisioned internally only", never
   -- through the app). Only the 'authenticated' self-service path is restricted here.
-  if is_admin() or coalesce(auth.role(), '') <> 'authenticated' then
+  --
+  -- §12.34's claim_business_account_type() (0012) is the one sanctioned self-service
+  -- exception: a CLIENT voluntarily becoming BUSINESS post-OAuth-signup, since Google
+  -- sign-in has no way to pass that choice before the profile row exists. security
+  -- definer bypasses RLS but never bypasses triggers, so that RPC sets this
+  -- transaction-local flag immediately before its UPDATE — the same technique 0009 already
+  -- uses to dedupe reschedule notifications — rather than this trigger ever trusting
+  -- account_type from the client directly.
+  if is_admin() or coalesce(auth.role(), '') <> 'authenticated'
+     or coalesce(current_setting('app.claim_business_account_type', true), '') = 'true' then
     return new;
   end if;
   if new.account_type is distinct from old.account_type
