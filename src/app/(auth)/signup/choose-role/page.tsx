@@ -20,5 +20,5 @@ export default async function ChooseRolePage() {
   if (profile.account_type === 'BUSINESS') redirect('/onboarding');
   if (profile.account_type === 'ADMIN') redirect('/admin');
 
-  return <ChooseRoleForm />;
+  return <ChooseRoleForm initialFullName={profile.full_name} />;
 }

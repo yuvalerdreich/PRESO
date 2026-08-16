@@ -12,10 +12,10 @@ import { useLanguage } from '@/lib/i18n/language-provider';
 import { createClient } from '@/lib/supabase/client';
 import { loginInput, type LoginInput } from '@/lib/validation/identity';
 
-export function LoginForm({ next }: { next?: string }) {
+export function LoginForm({ next, suspended }: { next?: string; suspended?: boolean }) {
   const { copy } = useLanguage();
   const router = useRouter();
-  const [serverError, setServerError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(suspended ? copy.auth.suspendedAccount : null);
 
   const {
     register,

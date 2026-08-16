@@ -20,6 +20,12 @@ const phone = z
   .trim()
   .regex(/^\+?[0-9\-\s]{9,15}$/, 'Enter a valid phone number');
 
+const fullName = z
+  .string()
+  .trim()
+  .min(2, 'Enter your full name')
+  .max(80, 'Enter your full name');
+
 export const loginInput = z.object({
   email,
   password: z.string().min(1, 'Enter your password'),
@@ -28,11 +34,7 @@ export type LoginInput = z.infer<typeof loginInput>;
 
 export const signupInput = z
   .object({
-    fullName: z
-      .string()
-      .trim()
-      .min(2, 'Enter your full name')
-      .max(80, 'Enter your full name'),
+    fullName,
     email,
     phone: z.union([phone, z.literal('')]).optional(),
     password,
@@ -44,6 +46,12 @@ export const signupInput = z
     path: ['confirmPassword'],
   });
 export type SignupInput = z.infer<typeof signupInput>;
+
+export const completeProfileInput = z.object({
+  fullName,
+  accountType: z.enum(['CLIENT', 'BUSINESS'], { message: 'Choose an account type' }),
+});
+export type CompleteProfileInput = z.infer<typeof completeProfileInput>;
 
 export const forgotPasswordInput = z.object({
   email,

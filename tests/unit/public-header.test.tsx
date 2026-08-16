@@ -1,5 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+}));
 
 import { AppointmentsPanelProvider } from '@/components/common/appointments-panel-provider';
 import { PublicHeader } from '@/components/common/public-header';
@@ -84,5 +88,32 @@ describe('public header', () => {
 
     const appointmentsButton = screen.getByRole('button', { name: translations.en.header.openAppointments });
     expect(appointmentsButton).not.toHaveTextContent('0');
+  });
+
+  it('shows a sign-in link when no one is logged in', () => {
+    render(
+      <LanguageProvider initialLocale="en">
+        <AppointmentsPanelProvider appointments={[]} waitlistEntries={[]}>
+          <PublicHeader appointments={[]} />
+        </AppointmentsPanelProvider>
+      </LanguageProvider>,
+    );
+
+    expect(screen.getByRole('link', { name: translations.en.header.signIn })).toHaveAttribute('href', '/login');
+    expect(screen.queryByText(translations.en.header.logout)).not.toBeInTheDocument();
+  });
+
+  it('shows a greeting and a logout button instead of sign-in when a user is logged in', () => {
+    render(
+      <LanguageProvider initialLocale="en">
+        <AppointmentsPanelProvider appointments={[]} waitlistEntries={[]}>
+          <PublicHeader appointments={[]} currentUser={{ fullName: 'Noa Golan' }} />
+        </AppointmentsPanelProvider>
+      </LanguageProvider>,
+    );
+
+    expect(screen.getByText(`${translations.en.header.greeting} Noa Golan`)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: translations.en.header.logout })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: translations.en.header.signIn })).not.toBeInTheDocument();
   });
 });
