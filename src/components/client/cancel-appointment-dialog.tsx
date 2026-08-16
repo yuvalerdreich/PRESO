@@ -2,7 +2,7 @@
 
 import { Modal } from '@/components/common/modal';
 import { useLanguage } from '@/lib/i18n/language-provider';
-import type { ClientAppointment } from '@/types/appointments';
+import type { ClientAppointment } from '@/types/domain';
 
 export function CancelAppointmentDialog({
   appointment,

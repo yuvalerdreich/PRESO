@@ -10,7 +10,7 @@ import { ProfileSettingsProvider } from '@/components/common/profile-settings-pr
 import { PublicHeader } from '@/components/common/public-header';
 import { LanguageProvider } from '@/lib/i18n/language-provider';
 import { translations } from '@/lib/i18n/translations';
-import type { ClientAppointment, ClientWaitlistEntry } from '@/types/appointments';
+import type { ClientAppointment, ClientWaitlistEntry } from '@/types/domain';
 
 function appointment(overrides: Partial<ClientAppointment>): ClientAppointment {
   return {
@@ -21,7 +21,7 @@ function appointment(overrides: Partial<ClientAppointment>): ClientAppointment {
     address: 'רחוב דיזנגוף 142, תל אביב',
     dateISO: '2999-01-01',
     time: '10:00',
-    status: 'confirmed',
+    status: 'CONFIRMED',
     ...overrides,
   };
 }
@@ -59,9 +59,9 @@ describe('public header', () => {
 
   it('counts only future, non-cancelled appointments in the badge — never waitlist or past ones', () => {
     const appointments = [
-      appointment({ id: 'upcoming', dateISO: '2999-01-01', status: 'confirmed' }),
-      appointment({ id: 'upcoming-cancelled', dateISO: '2999-01-01', status: 'cancelled' }),
-      appointment({ id: 'past', dateISO: '2000-01-01', status: 'confirmed' }),
+      appointment({ id: 'upcoming', dateISO: '2999-01-01', status: 'CONFIRMED' }),
+      appointment({ id: 'upcoming-cancelled', dateISO: '2999-01-01', status: 'CANCELLED' }),
+      appointment({ id: 'past', dateISO: '2000-01-01', status: 'CONFIRMED' }),
     ];
     renderHeader(appointments);
 

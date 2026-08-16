@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { AppointmentsPanel } from '@/components/client/appointments-panel';
 import { appointmentsRepository } from '@/lib/appointments/repository';
 import { LanguageProvider } from '@/lib/i18n/language-provider';
-import type { ClientAppointment, ClientWaitlistEntry } from '@/types/appointments';
+import type { ClientAppointment, ClientWaitlistEntry } from '@/types/domain';
 
 async function loadFixture() {
   const [appointments, waitlistEntries] = await Promise.all([
@@ -46,7 +46,7 @@ describe('appointments panel', () => {
 
   it('labels each tab with a count that reflects the appointment/waitlist data, and updates it after cancelling', async () => {
     const { appointments, waitlistEntries } = await loadFixture();
-    const upcomingCount = appointments.filter((a) => a.status !== 'cancelled' && a.dateISO >= todayISO()).length;
+    const upcomingCount = appointments.filter((a) => a.status !== 'CANCELLED' && a.dateISO >= todayISO()).length;
     const historyCount = appointments.length - upcomingCount;
 
     renderPanel(appointments, waitlistEntries);

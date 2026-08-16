@@ -11,7 +11,7 @@ import { useProfileSettings } from '@/components/common/profile-settings-context
 import { countUpcomingAppointments } from '@/lib/appointments/classify';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import { createClient } from '@/lib/supabase/client';
-import type { ClientAppointment } from '@/types/appointments';
+import type { ClientAppointment } from '@/types/domain';
 
 export function PublicHeader({
   appointments,

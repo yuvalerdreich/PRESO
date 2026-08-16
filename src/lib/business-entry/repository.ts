@@ -1,4 +1,4 @@
-import type { BusinessArea, BusinessCategory, JoinableBusiness } from '@/types/business-entry';
+import type { BusinessArea, BusinessCategory, JoinableBusiness } from '@/types/domain';
 
 /**
  * Typecheck-only placeholder — unblocks `tsc` and the module graph. The real

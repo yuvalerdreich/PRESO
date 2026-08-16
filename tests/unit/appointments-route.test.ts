@@ -23,7 +23,7 @@ describe('POST /api/appointments', () => {
 
     await expect(appointmentsRepository.listCurrentClientAppointments()).resolves.toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ id: body.id, status: 'confirmed', dateISO: '2026-09-01', time: '11:00' }),
+        expect.objectContaining({ id: body.id, status: 'CONFIRMED', dateISO: '2026-09-01', time: '11:00' }),
       ]),
     );
   });
@@ -38,7 +38,7 @@ describe('POST /api/appointments', () => {
     expect(body.status).toBe('PENDING');
 
     await expect(appointmentsRepository.listCurrentClientAppointments()).resolves.toEqual(
-      expect.arrayContaining([expect.objectContaining({ id: body.id, status: 'pending' })]),
+      expect.arrayContaining([expect.objectContaining({ id: body.id, status: 'PENDING' })]),
     );
   });
 

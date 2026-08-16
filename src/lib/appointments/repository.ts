@@ -1,4 +1,4 @@
-import type { ClientAppointment, ClientWaitlistEntry, CreateAppointmentInput } from '@/types/appointments';
+import type { ClientAppointment, ClientWaitlistEntry, CreateAppointmentInput } from '@/types/domain';
 
 import { mockAppointmentsRepository } from '@/lib/appointments/mock-repository';
 
