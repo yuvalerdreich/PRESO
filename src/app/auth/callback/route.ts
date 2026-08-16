@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+import { getDefaultDestination } from '@/lib/auth/default-destination';
 import { createClient } from '@/lib/supabase/route';
 
 /**
@@ -32,6 +33,20 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const destination = type === 'recovery' ? '/reset-password' : (next ?? '/me');
+  if (type === 'recovery') {
+    return NextResponse.redirect(new URL('/reset-password', origin));
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('account_type')
+    .eq('id', user!.id)
+    .single();
+
+  const destination = next ?? getDefaultDestination(profile?.account_type ?? 'CLIENT');
   return NextResponse.redirect(new URL(destination, origin));
 }
