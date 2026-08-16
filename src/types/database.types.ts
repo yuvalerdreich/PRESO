@@ -76,6 +76,13 @@ export type Database = {
             foreignKeyName: "appointments_cancelled_by_fkey"
             columns: ["cancelled_by"]
             isOneToOne: false
+            referencedRelation: "business_client_contacts"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "appointments_cancelled_by_fkey"
+            columns: ["cancelled_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -83,8 +90,22 @@ export type Database = {
             foreignKeyName: "appointments_client_profile_id_fkey"
             columns: ["client_profile_id"]
             isOneToOne: false
+            referencedRelation: "business_client_contacts"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "appointments_client_profile_id_fkey"
+            columns: ["client_profile_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "business_client_contacts"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "appointments_created_by_fkey"
@@ -145,6 +166,13 @@ export type Database = {
           metadata?: Json
         }
         Relationships: [
+          {
+            foreignKeyName: "audit_log_actor_profile_id_fkey"
+            columns: ["actor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "business_client_contacts"
+            referencedColumns: ["profile_id"]
+          },
           {
             foreignKeyName: "audit_log_actor_profile_id_fkey"
             columns: ["actor_profile_id"]
@@ -242,6 +270,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "businesses_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "business_client_contacts"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "businesses_owner_profile_id_fkey"
@@ -355,6 +390,13 @@ export type Database = {
             foreignKeyName: "employees_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
+            referencedRelation: "business_client_contacts"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "employees_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -400,8 +442,22 @@ export type Database = {
             foreignKeyName: "join_requests_decided_by_fkey"
             columns: ["decided_by"]
             isOneToOne: false
+            referencedRelation: "business_client_contacts"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "join_requests_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "join_requests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "business_client_contacts"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "join_requests_profile_id_fkey"
@@ -441,6 +497,13 @@ export type Database = {
           type?: Database["public"]["Enums"]["notification_type"]
         }
         Relationships: [
+          {
+            foreignKeyName: "notifications_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "business_client_contacts"
+            referencedColumns: ["profile_id"]
+          },
           {
             foreignKeyName: "notifications_profile_id_fkey"
             columns: ["profile_id"]
@@ -518,6 +581,13 @@ export type Database = {
           target_type?: Database["public"]["Enums"]["report_target_type"]
         }
         Relationships: [
+          {
+            foreignKeyName: "reports_reporter_profile_id_fkey"
+            columns: ["reporter_profile_id"]
+            isOneToOne: false
+            referencedRelation: "business_client_contacts"
+            referencedColumns: ["profile_id"]
+          },
           {
             foreignKeyName: "reports_reporter_profile_id_fkey"
             columns: ["reporter_profile_id"]
@@ -661,6 +731,13 @@ export type Database = {
             foreignKeyName: "waitlist_entries_client_profile_id_fkey"
             columns: ["client_profile_id"]
             isOneToOne: false
+            referencedRelation: "business_client_contacts"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "waitlist_entries_client_profile_id_fkey"
+            columns: ["client_profile_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -675,6 +752,23 @@ export type Database = {
       }
     }
     Views: {
+      business_client_contacts: {
+        Row: {
+          business_id: string | null
+          full_name: string | null
+          phone: string | null
+          profile_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_public_profiles: {
         Row: {
           avatar_url: string | null
@@ -692,6 +786,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "businesses"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employees_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "business_client_contacts"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "employees_profile_id_fkey"
