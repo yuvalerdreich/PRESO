@@ -1,4 +1,4 @@
-import type { ClientAppointment, ClientWaitlistEntry, CreateAppointmentInput } from '@/types/appointments';
+import type { ClientAppointment, ClientWaitlistEntry, CreateAppointmentInput } from '@/types/domain';
 
 /**
  * Local fixture data standing in for Supabase reads (CLAUDE.md §8), mirroring the
@@ -32,7 +32,7 @@ function initialAppointments(): ClientAppointment[] {
       address: 'רחוב דיזנגוף 142, תל אביב',
       dateISO: daysFromNow(5),
       time: '11:30',
-      status: 'confirmed',
+      status: 'CONFIRMED',
     },
     {
       id: 'appointment-glow-past',
@@ -42,7 +42,7 @@ function initialAppointments(): ClientAppointment[] {
       address: 'שדרות אבא אבן 8, הרצליה',
       dateISO: daysFromNow(-10),
       time: '09:00',
-      status: 'confirmed',
+      status: 'CONFIRMED',
     },
   ];
 }
@@ -56,6 +56,7 @@ function initialWaitlistEntries(): ClientWaitlistEntry[] {
       serviceName: 'גוונים רכים',
       requestedDateISO: daysFromNow(7),
       requestedRange: '08:00 - 22:00',
+      status: 'ACTIVE',
     },
   ];
 }

@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     return errorResponse('not_found', 'Business not found.', 404);
   }
 
-  const status = business.approvalPolicy === 'AUTO' ? 'confirmed' : 'pending';
+  const status = business.approvalPolicy === 'AUTO' ? 'CONFIRMED' : 'PENDING';
 
   const appointment = await appointmentsRepository.createAppointment({
     businessName: business.name,
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
   return NextResponse.json(
     {
       id: appointment.id,
-      status: status === 'confirmed' ? 'CONFIRMED' : 'PENDING',
+      status,
       startsAt: startDate.toISOString(),
       endsAt: endDate.toISOString(),
       employeeId,

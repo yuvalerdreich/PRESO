@@ -4,7 +4,7 @@ import type {
   DashboardEmployee,
   DashboardKpi,
   DashboardService,
-} from '@/types/dashboard';
+} from '@/types/domain';
 
 /**
  * Typecheck-only placeholder — unblocks `tsc` and the module graph. The real
@@ -13,7 +13,15 @@ import type {
  */
 export const dashboardRepository = {
   async getCurrentBusinessDashboard(): Promise<DashboardBusiness> {
-    return { id: 'studio-zohar' };
+    return {
+      id: 'studio-zohar',
+      name: 'Studio Zohar',
+      timezone: 'Asia/Jerusalem',
+      approvalPolicy: 'AUTO',
+      cancellationWindowHours: 24,
+      status: 'ACTIVE',
+      isOwner: true,
+    };
   },
   async listDashboardEmployees(): Promise<DashboardEmployee[]> {
     return [];

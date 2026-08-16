@@ -18,11 +18,11 @@ const GLOW_CLINIC_ID = 'b18f6ca9-0c44-45b8-a8d9-3e1a2c6a1002';
 const APEX_FITNESS_ID = 'b18f6ca9-0c44-45b8-a8d9-3e1a2c6a1000';
 
 const categories: Category[] = [
-  { id: 'beauty', icon: 'scissors', name: { he: 'מספרות ומכוני יופי', en: 'Hair salons & beauty' } },
-  { id: 'cosmetics', icon: 'sparkles', name: { he: 'קוסמטיקה וציפורניים', en: 'Cosmetics & nails' } },
-  { id: 'fitness', icon: 'dumbbell', name: { he: 'כושר ופילאטיס', en: 'Fitness & pilates' } },
-  { id: 'clinics', icon: 'stethoscope', name: { he: 'קליניקות וטיפולים', en: 'Clinics & treatments' } },
-  { id: 'lessons', icon: 'graduation-cap', name: { he: 'שיעורים וייעוץ', en: 'Lessons & consulting' } },
+  { id: 'beauty', slug: 'beauty', icon: 'scissors', name: { he: 'מספרות ומכוני יופי', en: 'Hair salons & beauty' } },
+  { id: 'cosmetics', slug: 'cosmetics', icon: 'sparkles', name: { he: 'קוסמטיקה וציפורניים', en: 'Cosmetics & nails' } },
+  { id: 'fitness', slug: 'fitness', icon: 'dumbbell', name: { he: 'כושר ופילאטיס', en: 'Fitness & pilates' } },
+  { id: 'clinics', slug: 'clinics', icon: 'stethoscope', name: { he: 'קליניקות וטיפולים', en: 'Clinics & treatments' } },
+  { id: 'lessons', slug: 'lessons', icon: 'graduation-cap', name: { he: 'שיעורים וייעוץ', en: 'Lessons & consulting' } },
 ];
 
 const businesses: (BusinessProfile & { employeeAvatarUrls: string[] })[] = [
@@ -35,6 +35,9 @@ const businesses: (BusinessProfile & { employeeAvatarUrls: string[] })[] = [
     description: 'אימונים אישיים, שיקום תנועתי ופילאטיס מכשירים אחד על אחד.',
     photoUrl: 'https://picsum.photos/seed/apex-fitness/640/480',
     phone: '04-8112233',
+    timezone: 'Asia/Jerusalem',
+    cancellationWindowHours: 24,
+    ownerProfileId: 'p-apex-owner',
     employeeCount: 1,
     employeeAvatarUrls: ['https://i.pravatar.cc/64?img=12'],
     approvalPolicy: 'AUTO',
@@ -48,6 +51,9 @@ const businesses: (BusinessProfile & { employeeAvatarUrls: string[] })[] = [
     description: 'טיפולי פנים מתקדמים, מניקור פדיקור רפואי ואסתטיקה פרא-רפואית.',
     photoUrl: 'https://picsum.photos/seed/glow-clinic/640/480',
     phone: '09-9556677',
+    timezone: 'Asia/Jerusalem',
+    cancellationWindowHours: 48,
+    ownerProfileId: 'p-glow-owner',
     employeeCount: 2,
     employeeAvatarUrls: ['https://i.pravatar.cc/64?img=32', 'https://i.pravatar.cc/64?img=45'],
     // MANUAL on purpose: this is the only business in the fixture whose bookings land PENDING,
@@ -63,6 +69,9 @@ const businesses: (BusinessProfile & { employeeAvatarUrls: string[] })[] = [
     description: 'סטודיו לעיצוב שיער, כימיקלים מתקדמים, גוונים ותספורות גברים ונשים.',
     photoUrl: 'https://picsum.photos/seed/studio-zohar/640/480',
     phone: '03-6001122',
+    timezone: 'Asia/Jerusalem',
+    cancellationWindowHours: 24,
+    ownerProfileId: 'p-zohar-owner',
     employeeCount: 2,
     employeeAvatarUrls: ['https://i.pravatar.cc/64?img=51', 'https://i.pravatar.cc/64?img=47'],
     approvalPolicy: 'AUTO',
