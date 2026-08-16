@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.15"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -97,6 +92,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_public_profiles"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "appointments_employee_id_fkey"
@@ -304,6 +306,13 @@ export type Database = {
             foreignKeyName: "employee_availability_rules_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "employee_public_profiles"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "employee_availability_rules_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -444,6 +453,7 @@ export type Database = {
       profiles: {
         Row: {
           account_type: Database["public"]["Enums"]["account_type"]
+          avatar_url: string | null
           created_at: string
           date_of_birth: string | null
           full_name: string
@@ -454,6 +464,7 @@ export type Database = {
         }
         Insert: {
           account_type: Database["public"]["Enums"]["account_type"]
+          avatar_url?: string | null
           created_at?: string
           date_of_birth?: string | null
           full_name: string
@@ -464,6 +475,7 @@ export type Database = {
         }
         Update: {
           account_type?: Database["public"]["Enums"]["account_type"]
+          avatar_url?: string | null
           created_at?: string
           date_of_birth?: string | null
           full_name?: string
@@ -519,6 +531,7 @@ export type Database = {
         Row: {
           buffer_minutes: number
           created_at: string
+          description: string | null
           duration_minutes: number
           employee_id: string
           id: string
@@ -529,6 +542,7 @@ export type Database = {
         Insert: {
           buffer_minutes?: number
           created_at?: string
+          description?: string | null
           duration_minutes: number
           employee_id: string
           id?: string
@@ -539,6 +553,7 @@ export type Database = {
         Update: {
           buffer_minutes?: number
           created_at?: string
+          description?: string | null
           duration_minutes?: number
           employee_id?: string
           id?: string
@@ -547,6 +562,13 @@ export type Database = {
           status?: Database["public"]["Enums"]["service_status"]
         }
         Relationships: [
+          {
+            foreignKeyName: "services_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_public_profiles"
+            referencedColumns: ["employee_id"]
+          },
           {
             foreignKeyName: "services_employee_id_fkey"
             columns: ["employee_id"]
@@ -570,6 +592,13 @@ export type Database = {
           waitlist_entry_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "waitlist_employee_targets_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_public_profiles"
+            referencedColumns: ["employee_id"]
+          },
           {
             foreignKeyName: "waitlist_employee_targets_employee_id_fkey"
             columns: ["employee_id"]
@@ -646,7 +675,33 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      employee_public_profiles: {
+        Row: {
+          avatar_url: string | null
+          business_id: string | null
+          employee_id: string | null
+          full_name: string | null
+          position_title: string | null
+          profile_id: string | null
+          status: Database["public"]["Enums"]["employee_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employees_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       _insert_appointment: {
@@ -760,6 +815,7 @@ export type Database = {
         Args: never
         Returns: {
           account_type: Database["public"]["Enums"]["account_type"]
+          avatar_url: string | null
           created_at: string
           date_of_birth: string | null
           full_name: string
@@ -813,6 +869,17 @@ export type Database = {
           ends_at: string
           starts_at: string
         }[]
+      }
+      get_next_available: {
+        Args: {
+          p_business_id: string
+          p_from: string
+          p_hour_from?: string
+          p_hour_to?: string
+          p_service_query?: string
+          p_to: string
+        }
+        Returns: string
       }
       is_admin: { Args: never; Returns: boolean }
       is_employee_of: { Args: { p_business_id: string }; Returns: boolean }
@@ -1071,3 +1138,4 @@ export const Constants = {
     },
   },
 } as const
+
