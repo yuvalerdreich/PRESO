@@ -53,6 +53,17 @@ export const completeProfileInput = z.object({
 });
 export type CompleteProfileInput = z.infer<typeof completeProfileInput>;
 
+export const profileSettingsInput = z.object({
+  location: z.union([z.string().trim().min(2).max(100), z.literal('')]),
+  dateOfBirth: z.union([
+    z.iso.date().refine((value) => value <= new Date().toISOString().slice(0, 10), {
+      message: 'Date of birth must be in the past',
+    }),
+    z.literal(''),
+  ]),
+});
+export type ProfileSettingsInput = z.infer<typeof profileSettingsInput>;
+
 export const forgotPasswordInput = z.object({
   email,
 });
