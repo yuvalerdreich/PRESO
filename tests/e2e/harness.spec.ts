@@ -62,11 +62,10 @@ test('an unknown path renders the not-found page, not a crash', async ({ page })
   ).toBeVisible();
 });
 
-test('my appointments panel opens from the header button', async ({ page }) => {
+test('landing header exposes sign-in entry for guests', async ({ page }) => {
   await page.goto('/');
 
-  await page.getByRole('button', { name: 'פתיחת התורים שלי' }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'התורים והבקשות שלי' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'התחברות' })).toHaveAttribute('href', '/login');
 });
 
 // Skipped: /onboarding and /join only render placeholders — the demo forms aren't built yet
