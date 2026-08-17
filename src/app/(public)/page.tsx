@@ -1,11 +1,11 @@
 import { BusinessResults } from '@/components/public/business-results';
 import { DiscoveryHome } from '@/components/public/discovery-home';
-import { discoveryRepository } from '@/lib/discovery/repository';
+import { listCategories, searchBusinesses } from '@/server/queries/discovery';
 
 export default async function HomePage() {
   const [categories, businesses] = await Promise.all([
-    discoveryRepository.listCategories(),
-    discoveryRepository.searchBusinesses(),
+    listCategories(),
+    searchBusinesses(),
   ]);
 
   return (
