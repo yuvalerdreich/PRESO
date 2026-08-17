@@ -1,18 +1,20 @@
 'use client';
 
-import Link from 'next/link';
 import { useState } from 'react';
 import { BriefcaseBusiness, Building2, Plus, Search, UserPlus } from 'lucide-react';
 
 import { CreateBusinessDialog } from '@/components/business/create-business-dialog';
+import { JoinBusinessDialog } from '@/components/business/join-business-dialog';
 import { useLanguage } from '@/lib/i18n/language-provider';
+import type { BusinessSummary } from '@/types/domain';
 
 type BusinessFilter = 'all' | 'owned' | 'staff' | 'pending';
 
-export function MyBusinessesPage() {
+export function MyBusinessesPage({ joinableBusinesses = [] }: { joinableBusinesses?: BusinessSummary[] }) {
   const { copy } = useLanguage();
   const [activeFilter, setActiveFilter] = useState<BusinessFilter>('all');
   const [isCreateBusinessOpen, setIsCreateBusinessOpen] = useState(false);
+  const [isJoinBusinessOpen, setIsJoinBusinessOpen] = useState(false);
 
   const filters: { id: BusinessFilter; label: string }[] = [
     { id: 'all', label: copy.myBusinesses.all },
@@ -44,13 +46,14 @@ export function MyBusinessesPage() {
               <Plus className="h-4 w-4" aria-hidden="true" />
               {copy.myBusinesses.openBusiness}
             </button>
-            <Link
-              href="/join"
+            <button
+              type="button"
+              onClick={() => setIsJoinBusinessOpen(true)}
               className="flex items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-white/15"
             >
               <UserPlus className="h-4 w-4" aria-hidden="true" />
               {copy.myBusinesses.joinBusiness}
-            </Link>
+            </button>
           </div>
 
           <div role="tablist" aria-label={copy.myBusinesses.title} className="grid grid-cols-2 gap-2 sm:flex">
@@ -100,6 +103,9 @@ export function MyBusinessesPage() {
       <p className="text-center text-xs text-[var(--muted)]">{copy.myBusinesses.demoNotice}</p>
 
       {isCreateBusinessOpen ? <CreateBusinessDialog onClose={() => setIsCreateBusinessOpen(false)} /> : null}
+      {isJoinBusinessOpen ? (
+        <JoinBusinessDialog businesses={joinableBusinesses} onClose={() => setIsJoinBusinessOpen(false)} />
+      ) : null}
     </div>
   );
 }
