@@ -1,7 +1,7 @@
 import { AppointmentsPanelProvider } from '@/components/common/appointments-panel-provider';
 import { ProfileSettingsProvider } from '@/components/common/profile-settings-provider';
 import { PublicHeader } from '@/components/common/public-header';
-import { appointmentsRepository } from '@/lib/appointments/repository';
+import { listClientAppointments, listClientWaitlistEntries } from '@/server/queries/appointments';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/types/database.types';
 
@@ -14,8 +14,8 @@ type CurrentUser = {
 
 export default async function PublicLayout({ children }: LayoutProps<'/'>) {
   const [appointments, waitlistEntries, currentUser] = await Promise.all([
-    appointmentsRepository.listCurrentClientAppointments(),
-    appointmentsRepository.listCurrentClientWaitlistEntries(),
+    listClientAppointments(),
+    listClientWaitlistEntries(),
     getCurrentUser(),
   ]);
 

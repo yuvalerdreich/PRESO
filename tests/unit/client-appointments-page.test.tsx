@@ -1,5 +1,13 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// See the note in home-page.test.tsx: the page reads through a cookie-bound client, so the query
+// module is stubbed and this stays a composition test. The empty lists are deliberate — these
+// assertions are about the panel's chrome and the back link, not about any row.
+vi.mock('@/server/queries/appointments', () => ({
+  listClientAppointments: async () => [],
+  listClientWaitlistEntries: async () => [],
+}));
 
 import ClientAppointmentsPage from '@/app/(client)/me/appointments/page';
 import { LanguageProvider } from '@/lib/i18n/language-provider';
