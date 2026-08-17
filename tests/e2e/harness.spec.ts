@@ -62,11 +62,15 @@ test('an unknown path renders the not-found page, not a crash', async ({ page })
   ).toBeVisible();
 });
 
-test('my appointments panel opens from the sidebar button', async ({ page }) => {
+// The sidebar entry is a link to the full appointments page, not a modal trigger. The page
+// itself sits behind `/me/*`, which `proxy.ts` gates on a session, and the suite has no
+// signed-in fixture yet — so this asserts the wiring plus the gate. Assert on the rendered
+// page instead once an authenticated storageState exists.
+test('my appointments entry links to the appointments page, behind the session gate', async ({ page }) => {
   await page.goto('/');
 
-  await page.getByRole('button', { name: 'פתיחת התורים שלי' }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'התורים והבקשות שלי' })).toBeVisible();
+  await page.getByRole('link', { name: 'פתיחת התורים שלי' }).click();
+  await expect(page).toHaveURL(/\/login\?next=%2Fme%2Fappointments$/);
 });
 
 // Skipped: /onboarding and /join only render placeholders — the demo forms aren't built yet
