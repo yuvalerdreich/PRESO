@@ -1,6 +1,6 @@
 'use client';
 
-import { BriefcaseBusiness, CalendarDays, Home, type LucideIcon } from 'lucide-react';
+import { Building2, CalendarDays, Home, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -66,14 +66,17 @@ export function AccountSidebar({
         </Link>
 
         {accountType === 'BUSINESS' ? (
-          <Link
-            href="/dashboard"
-            aria-current={pathname.startsWith('/dashboard') ? 'page' : undefined}
-            className={itemClassName(pathname.startsWith('/dashboard'))}
-          >
-            <ItemIcon icon={BriefcaseBusiness} isActive={pathname.startsWith('/dashboard')} />
-            <span>{copy.sidebar.businessDashboard}</span>
-          </Link>
+          <>
+            <Link
+              href="/businesses"
+              aria-current={pathname === '/businesses' ? 'page' : undefined}
+              className={itemClassName(pathname === '/businesses')}
+            >
+              <ItemIcon icon={Building2} isActive={pathname === '/businesses'} />
+              <span>{copy.sidebar.myBusinesses}</span>
+            </Link>
+
+          </>
         ) : null}
       </nav>
     </aside>
