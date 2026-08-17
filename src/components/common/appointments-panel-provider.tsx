@@ -9,8 +9,8 @@ import { useLanguage } from '@/lib/i18n/language-provider';
 import type { ClientAppointment, ClientWaitlistEntry } from '@/types/appointments';
 
 /**
- * Shares the "My appointments" modal across the header pill and the booking
- * thank-you screen's "view my appointments" action. Both open it in place
+ * Shares the "My appointments" modal across the sidebar nav item and the
+ * booking thank-you screen's "view my appointments" action. Both open it in place
  * rather than navigating to /me/appointments, which requires a real session
  * proxy.ts already enforces — no (auth)/login page exists yet to satisfy it
  * (TECHNICAL_DESIGN.md §12, tracked until real auth lands).
@@ -28,7 +28,7 @@ export function AppointmentsPanelProvider({
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <AppointmentsPanelContext.Provider value={{ open: () => setIsOpen(true) }}>
+    <AppointmentsPanelContext.Provider value={{ open: () => setIsOpen(true), isOpen }}>
       {children}
 
       {isOpen ? (
