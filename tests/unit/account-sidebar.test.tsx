@@ -84,11 +84,13 @@ describe('account sidebar', () => {
     ).not.toHaveTextContent('0');
   });
 
-  it('adds the dashboard entry for a business account', () => {
+  it('adds the My Businesses entry for a business account', () => {
     renderSidebar([], 'BUSINESS');
 
-    expect(
-      screen.getByRole('link', { name: translations.en.sidebar.businessDashboard }),
-    ).toHaveAttribute('href', '/dashboard');
+    expect(screen.getByRole('link', { name: translations.en.sidebar.myBusinesses })).toHaveAttribute(
+      'href',
+      '/businesses',
+    );
+    expect(screen.queryByRole('link', { name: translations.en.sidebar.businessDashboard })).not.toBeInTheDocument();
   });
 });
