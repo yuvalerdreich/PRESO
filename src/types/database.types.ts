@@ -959,6 +959,64 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_business_with_owner: {
+        Args: {
+          p_address: string
+          p_approval_policy?: Database["public"]["Enums"]["approval_policy"]
+          p_area: string
+          p_cancellation_window_hours?: number
+          p_category_id: string
+          p_description?: string
+          p_name: string
+          p_phone: string
+          p_position_title?: string
+          p_timezone?: string
+        }
+        Returns: {
+          address: string
+          approval_policy: Database["public"]["Enums"]["approval_policy"]
+          area: string
+          cancellation_window_hours: number
+          category_id: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          owner_profile_id: string
+          phone: string
+          photo_paths: string[]
+          status: Database["public"]["Enums"]["business_status"]
+          timezone: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "businesses"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      decide_join_request: {
+        Args: {
+          p_decision: Database["public"]["Enums"]["join_request_status"]
+          p_position_title?: string
+          p_request_id: string
+        }
+        Returns: {
+          business_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          profile_id: string
+          status: Database["public"]["Enums"]["join_request_status"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "join_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       get_available_slots: {
         Args: {
           p_employee_id: string
@@ -1018,6 +1076,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      remove_employee: { Args: { p_employee_id: string }; Returns: boolean }
       reschedule_appointment: {
         Args: {
           p_actor_profile_id: string
