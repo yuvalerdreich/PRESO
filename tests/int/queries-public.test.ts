@@ -85,7 +85,11 @@ describe('discovery queries (anonymous)', () => {
   it('returns the seeded businesses with photo, staff count and avatars resolved', async () => {
     const businesses = await searchBusinesses();
 
-    expect(businesses.map((b) => b.id).sort()).toEqual([APEX_FITNESS, STUDIO_ZOHAR, GLOW_CLINIC].sort());
+    // `arrayContaining`, not equality: the integration project shares one database, so another
+    // suite's fixture business appearing here is expected rather than a failure.
+    expect(businesses.map((b) => b.id)).toEqual(
+      expect.arrayContaining([APEX_FITNESS, STUDIO_ZOHAR, GLOW_CLINIC]),
+    );
 
     const zohar = businesses.find((b) => b.id === STUDIO_ZOHAR)!;
     expect(zohar.employeeCount).toBe(2);

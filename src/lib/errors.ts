@@ -166,6 +166,17 @@ export function fromPostgresError(error: unknown): AppError {
   if (message.includes('last_employee')) {
     return new AppError('UNPROCESSABLE', 'A business must keep at least one staff member.', undefined, error);
   }
+  // §6.9 — removal is refused while future appointments exist, because each of those has to be
+  // cancelled explicitly so its client gets notified. Not named in §8.2's table, but the same
+  // family as `last_employee`: a legal-state refusal, not a malformed request.
+  if (message.includes('employee_has_appointments')) {
+    return new AppError(
+      'UNPROCESSABLE',
+      'This staff member still has upcoming appointments. Cancel them first, then remove them.',
+      undefined,
+      error,
+    );
+  }
   if (message.includes('match_expired')) {
     return new AppError('GONE', 'This offer has expired and the time was released.', undefined, error);
   }
