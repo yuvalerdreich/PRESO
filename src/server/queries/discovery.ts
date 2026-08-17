@@ -1,9 +1,13 @@
 import { categoryPresentation } from '@/lib/i18n/categories';
 import { createClient } from '@/lib/supabase/server';
+import type { BusinessSearchQuery } from '@/lib/validation/search';
+import { getNextAvailable } from '@/server/queries/availability';
 import { resolvePhotoUrl } from '@/server/queries/shared';
 import type {
   BusinessProfile,
   BusinessSearchFilters,
+  BusinessSearchResult,
+  BusinessSearchResultItem,
   BusinessSummary,
   Category,
   EmployeeListItem,
@@ -96,6 +100,198 @@ export async function searchBusinesses(filters: BusinessSearchFilters = {}): Pro
     employeeAvatarUrls: (staffByBusiness.get(row.id) ?? []).flatMap((s) => (s.avatarUrl ? [s.avatarUrl] : [])),
     approvalPolicy: row.approval_policy,
   }));
+}
+
+/**
+ * `GET /api/businesses` (§5.2) — the full search contract, as opposed to `searchBusinesses()`
+ * above which serves the home grid's three filters.
+ *
+ * Two filters cannot be expressed as columns and are handled by narrowing the candidate set
+ * first: `serviceQ`/`priceMin`/`priceMax` are properties of the `services` join rather than of a
+ * business, and `date`/`hourFrom`/`hourTo`/`sort=nextAvailable` are properties of *computed
+ * availability*, which has no column at all (§2).
+ *
+ * The availability pass is the expensive one §12.8 warns about, so it runs **after** paging, over
+ * at most `pageSize` businesses, with the 14-day horizon `get_next_available()` enforces
+ * internally. Sorting by it necessarily evaluates the whole filtered set, which is why that sort
+ * is opt-in rather than the default.
+ */
+export async function searchBusinessesPaged(query: BusinessSearchQuery): Promise<BusinessSearchResult> {
+  const supabase = await createClient();
+
+  const needsServiceJoin =
+    query.serviceQ !== undefined || query.priceMin !== undefined || query.priceMax !== undefined;
+
+  let matchingByService: string[] | null = null;
+
+  if (needsServiceJoin) {
+    let serviceQuery = supabase.from('services').select('employee_id, name, price').eq('status', 'ACTIVE');
+
+    if (query.serviceQ) serviceQuery = serviceQuery.ilike('name', `%${query.serviceQ}%`);
+    if (query.priceMin !== undefined) serviceQuery = serviceQuery.gte('price', query.priceMin);
+    if (query.priceMax !== undefined) serviceQuery = serviceQuery.lte('price', query.priceMax);
+
+    const { data: services, error: servicesError } = await serviceQuery;
+    if (servicesError) throw servicesError;
+
+    const employeeIds = [...new Set((services ?? []).map((row) => row.employee_id))];
+    if (employeeIds.length === 0) {
+      return { items: [], page: query.page, pageSize: query.pageSize, total: 0 };
+    }
+
+    const { data: employees, error: employeesError } = await supabase
+      .from('employees')
+      .select('business_id')
+      .in('id', employeeIds)
+      .eq('status', 'ACTIVE');
+    if (employeesError) throw employeesError;
+
+    matchingByService = [...new Set((employees ?? []).map((row) => row.business_id))];
+    if (matchingByService.length === 0) {
+      return { items: [], page: query.page, pageSize: query.pageSize, total: 0 };
+    }
+  }
+
+  let businessIdsMatchingStaff: string[] = [];
+  if (query.q) {
+    const { data: staff, error: staffError } = await supabase
+      .from('employee_public_profiles')
+      .select('business_id')
+      .ilike('full_name', `%${query.q}%`);
+    if (staffError) throw staffError;
+    businessIdsMatchingStaff = [...new Set((staff ?? []).map((row) => row.business_id).filter(Boolean))] as string[];
+  }
+
+  let base = supabase
+    .from('businesses')
+    .select(
+      'id, name, description, category_id, area, address, photo_paths, approval_policy, categories!inner(id, name, slug)',
+      { count: 'exact' },
+    );
+
+  if (query.q) {
+    const clauses = [`name.ilike.%${query.q}%`];
+    if (businessIdsMatchingStaff.length > 0) clauses.push(`id.in.(${businessIdsMatchingStaff.join(',')})`);
+    base = base.or(clauses.join(','));
+  }
+  if (query.category) base = base.eq('categories.slug', query.category);
+  if (query.area) base = base.ilike('area', `%${query.area}%`);
+  if (matchingByService) base = base.in('id', matchingByService);
+
+  const wantsAvailability =
+    query.sort === 'nextAvailable' ||
+    query.date !== undefined ||
+    query.hourFrom !== undefined ||
+    query.hourTo !== undefined;
+
+  // Sorting by next-available has to see every match before it can order them; relevance sorting
+  // can page in the database and evaluate availability for one page only.
+  const from = (query.page - 1) * query.pageSize;
+  const paged = wantsAvailability ? base.order('name') : base.order('name').range(from, from + query.pageSize - 1);
+
+  const { data, error, count } = await paged;
+  if (error) throw error;
+
+  const rows = data ?? [];
+  const [staffByBusiness, priceRanges] = await Promise.all([
+    loadStaffAvatars(rows.map((row) => row.id)),
+    loadPriceRanges(rows.map((row) => row.id)),
+  ]);
+
+  const availabilityWindow = query.date
+    ? {
+        from: new Date(`${query.date}T00:00:00Z`),
+        to: new Date(new Date(`${query.date}T00:00:00Z`).getTime() + 86_400_000),
+      }
+    : undefined;
+
+  let items: BusinessSearchResultItem[] = await Promise.all(
+    rows.map(async (row) => {
+      const category = row.categories as { id: string; name: string; slug: string };
+      const staff = staffByBusiness.get(row.id) ?? [];
+
+      return {
+        id: row.id,
+        name: row.name,
+        categoryId: row.category_id,
+        area: row.area,
+        address: row.address,
+        description: row.description ?? '',
+        photoUrl: resolvePhotoUrl(supabase, row.photo_paths),
+        employeeCount: staff.length,
+        employeeAvatarUrls: staff.flatMap((s) => (s.avatarUrl ? [s.avatarUrl] : [])),
+        approvalPolicy: row.approval_policy,
+        category: { id: category.id, slug: category.slug, name: category.name },
+        priceRange: priceRanges.get(row.id) ?? null,
+        nextAvailableAt: wantsAvailability
+          ? await getNextAvailable(row.id, {
+              serviceQuery: query.serviceQ,
+              hourFrom: query.hourFrom,
+              hourTo: query.hourTo,
+              ...availabilityWindow,
+            })
+          : null,
+      };
+    }),
+  );
+
+  let total = count ?? items.length;
+
+  if (wantsAvailability) {
+    // A `date`/`hour` filter means "show me places that can actually see me then" — a business
+    // with no slot in that window is not a weaker match, it is not a match.
+    items = items.filter((item) => item.nextAvailableAt !== null);
+
+    if (query.sort === 'nextAvailable') {
+      items.sort((a, b) => (a.nextAvailableAt ?? '').localeCompare(b.nextAvailableAt ?? ''));
+    }
+
+    total = items.length;
+    items = items.slice(from, from + query.pageSize);
+  }
+
+  return { items, page: query.page, pageSize: query.pageSize, total };
+}
+
+/** Min/max ACTIVE service price per business, for §5.2's `priceRange`. */
+async function loadPriceRanges(
+  businessIds: string[],
+): Promise<Map<string, { min: number; max: number } | null>> {
+  const ranges = new Map<string, { min: number; max: number } | null>();
+  if (businessIds.length === 0) return ranges;
+
+  const supabase = await createClient();
+
+  const { data: employees, error: employeesError } = await supabase
+    .from('employees')
+    .select('id, business_id')
+    .in('business_id', businessIds)
+    .eq('status', 'ACTIVE');
+  if (employeesError) throw employeesError;
+
+  const businessByEmployee = new Map((employees ?? []).map((row) => [row.id, row.business_id]));
+  if (businessByEmployee.size === 0) return ranges;
+
+  const { data: services, error: servicesError } = await supabase
+    .from('services')
+    .select('employee_id, price')
+    .in('employee_id', [...businessByEmployee.keys()])
+    .eq('status', 'ACTIVE');
+  if (servicesError) throw servicesError;
+
+  for (const service of services ?? []) {
+    const businessId = businessByEmployee.get(service.employee_id);
+    if (!businessId) continue;
+
+    const price = Number(service.price);
+    const current = ranges.get(businessId);
+    ranges.set(
+      businessId,
+      current ? { min: Math.min(current.min, price), max: Math.max(current.max, price) } : { min: price, max: price },
+    );
+  }
+
+  return ranges;
 }
 
 export async function getBusinessProfile(businessId: string): Promise<BusinessProfile | null> {
