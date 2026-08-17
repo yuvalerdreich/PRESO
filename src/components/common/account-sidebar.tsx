@@ -4,7 +4,6 @@ import { BriefcaseBusiness, CalendarDays, Home, type LucideIcon } from 'lucide-r
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { useAppointmentsPanel } from '@/components/common/appointments-panel-context';
 import { countUpcomingAppointments } from '@/lib/appointments/classify';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import type { ClientAppointment } from '@/types/appointments';
@@ -27,9 +26,9 @@ export function AccountSidebar({
   accountType?: AccountType;
 }) {
   const { copy } = useLanguage();
-  const { open, isOpen } = useAppointmentsPanel();
   const pathname = usePathname();
   const upcomingCount = countUpcomingAppointments(appointments);
+  const appointmentsActive = pathname === '/me/appointments';
 
   // The aside is always a side column — it never stacks above the content at
   // narrow widths (devtools open, small viewport); it scrolls internally instead.
@@ -47,24 +46,24 @@ export function AccountSidebar({
           <span>{copy.sidebar.home}</span>
         </Link>
 
-        <button
-          type="button"
-          onClick={open}
+        <Link
+          href="/me/appointments"
+          aria-current={appointmentsActive ? 'page' : undefined}
           aria-label={copy.sidebar.openAppointments}
-          className={itemClassName(isOpen)}
+          className={itemClassName(appointmentsActive)}
         >
-          <ItemIcon icon={CalendarDays} isActive={isOpen} />
+          <ItemIcon icon={CalendarDays} isActive={appointmentsActive} />
           <span>{copy.sidebar.appointments}</span>
           {upcomingCount > 0 ? (
             <span
               className={`ms-auto flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
-                isOpen ? 'bg-white text-[var(--brand)]' : 'bg-[var(--brand)] text-white'
+                appointmentsActive ? 'bg-white text-[var(--brand)]' : 'bg-[var(--brand)] text-white'
               }`}
             >
               {upcomingCount}
             </span>
           ) : null}
-        </button>
+        </Link>
 
         {accountType === 'BUSINESS' ? (
           <Link
