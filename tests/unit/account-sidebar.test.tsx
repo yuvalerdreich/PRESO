@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/navigation', () => ({
@@ -6,10 +6,9 @@ vi.mock('next/navigation', () => ({
 }));
 
 import { AccountSidebar } from '@/components/common/account-sidebar';
-import { AppointmentsPanelProvider } from '@/components/common/appointments-panel-provider';
 import { LanguageProvider } from '@/lib/i18n/language-provider';
 import { translations } from '@/lib/i18n/translations';
-import type { ClientAppointment, ClientWaitlistEntry } from '@/types/appointments';
+import type { ClientAppointment } from '@/types/appointments';
 import type { Database } from '@/types/database.types';
 
 function appointment(overrides: Partial<ClientAppointment>): ClientAppointment {
@@ -30,13 +29,9 @@ function renderSidebar(
   appointments: ClientAppointment[],
   accountType?: Database['public']['Enums']['account_type'],
 ) {
-  const waitlistEntries: ClientWaitlistEntry[] = [];
-
   return render(
     <LanguageProvider initialLocale="en">
-      <AppointmentsPanelProvider appointments={appointments} waitlistEntries={waitlistEntries}>
-        <AccountSidebar appointments={appointments} accountType={accountType} />
-      </AppointmentsPanelProvider>
+      <AccountSidebar appointments={appointments} accountType={accountType} />
     </LanguageProvider>,
   );
 }
@@ -64,18 +59,12 @@ describe('account sidebar', () => {
     );
   });
 
-  it('opens the appointments panel from the my-appointments entry', () => {
+  it('links the my-appointments entry to the full appointments page', () => {
     renderSidebar([appointment({ id: 'upcoming-1' })]);
 
     expect(
-      screen.queryByRole('heading', { level: 1, name: translations.en.appointments.title }),
-    ).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: translations.en.sidebar.openAppointments }));
-
-    expect(
-      screen.getByRole('heading', { level: 1, name: translations.en.appointments.title }),
-    ).toBeInTheDocument();
+      screen.getByRole('link', { name: translations.en.sidebar.openAppointments }),
+    ).toHaveAttribute('href', '/me/appointments');
   });
 
   it('badges only future, non-cancelled appointments and hides the badge at zero', () => {
@@ -91,7 +80,7 @@ describe('account sidebar', () => {
 
     renderSidebar([]);
     expect(
-      screen.getByRole('button', { name: translations.en.sidebar.openAppointments }),
+      screen.getByRole('link', { name: translations.en.sidebar.openAppointments }),
     ).not.toHaveTextContent('0');
   });
 

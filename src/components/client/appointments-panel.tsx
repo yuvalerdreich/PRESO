@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, CalendarX } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CalendarDays, CalendarX } from 'lucide-react';
 
 import { AppointmentCard } from '@/components/client/appointment-card';
 import { AppointmentsTabs, type AppointmentsTabId } from '@/components/client/appointments-tabs';
@@ -22,13 +22,7 @@ export function AppointmentsPanel({
 }) {
   const { copy, direction } = useLanguage();
   const BackArrow = direction === 'rtl' ? ArrowRight : ArrowLeft;
-
   const [activeTab, setActiveTab] = useState<AppointmentsTabId>('upcoming');
-  // Appointments cancelled through this panel's demo flow. Kept separate from
-  // `appointment.status` (rather than mutating it) so the difference between a
-  // "real" cancelled appointment and one cancelled in this demo session stays
-  // visible (see copy.appointments.cancelledDemo) — and so this stays local
-  // state that never writes back to the fetched data.
   const [demoCancelledIds, setDemoCancelledIds] = useState<Set<string>>(new Set());
   const [cancelTarget, setCancelTarget] = useState<ClientAppointment | null>(null);
 
@@ -55,7 +49,7 @@ export function AppointmentsPanel({
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-7 px-4 py-7 sm:px-6 lg:px-10 lg:py-10">
       {backHref ? (
         <Link
           href={backHref}
@@ -66,28 +60,37 @@ export function AppointmentsPanel({
         </Link>
       ) : null}
 
-      <div>
-        <h1 className="text-lg font-bold text-[var(--foreground)]">{copy.appointments.title}</h1>
-        <p className="text-sm text-[var(--muted)]">{copy.appointments.description}</p>
-      </div>
+      <section className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#30257b] via-[#1e2857] to-[#111938] px-5 py-7 text-white shadow-[0_24px_45px_-30px_rgba(23,27,70,0.85)] sm:px-8 sm:py-9">
+        <div className="flex flex-col gap-5 border-b border-white/10 pb-6 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{copy.appointments.title}</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">{copy.appointments.description}</p>
+          </div>
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[#7169ef] bg-[#4237aa] text-[#a8b0ff] shadow-inner">
+            <CalendarDays className="h-7 w-7" aria-hidden="true" />
+          </span>
+        </div>
 
-      <AppointmentsTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+        <div className="mt-6">
+          <AppointmentsTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} variant="hero" />
+        </div>
+      </section>
 
       <div
         role="tabpanel"
         id={`appointments-tabpanel-${activeTab}`}
         aria-labelledby={`appointments-tab-${activeTab}`}
-        className="flex flex-col gap-3"
+        className="w-full"
       >
         {activeTab === 'upcoming' ? (
           upcoming.length > 0 ? (
-            upcoming.map((appointment) => (
-              <AppointmentCard
-                key={appointment.id}
-                appointment={appointment}
-                onCancel={() => setCancelTarget(appointment)}
-              />
-            ))
+            <div dir="rtl" className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {upcoming.map((appointment) => (
+                <div key={appointment.id} dir={direction}>
+                  <AppointmentCard appointment={appointment} onCancel={() => setCancelTarget(appointment)} />
+                </div>
+              ))}
+            </div>
           ) : (
             <EmptyTabState text={copy.appointments.noUpcoming} />
           )
@@ -95,20 +98,22 @@ export function AppointmentsPanel({
 
         {activeTab === 'waitlist' ? (
           waitlistEntries.length > 0 ? (
-            <>
+            <div className="flex flex-col gap-4">
               <p className="text-sm text-[var(--muted)]">{copy.appointments.waitlistDescription}</p>
-              {waitlistEntries.map((entry) => (
-                <div key={entry.id} className="flex flex-col gap-1 rounded-2xl border border-[var(--line)] bg-white p-4">
-                  <p className="text-sm font-bold text-[var(--foreground)]">
-                    {entry.serviceName} · {entry.employeeName}
-                  </p>
-                  <p className="text-sm text-[var(--brand-deep)]">{entry.businessName}</p>
-                  <p className="text-sm text-[var(--muted)]">
-                    {copy.appointments.requestedRange}: {entry.requestedDateISO} · {entry.requestedRange}
-                  </p>
-                </div>
-              ))}
-            </>
+              <div dir="rtl" className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {waitlistEntries.map((entry) => (
+                  <div key={entry.id} dir={direction}>
+                    <article className="flex h-full flex-col gap-2 rounded-3xl border border-[var(--line)] bg-white p-5 shadow-[0_16px_35px_-28px_rgba(23,27,70,0.55)]">
+                      <p className="text-base font-bold text-[var(--foreground)]">{entry.serviceName} · {entry.employeeName}</p>
+                      <p className="text-sm font-semibold text-[var(--brand)]">{entry.businessName}</p>
+                      <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-[var(--muted)]">
+                        {copy.appointments.requestedRange}: {entry.requestedDateISO} · {entry.requestedRange}
+                      </p>
+                    </article>
+                  </div>
+                ))}
+              </div>
+            </div>
           ) : (
             <EmptyTabState text={copy.appointments.noWaitlist} />
           )
@@ -116,20 +121,20 @@ export function AppointmentsPanel({
 
         {activeTab === 'history' ? (
           history.length > 0 ? (
-            history.map((appointment) => (
-              <AppointmentCard
-                key={appointment.id}
-                appointment={appointment}
-                cancelledInDemo={demoCancelledIds.has(appointment.id)}
-              />
-            ))
+            <div dir="rtl" className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {history.map((appointment) => (
+                <div key={appointment.id} dir={direction}>
+                  <AppointmentCard appointment={appointment} cancelledInDemo={demoCancelledIds.has(appointment.id)} />
+                </div>
+              ))}
+            </div>
           ) : (
             <EmptyTabState text={copy.appointments.noHistory} />
           )
         ) : null}
       </div>
 
-      <p className="text-xs text-[var(--muted)]">{copy.appointments.demoNotice}</p>
+      <p className="mx-auto w-full max-w-3xl text-center text-xs text-[var(--muted)]">{copy.appointments.demoNotice}</p>
 
       {cancelTarget ? (
         <CancelAppointmentDialog
@@ -144,7 +149,7 @@ export function AppointmentsPanel({
 
 function EmptyTabState({ text }: { text: string }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-[var(--line)] px-6 py-14 text-center">
+    <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-[var(--line)] bg-white px-6 py-14 text-center">
       <CalendarX className="h-8 w-8 text-[var(--muted)]" aria-hidden="true" />
       <p className="text-sm text-[var(--muted)]">{text}</p>
     </div>
