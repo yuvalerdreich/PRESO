@@ -5,39 +5,87 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
 }));
 
+import { AppointmentsPanelProvider } from '@/components/common/appointments-panel-provider';
 import { ProfileSettingsProvider } from '@/components/common/profile-settings-provider';
 import { PublicHeader } from '@/components/common/public-header';
 import { LanguageProvider } from '@/lib/i18n/language-provider';
 import { translations } from '@/lib/i18n/translations';
+import type { ClientAppointment, ClientWaitlistEntry } from '@/types/appointments';
 
-function renderHeader(currentUser?: { fullName: string } | null) {
+function appointment(overrides: Partial<ClientAppointment>): ClientAppointment {
+  return {
+    id: 'a',
+    businessName: 'Studio Zohar - מספרת זוהר',
+    employeeName: 'זוהר לוי',
+    serviceName: 'תספורת',
+    address: 'רחוב דיזנגוף 142, תל אביב',
+    dateISO: '2999-01-01',
+    time: '10:00',
+    status: 'confirmed',
+    ...overrides,
+  };
+}
+
+function renderHeader(appointments: ClientAppointment[], currentUser?: { fullName: string } | null) {
+  const waitlistEntries: ClientWaitlistEntry[] = [];
+
   return render(
     <LanguageProvider initialLocale="en">
-      <ProfileSettingsProvider initialLocation="" initialDateOfBirth="" accountType="CLIENT">
-        <PublicHeader currentUser={currentUser} />
-      </ProfileSettingsProvider>
+      <AppointmentsPanelProvider appointments={appointments} waitlistEntries={waitlistEntries}>
+        <ProfileSettingsProvider initialLocation="" initialDateOfBirth="" accountType="CLIENT">
+          <PublicHeader appointments={appointments} currentUser={currentUser} />
+        </ProfileSettingsProvider>
+      </AppointmentsPanelProvider>
     </LanguageProvider>,
   );
 }
 
 describe('public header', () => {
-  it('renders the brand mark without the popup appointments control', () => {
-    renderHeader();
+  it('renders the brand mark and a My Appointments button with an upcoming-count badge that opens the panel', () => {
+    const appointments = [appointment({ id: 'upcoming-1' })];
+    renderHeader(appointments);
 
     expect(screen.getByText(translations.en.brand.name)).toBeInTheDocument();
     expect(screen.getByText(translations.en.header.subtitle)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: translations.en.header.openAppointments })).not.toBeInTheDocument();
+
+    const appointmentsButton = screen.getByRole('button', { name: translations.en.header.openAppointments });
+    expect(screen.getByText(translations.en.header.appointments)).toBeInTheDocument();
+    expect(screen.getByText('1')).toBeInTheDocument();
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    fireEvent.click(appointmentsButton);
+    expect(screen.getByRole('heading', { level: 1, name: translations.en.appointments.title })).toBeInTheDocument();
+  });
+
+  it('counts only future, non-cancelled appointments in the badge — never waitlist or past ones', () => {
+    const appointments = [
+      appointment({ id: 'upcoming', dateISO: '2999-01-01', status: 'confirmed' }),
+      appointment({ id: 'upcoming-cancelled', dateISO: '2999-01-01', status: 'cancelled' }),
+      appointment({ id: 'past', dateISO: '2000-01-01', status: 'confirmed' }),
+    ];
+    renderHeader(appointments);
+
+    expect(screen.getByText('1')).toBeInTheDocument();
+    expect(screen.queryByText('2')).not.toBeInTheDocument();
+    expect(screen.queryByText('3')).not.toBeInTheDocument();
+  });
+
+  it('hides the count badge entirely when there are no upcoming appointments', () => {
+    renderHeader([]);
+
+    const appointmentsButton = screen.getByRole('button', { name: translations.en.header.openAppointments });
+    expect(appointmentsButton).not.toHaveTextContent('0');
   });
 
   it('shows a sign-in link when no one is logged in', () => {
-    renderHeader();
+    renderHeader([]);
 
     expect(screen.getByRole('link', { name: translations.en.header.signIn })).toHaveAttribute('href', '/login');
     expect(screen.queryByText(translations.en.header.logout)).not.toBeInTheDocument();
   });
 
   it('shows a greeting and a logout button instead of sign-in when a user is logged in', () => {
-    renderHeader({ fullName: 'Noa Golan' });
+    renderHeader([], { fullName: 'Noa Golan' });
 
     expect(screen.getByText(`${translations.en.header.greeting} Noa Golan`)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: translations.en.header.logout })).toBeInTheDocument();
@@ -45,7 +93,7 @@ describe('public header', () => {
   });
 
   it('opens the profile settings modal when the greeting is clicked', () => {
-    renderHeader({ fullName: 'Noa Golan' });
+    renderHeader([], { fullName: 'Noa Golan' });
 
     expect(screen.queryByRole('heading', { name: translations.en.profileSettings.title })).not.toBeInTheDocument();
     fireEvent.click(screen.getByText(`${translations.en.header.greeting} Noa Golan`));

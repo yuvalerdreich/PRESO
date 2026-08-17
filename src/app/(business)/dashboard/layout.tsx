@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation';
 
-import { AccountSidebar } from '@/components/common/account-sidebar';
 import { AppError } from '@/lib/errors';
 import { requireSession } from '@/server/guards';
 import { createClient } from '@/lib/supabase/server';
@@ -25,10 +24,5 @@ export default async function DashboardLayout({ children }: LayoutProps<'/dashbo
 
   if (!employee) redirect('/onboarding');
 
-  return (
-    <div className="min-h-screen lg:flex">
-      <AccountSidebar accountType={profile.account_type} />
-      <main className="min-w-0 flex-1">{children}</main>
-    </div>
-  );
+  return <>{children}</>;
 }

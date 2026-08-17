@@ -1,5 +1,4 @@
 import { AppointmentsPanelProvider } from '@/components/common/appointments-panel-provider';
-import { AccountSidebar } from '@/components/common/account-sidebar';
 import { ProfileSettingsProvider } from '@/components/common/profile-settings-provider';
 import { PublicHeader } from '@/components/common/public-header';
 import { appointmentsRepository } from '@/lib/appointments/repository';
@@ -27,20 +26,13 @@ export default async function PublicLayout({ children }: LayoutProps<'/'>) {
         initialDateOfBirth={currentUser?.dateOfBirth ?? ''}
         accountType={currentUser?.accountType ?? 'CLIENT'}
       >
-        {currentUser ? (
-          <div className="min-h-screen lg:flex">
-            <AccountSidebar accountType={currentUser.accountType} />
-            <div className="flex min-w-0 flex-1 flex-col">
-              <PublicHeader currentUser={{ fullName: currentUser.fullName }} />
-              <main className="flex-1">{children}</main>
-            </div>
-          </div>
-        ) : (
-          <div className="flex min-h-full flex-col">
-            <PublicHeader currentUser={null} />
-            <main className="flex-1">{children}</main>
-          </div>
-        )}
+        <div className="flex min-h-full flex-col">
+          <PublicHeader
+            appointments={appointments}
+            currentUser={currentUser ? { fullName: currentUser.fullName } : null}
+          />
+          <main className="flex-1">{children}</main>
+        </div>
       </ProfileSettingsProvider>
     </AppointmentsPanelProvider>
   );
