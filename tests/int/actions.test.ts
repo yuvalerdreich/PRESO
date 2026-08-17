@@ -116,6 +116,7 @@ afterAll(async () => {
     await admin.auth.admin.deleteUser(id);
   }
 
+  await admin.from('notifications').delete().gte('created_at', suiteStartedAt);
   await admin.from('audit_log').delete().gte('created_at', suiteStartedAt);
 });
 
