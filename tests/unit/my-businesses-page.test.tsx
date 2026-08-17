@@ -13,7 +13,12 @@ describe('my businesses page', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'My businesses' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Open a new business' })).toHaveAttribute('href', '/onboarding');
+    fireEvent.click(screen.getByRole('button', { name: 'Open a new business' }));
+    expect(screen.getByRole('dialog', { name: 'Open a new business' })).toBeInTheDocument();
+    expect(screen.getByText('1. Business details and category')).toBeInTheDocument();
+    expect(screen.getByText('4. Cancellation, booking, and payment policies')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Add service' }));
+    expect(screen.getByText('Service name #2')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Join an existing business' })).toHaveAttribute('href', '/join');
     expect(screen.getByRole('heading', { name: 'No businesses linked yet' })).toBeInTheDocument();
 

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { BriefcaseBusiness, Building2, Plus, Search, UserPlus } from 'lucide-react';
 
+import { CreateBusinessDialog } from '@/components/business/create-business-dialog';
 import { useLanguage } from '@/lib/i18n/language-provider';
 
 type BusinessFilter = 'all' | 'owned' | 'staff' | 'pending';
@@ -11,6 +12,7 @@ type BusinessFilter = 'all' | 'owned' | 'staff' | 'pending';
 export function MyBusinessesPage() {
   const { copy } = useLanguage();
   const [activeFilter, setActiveFilter] = useState<BusinessFilter>('all');
+  const [isCreateBusinessOpen, setIsCreateBusinessOpen] = useState(false);
 
   const filters: { id: BusinessFilter; label: string }[] = [
     { id: 'all', label: copy.myBusinesses.all },
@@ -34,13 +36,14 @@ export function MyBusinessesPage() {
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="grid grid-cols-2 gap-2 sm:flex">
-            <Link
-              href="/onboarding"
+            <button
+              type="button"
+              onClick={() => setIsCreateBusinessOpen(true)}
               className="flex items-center justify-center gap-2 rounded-2xl bg-[var(--brand)] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-[var(--brand)]/25 transition-colors hover:bg-[#4736d7]"
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
               {copy.myBusinesses.openBusiness}
-            </Link>
+            </button>
             <Link
               href="/join"
               className="flex items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-white/15"
@@ -95,6 +98,8 @@ export function MyBusinessesPage() {
       </section>
 
       <p className="text-center text-xs text-[var(--muted)]">{copy.myBusinesses.demoNotice}</p>
+
+      {isCreateBusinessOpen ? <CreateBusinessDialog onClose={() => setIsCreateBusinessOpen(false)} /> : null}
     </div>
   );
 }
