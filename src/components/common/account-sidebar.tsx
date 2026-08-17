@@ -1,0 +1,99 @@
+'use client';
+
+import { BriefcaseBusiness, CalendarDays, Home, type LucideIcon } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
+import { useAppointmentsPanel } from '@/components/common/appointments-panel-context';
+import { countUpcomingAppointments } from '@/lib/appointments/classify';
+import { useLanguage } from '@/lib/i18n/language-provider';
+import type { ClientAppointment } from '@/types/appointments';
+import type { Database } from '@/types/database.types';
+
+type AccountType = Database['public']['Enums']['account_type'];
+
+/**
+ * The primary navigation menu. A CLIENT sees exactly two entries — home and
+ * "my appointments"; a BUSINESS account additionally gets its dashboard.
+ * "My appointments" is a button, not a link: it opens the shared
+ * AppointmentsPanel modal in place, the same surface the booking thank-you
+ * screen opens (TECHNICAL_DESIGN.md §12.33).
+ */
+export function AccountSidebar({
+  appointments,
+  accountType = 'CLIENT',
+}: {
+  appointments: ClientAppointment[];
+  accountType?: AccountType;
+}) {
+  const { copy } = useLanguage();
+  const { open, isOpen } = useAppointmentsPanel();
+  const pathname = usePathname();
+  const upcomingCount = countUpcomingAppointments(appointments);
+
+  // The aside is always a side column — it never stacks above the content at
+  // narrow widths (devtools open, small viewport); it scrolls internally instead.
+  return (
+    <aside className="sticky top-0 h-dvh w-56 shrink-0 overflow-y-auto border-e border-[var(--line)] bg-[var(--surface)] sm:w-64 lg:w-72">
+      <nav aria-label={copy.sidebar.title} className="flex flex-col gap-2 px-3 py-6 sm:px-4">
+        <span className="px-4 pb-1 text-xs font-medium text-[var(--muted)]">{copy.sidebar.title}</span>
+
+        <Link
+          href="/"
+          aria-current={pathname === '/' ? 'page' : undefined}
+          className={itemClassName(pathname === '/')}
+        >
+          <ItemIcon icon={Home} isActive={pathname === '/'} />
+          <span>{copy.sidebar.home}</span>
+        </Link>
+
+        <button
+          type="button"
+          onClick={open}
+          aria-label={copy.sidebar.openAppointments}
+          className={itemClassName(isOpen)}
+        >
+          <ItemIcon icon={CalendarDays} isActive={isOpen} />
+          <span>{copy.sidebar.appointments}</span>
+          {upcomingCount > 0 ? (
+            <span
+              className={`ms-auto flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
+                isOpen ? 'bg-white text-[var(--brand)]' : 'bg-[var(--brand)] text-white'
+              }`}
+            >
+              {upcomingCount}
+            </span>
+          ) : null}
+        </button>
+
+        {accountType === 'BUSINESS' ? (
+          <Link
+            href="/dashboard"
+            aria-current={pathname.startsWith('/dashboard') ? 'page' : undefined}
+            className={itemClassName(pathname.startsWith('/dashboard'))}
+          >
+            <ItemIcon icon={BriefcaseBusiness} isActive={pathname.startsWith('/dashboard')} />
+            <span>{copy.sidebar.businessDashboard}</span>
+          </Link>
+        ) : null}
+      </nav>
+    </aside>
+  );
+}
+
+function itemClassName(isActive: boolean) {
+  return `flex w-full items-center gap-3 rounded-full px-4 py-3 text-sm font-semibold transition-colors ${
+    isActive
+      ? 'bg-[var(--brand)] text-white shadow-sm shadow-[var(--brand)]/30'
+      : 'text-[var(--foreground)] hover:bg-[var(--soft-violet)]'
+  }`;
+}
+
+function ItemIcon({ icon: Icon, isActive }: { icon: LucideIcon; isActive: boolean }) {
+  return (
+    <Icon
+      className={`h-5 w-5 shrink-0 ${isActive ? 'text-white' : 'text-[var(--muted)]'}`}
+      aria-hidden="true"
+    />
+  );
+}

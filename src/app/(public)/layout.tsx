@@ -1,3 +1,4 @@
+import { AccountSidebar } from '@/components/common/account-sidebar';
 import { AppointmentsPanelProvider } from '@/components/common/appointments-panel-provider';
 import { ProfileSettingsProvider } from '@/components/common/profile-settings-provider';
 import { PublicHeader } from '@/components/common/public-header';
@@ -27,11 +28,11 @@ export default async function PublicLayout({ children }: LayoutProps<'/'>) {
         accountType={currentUser?.accountType ?? 'CLIENT'}
       >
         <div className="flex min-h-full flex-col">
-          <PublicHeader
-            appointments={appointments}
-            currentUser={currentUser ? { fullName: currentUser.fullName } : null}
-          />
-          <main className="flex-1">{children}</main>
+          <PublicHeader currentUser={currentUser ? { fullName: currentUser.fullName } : null} />
+          <div className="flex flex-1">
+            <AccountSidebar appointments={appointments} accountType={currentUser?.accountType} />
+            <main className="min-w-0 flex-1">{children}</main>
+          </div>
         </div>
       </ProfileSettingsProvider>
     </AppointmentsPanelProvider>

@@ -2,7 +2,9 @@
 
 import { createContext, useContext } from 'react';
 
-export const AppointmentsPanelContext = createContext<{ open: () => void } | null>(null);
+export const AppointmentsPanelContext = createContext<{ open: () => void; isOpen: boolean } | null>(
+  null,
+);
 
 export function useAppointmentsPanel() {
   const context = useContext(AppointmentsPanelContext);

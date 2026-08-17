@@ -62,7 +62,7 @@ test('an unknown path renders the not-found page, not a crash', async ({ page })
   ).toBeVisible();
 });
 
-test('my appointments panel opens from the header button', async ({ page }) => {
+test('my appointments panel opens from the sidebar button', async ({ page }) => {
   await page.goto('/');
 
   await page.getByRole('button', { name: 'פתיחת התורים שלי' }).click();
