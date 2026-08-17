@@ -7,7 +7,6 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push, refresh }),
 }));
 
-import { AppointmentsPanelProvider } from '@/components/common/appointments-panel-provider';
 import { BookingConfirmDialog } from '@/components/booking/booking-confirm-dialog';
 import { LanguageProvider } from '@/lib/i18n/language-provider';
 
@@ -16,20 +15,18 @@ const closeHref = '/b/b18f6ca9-0c44-45b8-a8d9-3e1a2c6a1002/e/e-glow-1/s/s-glow-1
 function renderDialog() {
   return render(
     <LanguageProvider initialLocale="en">
-      <AppointmentsPanelProvider appointments={[]} waitlistEntries={[]}>
-        <BookingConfirmDialog
-          closeHref={closeHref}
-          employeeId="e-glow-1"
-          serviceId="s-glow-1"
-          businessName="Glow Clinic"
-          employeeName="Dana Cohen"
-          serviceName="Advanced facial"
-          servicePrice={250}
-          durationMinutes={50}
-          dateISO="2026-08-16"
-          time="09:00"
-        />
-      </AppointmentsPanelProvider>
+      <BookingConfirmDialog
+        closeHref={closeHref}
+        employeeId="e-glow-1"
+        serviceId="s-glow-1"
+        businessName="Glow Clinic"
+        employeeName="Dana Cohen"
+        serviceName="Advanced facial"
+        servicePrice={250}
+        durationMinutes={50}
+        dateISO="2026-08-16"
+        time="09:00"
+      />
     </LanguageProvider>,
   );
 }
@@ -79,12 +76,7 @@ describe('booking confirm dialog', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /View "My appointments"/ }));
 
-    // Opens the shared panel in place instead of navigating to /me/appointments,
-    // which requires a real session that no (auth)/login page can satisfy yet.
-    expect(
-      screen.getByRole('heading', { level: 1, name: 'My appointments and requests' }),
-    ).toBeInTheDocument();
-    expect(push).toHaveBeenCalledWith(closeHref);
+    expect(push).toHaveBeenCalledWith('/me/appointments');
   });
 
   it('posts the booking and shows the pending thank-you screen with a pending status', async () => {
