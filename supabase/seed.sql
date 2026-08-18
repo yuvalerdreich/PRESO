@@ -32,6 +32,14 @@
 --      `{"code":500,"error_code":"unexpected_failure","msg":"Database error querying schema"}`
 --      that says nothing about which column is at fault. They must be '' — not NULL.
 --      (The other four token columns already default to '' in the table itself.)
+--
+--   3. `crypt()`/`gen_salt()` come from pgcrypto, which local Postgres puts in `public` but the
+--      hosted project keeps in `extensions` — 0001's `create extension if not exists` is
+--      satisfied by the pre-installed copy there and does not relocate it. Without the
+--      search_path below, seeding hosted dies on `function gen_salt(unknown) does not exist`.
+--      Naming both schemas resolves it either way; a missing one is ignored, not an error.
+
+set search_path = public, extensions;
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
