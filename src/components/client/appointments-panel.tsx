@@ -9,6 +9,7 @@ import { AppointmentCard } from '@/components/client/appointment-card';
 import { AppointmentsTabs, type AppointmentsTabId } from '@/components/client/appointments-tabs';
 import { CancelAppointmentDialog } from '@/components/client/cancel-appointment-dialog';
 import { actionButton } from '@/components/common/button-styles';
+import { PanelHero } from '@/components/common/panel-hero';
 import { readApiErrorMessage } from '@/lib/api-error';
 import { isUpcomingAppointment } from '@/lib/appointments/classify';
 import { useLanguage } from '@/lib/i18n/language-provider';
@@ -101,21 +102,9 @@ export function AppointmentsPanel({
         </Link>
       ) : null}
 
-      <section className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#30257b] via-[#1e2857] to-[#111938] px-5 py-7 text-white shadow-[0_24px_45px_-30px_rgba(23,27,70,0.85)] sm:px-8 sm:py-9">
-        <div className="flex flex-col gap-5 border-b border-white/10 pb-6 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{copy.appointments.title}</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">{copy.appointments.description}</p>
-          </div>
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[#7169ef] bg-[#4237aa] text-[#a8b0ff] shadow-inner">
-            <CalendarDays className="h-7 w-7" aria-hidden="true" />
-          </span>
-        </div>
-
-        <div className="mt-6">
-          <AppointmentsTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} variant="hero" />
-        </div>
-      </section>
+      <PanelHero title={copy.appointments.title} description={copy.appointments.description} icon={CalendarDays}>
+        <AppointmentsTabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} variant="hero" />
+      </PanelHero>
 
       <div
         role="tabpanel"

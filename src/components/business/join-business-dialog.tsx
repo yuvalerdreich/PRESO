@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Building2, CheckCircle2, MapPin, Search, UserPlus, Users, X } from 'lucide-react';
 
 import { actionButton, actionIconButton } from '@/components/common/button-styles';
+import { fieldPaddingStartIcon, surfaceFieldSubtle } from '@/components/common/field-styles';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import { sendJoinRequest } from '@/server/actions/employee';
 import type { JoinableBusiness } from '@/types/domain';
@@ -141,7 +142,7 @@ export function JoinBusinessDialog({
                       value={query}
                       onChange={(event) => setQuery(event.target.value)}
                       placeholder={copy.joinBusiness.searchPlaceholder}
-                      className="w-full rounded-2xl border border-[var(--line)] bg-slate-50 py-3 pe-4 ps-11 text-sm text-[var(--foreground)] outline-none transition-colors placeholder:text-[var(--muted)] focus:border-[var(--brand)] focus:ring-2 focus:ring-[var(--brand)]/15"
+                      className={`${surfaceFieldSubtle} ${fieldPaddingStartIcon}`}
                     />
                   </label>
 
