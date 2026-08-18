@@ -1,5 +1,6 @@
 'use client';
 
+import { actionButton } from '@/components/common/button-styles';
 import { Modal } from '@/components/common/modal';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import type { ClientAppointment } from '@/types/domain';
@@ -50,7 +51,7 @@ export function CancelAppointmentDialog({
           type="button"
           onClick={onClose}
           disabled={pending}
-          className="flex-1 rounded-full border border-[var(--line)] px-4 py-3 text-sm font-medium text-[var(--foreground)] hover:bg-[var(--soft-violet)] disabled:cursor-not-allowed disabled:opacity-60"
+          className={`${actionButton} flex-1 rounded-full px-4 py-3 text-sm`}
         >
           {copy.appointments.keepAppointment}
         </button>
@@ -58,7 +59,7 @@ export function CancelAppointmentDialog({
           type="button"
           onClick={onConfirm}
           disabled={pending}
-          className="flex-1 rounded-full bg-rose-600 px-4 py-3 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className={`${actionButton} flex-1 rounded-full px-4 py-3 text-sm`}
         >
           {pending ? copy.appointments.cancelling : copy.appointments.confirmCancel}
         </button>

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Building2, CheckCircle2, Plus, Scissors, UserPlus, X } from 'lucide-react';
 
-import { businessButton, businessIconButton, businessTextButton } from '@/components/business/button-styles';
+import { actionButton, actionIconButton, actionTextButton } from '@/components/common/button-styles';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import { createBusiness } from '@/server/actions/business';
 import type { BusinessCategory } from '@/types/domain';
@@ -125,7 +125,7 @@ export function CreateBusinessDialog({
             type="button"
             onClick={onClose}
             aria-label={copy.createBusiness.close}
-            className={`${businessIconButton} h-10 w-10 rounded-full`}
+            className={`${actionIconButton} h-10 w-10 rounded-full`}
           >
             <X className="h-6 w-6" aria-hidden="true" />
           </button>
@@ -143,7 +143,7 @@ export function CreateBusinessDialog({
             <button
               type="button"
               onClick={onClose}
-              className={`${businessButton} mt-7 rounded-2xl px-5 py-3 text-sm`}
+              className={`${actionButton} mt-7 rounded-2xl px-5 py-3 text-sm`}
             >
               {copy.createBusiness.close}
             </button>
@@ -198,7 +198,7 @@ export function CreateBusinessDialog({
                       { id: Math.max(0, ...current.map((s) => s.id)) + 1, name: '', price: '', duration: '45' },
                     ])
                   }
-                  className={`${businessTextButton} text-sm`}
+                  className={`${actionTextButton} text-sm`}
                 >
                   <Plus className="h-4 w-4" aria-hidden="true" />
                   {copy.createBusiness.addService}
@@ -289,7 +289,7 @@ export function CreateBusinessDialog({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className={`${businessButton} rounded-2xl px-5 py-3 text-sm shadow-lg`}
+                className={`${actionButton} rounded-2xl px-5 py-3 text-sm shadow-lg`}
               >
                 <Building2 className="h-4 w-4" aria-hidden="true" />
                 {isSubmitting ? copy.createBusiness.submitting : copy.createBusiness.submit}
@@ -297,7 +297,7 @@ export function CreateBusinessDialog({
               <button
                 type="button"
                 onClick={onClose}
-                className={`${businessButton} rounded-2xl px-5 py-3 text-sm`}
+                className={`${actionButton} rounded-2xl px-5 py-3 text-sm`}
               >
                 {copy.createBusiness.cancel}
               </button>

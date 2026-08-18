@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { BriefcaseBusiness, Building2, Clock, MapPin, Plus, Search, UserPlus, Users } from 'lucide-react';
 
-import { businessButton, businessButtonSelected } from '@/components/business/button-styles';
+import { actionButton, actionButtonSelected } from '@/components/common/button-styles';
 import { CreateBusinessDialog } from '@/components/business/create-business-dialog';
 import { JoinBusinessDialog } from '@/components/business/join-business-dialog';
 import { useLanguage } from '@/lib/i18n/language-provider';
@@ -103,7 +103,7 @@ export function MyBusinessesPage({
             <button
               type="button"
               onClick={() => setIsCreateBusinessOpen(true)}
-              className={`${businessButton} rounded-2xl px-4 py-3 text-sm shadow-lg`}
+              className={`${actionButton} rounded-2xl px-4 py-3 text-sm shadow-lg`}
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
               {copy.myBusinesses.openBusiness}
@@ -111,7 +111,7 @@ export function MyBusinessesPage({
             <button
               type="button"
               onClick={() => setIsJoinBusinessOpen(true)}
-              className={`${businessButton} rounded-2xl px-4 py-3 text-sm shadow-lg`}
+              className={`${actionButton} rounded-2xl px-4 py-3 text-sm shadow-lg`}
             >
               <UserPlus className="h-4 w-4" aria-hidden="true" />
               {copy.myBusinesses.joinBusiness}
@@ -128,8 +128,8 @@ export function MyBusinessesPage({
                   role="tab"
                   aria-selected={selected}
                   onClick={() => setActiveFilter(filter.id)}
-                  className={`${businessButton} rounded-2xl px-3 py-2 text-sm ${
-                    selected ? businessButtonSelected : ''
+                  className={`${actionButton} rounded-2xl px-3 py-2 text-sm ${
+                    selected ? actionButtonSelected : ''
                   }`}
                 >
                   {filter.label} <span className="ms-1 rounded-full bg-white/15 px-1.5 py-0.5 text-xs">{filter.count}</span>
@@ -260,12 +260,12 @@ function BusinessCard({ business }: { business: MyBusiness }) {
       <div className="mt-auto flex flex-wrap gap-2 pt-1">
         <Link
           href={`/b/${business.businessId}`}
-          className={`${businessButton} rounded-full px-4 py-2 text-sm`}
+          className={`${actionButton} rounded-full px-4 py-2 text-sm`}
         >
           {copy.myBusinesses.viewPublicPage}
         </Link>
         {business.relation !== 'PENDING' && !isInactive ? (
-          <Link href="/dashboard" className={`${businessButton} rounded-full px-4 py-2 text-sm`}>
+          <Link href="/dashboard" className={`${actionButton} rounded-full px-4 py-2 text-sm`}>
             {copy.myBusinesses.manage}
           </Link>
         ) : null}

@@ -2,6 +2,7 @@
 
 import { Calendar, Clock, MapPin, XCircle } from 'lucide-react';
 
+import { actionButton } from '@/components/common/button-styles';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import type { AppointmentStatus, ClientAppointment } from '@/types/domain';
 
@@ -71,7 +72,7 @@ export function AppointmentCard({
           <button
             type="button"
             onClick={onCancel}
-            className="flex items-center gap-2 text-sm font-bold text-rose-600 transition-colors hover:text-rose-700"
+            className={`${actionButton} rounded-full px-4 py-2 text-sm`}
           >
             <XCircle className="h-4 w-4" aria-hidden="true" />
             {copy.appointments.cancel}

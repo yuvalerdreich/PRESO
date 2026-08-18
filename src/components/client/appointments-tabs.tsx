@@ -1,5 +1,7 @@
 'use client';
 
+import { actionButton, actionButtonSelected } from '@/components/common/button-styles';
+
 export type AppointmentsTabId = 'upcoming' | 'waitlist' | 'history';
 
 export function AppointmentsTabs({
@@ -26,28 +28,12 @@ export function AppointmentsTabs({
             aria-selected={selected}
             aria-controls={`appointments-tabpanel-${tab.id}`}
             onClick={() => onChange(tab.id)}
-            className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition-colors ${
-              variant === 'hero'
-                ? selected
-                  ? 'bg-[var(--brand)] text-white shadow-lg shadow-[var(--brand)]/25'
-                  : 'bg-white/10 text-slate-200 hover:bg-white/15'
-                : selected
-                  ? 'bg-white text-[var(--brand-deep)] shadow-sm'
-                  : 'text-[var(--muted)] hover:text-[var(--foreground)]'
-            }`}
+            // Both variants share the one colour; only the selected ring separates them, exactly
+            // as the business area's filter chips do (components/common/button-styles.ts).
+            className={`${actionButton} rounded-2xl px-4 py-3 text-sm ${selected ? actionButtonSelected : ''}`}
           >
             <span>{tab.label}</span>
-            <span
-              className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-semibold ${
-                selected
-                  ? variant === 'hero'
-                    ? 'bg-white/20 text-white'
-                    : 'bg-[var(--brand)] text-white'
-                  : variant === 'hero'
-                    ? 'bg-white/15 text-white'
-                    : 'bg-white text-[var(--muted)]'
-              }`}
-            >
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white/20 px-1 text-xs font-semibold text-white">
               {tab.count}
             </span>
           </button>

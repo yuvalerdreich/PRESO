@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Building2, CheckCircle2, MapPin, Search, UserPlus, Users, X } from 'lucide-react';
 
-import { businessButton, businessIconButton } from '@/components/business/button-styles';
+import { actionButton, actionIconButton } from '@/components/common/button-styles';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import { sendJoinRequest } from '@/server/actions/employee';
 import type { JoinableBusiness } from '@/types/domain';
@@ -98,7 +98,7 @@ export function JoinBusinessDialog({
             type="button"
             onClick={onClose}
             aria-label={copy.joinBusiness.close}
-            className={`${businessIconButton} h-10 w-10 rounded-full`}
+            className={`${actionIconButton} h-10 w-10 rounded-full`}
           >
             <X className="h-6 w-6" aria-hidden="true" />
           </button>
@@ -116,7 +116,7 @@ export function JoinBusinessDialog({
             <button
               type="button"
               onClick={onClose}
-              className={`${businessButton} mt-7 rounded-2xl px-5 py-3 text-sm`}
+              className={`${actionButton} mt-7 rounded-2xl px-5 py-3 text-sm`}
             >
               {copy.joinBusiness.close}
             </button>
@@ -219,7 +219,7 @@ export function JoinBusinessDialog({
               <button
                 type="submit"
                 disabled={!selectedBusiness || selectedBusiness.pendingRequestStatus === 'PENDING' || isSubmitting}
-                className={`${businessButton} rounded-2xl px-5 py-3 text-sm shadow-lg`}
+                className={`${actionButton} rounded-2xl px-5 py-3 text-sm shadow-lg`}
               >
                 <UserPlus className="h-4 w-4" aria-hidden="true" />
                 {isSubmitting ? copy.joinBusiness.submitting : copy.joinBusiness.submit}
@@ -227,7 +227,7 @@ export function JoinBusinessDialog({
               <button
                 type="button"
                 onClick={onClose}
-                className={`${businessButton} rounded-2xl px-5 py-3 text-sm`}
+                className={`${actionButton} rounded-2xl px-5 py-3 text-sm`}
               >
                 {copy.joinBusiness.cancel}
               </button>
