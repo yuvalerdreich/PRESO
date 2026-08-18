@@ -24,7 +24,9 @@ const {
   listDashboardServices,
   listJoinRequests,
 } = await import('@/server/queries/dashboard');
-const { listAreas, listCategories, listJoinableBusinesses } = await import('@/server/queries/business-entry');
+const { listAreas, listCategories, listJoinableBusinesses, listMyBusinesses } = await import(
+  '@/server/queries/business-entry'
+);
 const { countUnread, listNotifications } = await import('@/server/queries/notifications');
 
 const URL_ = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -172,6 +174,34 @@ describe('business-entry reads', () => {
     expect(joinable.map((business) => business.id)).not.toContain(STUDIO_ZOHAR);
     expect(joinable.length).toBeGreaterThan(0);
     expect(joinable.every((business) => business.pendingRequestStatus === null)).toBe(true);
+  });
+
+  it('lists the founder’s own business as OWNER, with the roster size and their position', async () => {
+    state.client = await signIn('zohar@demo.local');
+
+    const mine = await listMyBusinesses();
+    const studio = mine.find((business) => business.businessId === STUDIO_ZOHAR);
+
+    expect(studio).toBeDefined();
+    expect(studio).toMatchObject({ relation: 'OWNER', name: 'Studio Zohar - מספרת זוהר' });
+    // `employees(count)` is the whole roster, not the caller's single row — the outer
+    // `.eq('profile_id', …)` narrows which employments come back, not the embedded aggregate.
+    expect(studio!.employeeCount).toBeGreaterThan(1);
+    expect(studio!.positionTitle).toBeTruthy();
+  });
+
+  it('lists a non-founder’s employment as STAFF', async () => {
+    state.client = await signIn('miya@demo.local');
+
+    const mine = await listMyBusinesses();
+    expect(mine.find((business) => business.businessId === STUDIO_ZOHAR)).toMatchObject({ relation: 'STAFF' });
+  });
+
+  it('returns nothing for an account with no employment and no open request', async () => {
+    // The seeded CLIENT — every BUSINESS account in the seed already founds or staffs something.
+    state.client = await signIn('client@demo.local');
+
+    expect(await listMyBusinesses()).toEqual([]);
   });
 });
 

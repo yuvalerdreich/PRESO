@@ -1,5 +1,10 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const refresh = vi.fn();
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), refresh }),
+}));
 
 import { AppointmentsPanel } from '@/components/client/appointments-panel';
 import { LanguageProvider } from '@/lib/i18n/language-provider';
@@ -23,7 +28,7 @@ function loadFixture(): { appointments: ClientAppointment[]; waitlistEntries: Cl
   return {
     appointments: [
       {
-        id: 'appointment-zohar',
+        id: '2a0e4e0e-8f5c-4a1e-9a3f-1c0b2d3e4f50',
         businessName: 'Studio Zohar - מספרת זוהר',
         employeeName: 'זוהר לוי',
         serviceName: 'תספורת ועיצוב שיער',
@@ -34,7 +39,7 @@ function loadFixture(): { appointments: ClientAppointment[]; waitlistEntries: Cl
       },
       {
         // Past-dated, so it belongs to History regardless of status.
-        id: 'appointment-glow-past',
+        id: '3b1f5f1f-9a6d-4b2f-8b4a-2d1c3e4f5a61',
         businessName: 'Glow Clinic קליניקת אסתטיקה',
         employeeName: 'דנה כהן',
         serviceName: 'טיפול פנים מתקדם',
@@ -46,7 +51,7 @@ function loadFixture(): { appointments: ClientAppointment[]; waitlistEntries: Cl
     ],
     waitlistEntries: [
       {
-        id: 'waitlist-noa',
+        id: '4c2a6a2a-0b7e-4c3a-9c5b-3e2d4f5a6b72',
         businessName: 'Glow Clinic קליניקת אסתטיקה',
         employeeName: 'נועה גולן',
         serviceName: 'גוונים רכים',
@@ -67,7 +72,15 @@ function renderPanel(appointments: ClientAppointment[], waitlistEntries: ClientW
 }
 
 describe('appointments panel', () => {
-  it('shows appointment tabs and keeps cancellation local to the panel', () => {
+  beforeEach(() => {
+    refresh.mockClear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('shows appointment tabs and opens/closes the cancel dialog', () => {
     const { appointments, waitlistEntries } = loadFixture();
     renderPanel(appointments, waitlistEntries);
 
@@ -80,15 +93,61 @@ describe('appointments panel', () => {
     expect(screen.getByRole('dialog', { name: 'Cancel this appointment?' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getAllByRole('button', { name: 'Cancel appointment' })[0]);
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel in demo' }));
-
-    expect(screen.getByRole('tab', { name: /history\s*2/i })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByText('Cancelled in demo only')).toBeInTheDocument();
   });
 
-  it('labels each tab with a count that reflects the appointment/waitlist data, and updates it after cancelling', () => {
+  /**
+   * The cancel is a real `PATCH /api/appointments/[id]`, so what this asserts is the request and
+   * the refresh — not a local list edit. The row only moves to History once the server component
+   * that supplied `appointments` re-runs and hands back `status: 'CANCELLED'`, which is exactly
+   * what `router.refresh()` triggers and what a component test cannot observe.
+   */
+  it('cancels through the API and refreshes the server data', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ status: 'CANCELLED' }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { appointments, waitlistEntries } = loadFixture();
+    renderPanel(appointments, waitlistEntries);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Cancel appointment' })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, cancel it' }));
+
+    await waitFor(() => expect(refresh).toHaveBeenCalled());
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/api/appointments/${appointments[0].id}`,
+      expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ action: 'cancel' }) }),
+    );
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /history/i })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  /**
+   * §8.4's envelope carries the sentence the user needs — most importantly the 422 raised when the
+   * business's cancellation window has already closed. The dialog stays open showing it.
+   */
+  it('keeps the dialog open and shows the API error message when cancelling fails', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          error: { code: 'UNPROCESSABLE', message: 'This business asks for 24 hours notice to cancel.' },
+        }),
+        { status: 422 },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { appointments, waitlistEntries } = loadFixture();
+    renderPanel(appointments, waitlistEntries);
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Cancel appointment' })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, cancel it' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('This business asks for 24 hours notice to cancel.');
+    expect(screen.getByRole('dialog', { name: 'Cancel this appointment?' })).toBeInTheDocument();
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it('labels each tab with a count that reflects the appointment/waitlist data', () => {
     const { appointments, waitlistEntries } = loadFixture();
     const upcomingCount = appointments.filter((a) => a.status !== 'CANCELLED' && a.dateISO >= todayISO()).length;
     const historyCount = appointments.length - upcomingCount;
@@ -98,14 +157,20 @@ describe('appointments panel', () => {
     expect(screen.getByRole('tab', { name: new RegExp(`upcoming\\s*${upcomingCount}`, 'i') })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: new RegExp(`waitlist\\s*${waitlistEntries.length}`, 'i') })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: new RegExp(`history\\s*${historyCount}`, 'i') })).toBeInTheDocument();
+  });
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Cancel appointment' })[0]);
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel in demo' }));
+  it('moves a CANCELLED row into History', () => {
+    const { appointments, waitlistEntries } = loadFixture();
+    const cancelled = appointments.map((appointment, index) =>
+      index === 0 ? { ...appointment, status: 'CANCELLED' as const } : appointment,
+    );
 
-    expect(screen.getByRole('tab', { name: new RegExp(`upcoming\\s*${upcomingCount - 1}`, 'i') })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: new RegExp(`history\\s*${historyCount + 1}`, 'i') })).toBeInTheDocument();
-    // Cancelling an appointment never touches the waitlist tab's count.
-    expect(screen.getByRole('tab', { name: new RegExp(`waitlist\\s*${waitlistEntries.length}`, 'i') })).toBeInTheDocument();
+    renderPanel(cancelled, waitlistEntries);
+
+    expect(screen.getByRole('tab', { name: /upcoming\s*0/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /history\s*2/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: /history/i }));
+    expect(screen.getAllByText('Cancelled').length).toBeGreaterThan(0);
   });
 
   it('shows the empty state on a tab with no rows, and does not affect the other tabs', () => {

@@ -31,7 +31,7 @@ import { requireEmployeeOf, requireSession } from '@/server/guards';
  * employees, which is exactly the state the rule forbids.
  */
 export const createBusiness = action('createBusiness', createBusinessInput, async (input) => {
-  await requireSession();
+  const profile = await requireSession();
   const supabase = await createClient();
 
   const { data, error } = await supabase.rpc('create_business_with_owner', {
@@ -48,10 +48,41 @@ export const createBusiness = action('createBusiness', createBusinessInput, asyn
   });
   if (error) throw error;
 
+  // The wizard's opening service list, attached to the `employees` row the RPC just created.
+  // Deliberately *outside* that transaction: a service is not part of §6.8 rule 3's invariant
+  // ("a business always has ≥1 employee"), so a failure here must not undo the business. The
+  // owner lands on a real business with an empty catalogue and adds services from the dashboard,
+  // which is the same state an owner who submitted no services reaches.
+  let servicesCreated = 0;
+  if (input.services.length > 0) {
+    const { data: employee, error: employeeError } = await supabase
+      .from('employees')
+      .select('id')
+      .eq('business_id', data.id)
+      .eq('profile_id', profile.id)
+      .single();
+    if (employeeError) throw employeeError;
+
+    const { error: servicesError } = await supabase.from('services').insert(
+      input.services.map((service) => ({
+        employee_id: employee.id,
+        name: service.name,
+        price: service.price,
+        duration_minutes: service.durationMinutes,
+        buffer_minutes: service.bufferMinutes,
+        status: service.status,
+      })),
+    );
+    if (servicesError) throw servicesError;
+
+    servicesCreated = input.services.length;
+  }
+
   revalidatePath('/dashboard');
+  revalidatePath('/businesses');
   revalidatePath('/');
 
-  return { businessId: data.id };
+  return { businessId: data.id, servicesCreated };
 });
 
 export const updateBusinessDetails = action('updateBusinessDetails', businessDetailsInput, async (input) => {

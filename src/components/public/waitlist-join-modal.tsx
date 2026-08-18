@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Bell, Calendar, Check, Clock, Moon, Sun, Sunrise, Sunset, SlidersHorizontal } from 'lucide-react';
 
 import { Modal } from '@/components/common/modal';
+import { readApiErrorMessage } from '@/lib/api-error';
 import { useLanguage } from '@/lib/i18n/language-provider';
 
 type PresetRangeId = 'noon' | 'morning' | 'evening' | 'afternoon' | 'flexible';
@@ -71,6 +72,9 @@ function OptionCard({
 
 export function WaitlistJoinModal({
   closeHref,
+  businessId,
+  employeeId,
+  serviceId,
   businessName,
   employeeName,
   serviceName,
@@ -78,6 +82,14 @@ export function WaitlistJoinModal({
   dateISO,
 }: {
   closeHref: string;
+  businessId: string;
+  /**
+   * The single employee this entry targets, sent as a one-element `employeeIds`. The API treats an
+   * empty array as "any employee in the business" (§3.10), which is *not* what this modal means —
+   * it is opened from one employee's calendar, for that employee.
+   */
+  employeeId: string;
+  serviceId: string;
   businessName: string;
   employeeName: string;
   serviceName: string;
@@ -90,16 +102,53 @@ export function WaitlistJoinModal({
   const [selected, setSelected] = useState<RangeId>('flexible');
   const [manualStart, setManualStart] = useState('08:00');
   const [manualEnd, setManualEnd] = useState('22:00');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   function close() {
     router.push(closeHref);
   }
 
-  function handleConfirm() {
-    toast.success(copy.waitlistJoin.successTitle, {
-      description: copy.waitlistJoin.successDescription,
-    });
-    close();
+  /**
+   * `POST /api/waitlist` — a real `waitlist_entries` row, which the matcher trigger (0009) then
+   * considers whenever an appointment on this employee is cancelled (§6.7).
+   *
+   * The chosen preset (or the manual pair) becomes the entry's `from_ts`/`to_ts` on the requested
+   * date. Same naive-datetime convention as `BookingConfirmDialog`'s `startsAt`.
+   */
+  async function handleConfirm() {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    const range = selected === 'manual' ? { start: manualStart, end: manualEnd } : PRESET_RANGES[selected];
+
+    try {
+      const response = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessId,
+          serviceId,
+          employeeIds: [employeeId],
+          fromTs: `${dateISO}T${range.start}:00`,
+          toTs: `${dateISO}T${range.end}:00`,
+        }),
+      });
+
+      if (!response.ok) {
+        toast.error((await readApiErrorMessage(response)) ?? copy.waitlistJoin.errorTitle);
+        return;
+      }
+
+      toast.success(copy.waitlistJoin.successTitle, {
+        description: copy.waitlistJoin.successDescription,
+      });
+      router.refresh();
+      close();
+    } catch {
+      toast.error(copy.waitlistJoin.errorTitle);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   const priceLabel = copy.businessProfile.price;
@@ -192,10 +241,11 @@ export function WaitlistJoinModal({
         <button
           type="button"
           onClick={handleConfirm}
-          className="flex flex-1 items-center justify-center gap-2 rounded-full bg-amber-500 px-4 py-3 text-sm font-semibold text-white hover:bg-amber-600"
+          disabled={isSubmitting}
+          className="flex flex-1 items-center justify-center gap-2 rounded-full bg-amber-500 px-4 py-3 text-sm font-semibold text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Bell className="h-4 w-4" aria-hidden="true" />
-          {copy.waitlistJoin.confirm}
+          {isSubmitting ? copy.waitlistJoin.submitting : copy.waitlistJoin.confirm}
         </button>
         <button
           type="button"

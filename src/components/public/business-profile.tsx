@@ -114,6 +114,9 @@ export function BusinessProfile({
             return (
               <WaitlistJoinModal
                 closeHref={`${basePath}?${closeParams.toString()}`}
+                businessId={business.id}
+                employeeId={selectedEmployee.id}
+                serviceId={selectedService.id}
                 businessName={business.name}
                 employeeName={selectedEmployee.fullName}
                 serviceName={selectedService.name}

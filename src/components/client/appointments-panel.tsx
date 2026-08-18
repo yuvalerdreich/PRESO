@@ -2,11 +2,13 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, ArrowRight, CalendarDays, CalendarX } from 'lucide-react';
 
 import { AppointmentCard } from '@/components/client/appointment-card';
 import { AppointmentsTabs, type AppointmentsTabId } from '@/components/client/appointments-tabs';
 import { CancelAppointmentDialog } from '@/components/client/cancel-appointment-dialog';
+import { readApiErrorMessage } from '@/lib/api-error';
 import { isUpcomingAppointment } from '@/lib/appointments/classify';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import type { ClientAppointment, ClientWaitlistEntry } from '@/types/domain';
@@ -21,18 +23,20 @@ export function AppointmentsPanel({
   backHref?: string;
 }) {
   const { copy, direction } = useLanguage();
+  const router = useRouter();
   const BackArrow = direction === 'rtl' ? ArrowRight : ArrowLeft;
   const [activeTab, setActiveTab] = useState<AppointmentsTabId>('upcoming');
-  const [demoCancelledIds, setDemoCancelledIds] = useState<Set<string>>(new Set());
   const [cancelTarget, setCancelTarget] = useState<ClientAppointment | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   const upcoming = useMemo(
-    () => appointments.filter((appointment) => isUpcomingAppointment(appointment, demoCancelledIds)),
-    [appointments, demoCancelledIds],
+    () => appointments.filter((appointment) => isUpcomingAppointment(appointment)),
+    [appointments],
   );
   const history = useMemo(
-    () => appointments.filter((appointment) => !isUpcomingAppointment(appointment, demoCancelledIds)),
-    [appointments, demoCancelledIds],
+    () => appointments.filter((appointment) => !isUpcomingAppointment(appointment)),
+    [appointments],
   );
 
   const tabs = [
@@ -41,11 +45,47 @@ export function AppointmentsPanel({
     { id: 'history' as const, label: copy.appointments.history, count: history.length },
   ];
 
-  function confirmCancel() {
-    if (!cancelTarget) return;
-    setDemoCancelledIds((prev) => new Set(prev).add(cancelTarget.id));
+  /**
+   * `PATCH /api/appointments/[id]` with `action: 'cancel'` — a route handler, not a server action,
+   * because the two failure modes need different words: a 422 means the business's cancellation
+   * window has closed (`cancel_appointment()` raises it), which the user can act on, while a 403
+   * or 404 means the row isn't theirs to cancel. §8.4 already put the right sentence in
+   * `error.message`, so it is shown verbatim.
+   *
+   * On success the dialog closes and `router.refresh()` re-runs the server component that fetched
+   * these props, so the row reappears under History carrying the real `status: 'CANCELLED'`. No
+   * local "cancelled" set is kept — the database is the only source of truth for that now.
+   */
+  async function confirmCancel() {
+    if (!cancelTarget || isCancelling) return;
+    setIsCancelling(true);
+    setCancelError(null);
+
+    try {
+      const response = await fetch(`/api/appointments/${cancelTarget.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'cancel' }),
+      });
+
+      if (!response.ok) {
+        setCancelError((await readApiErrorMessage(response)) ?? copy.appointments.cancelError);
+        return;
+      }
+
+      setCancelTarget(null);
+      setActiveTab('history');
+      router.refresh();
+    } catch {
+      setCancelError(copy.appointments.cancelError);
+    } finally {
+      setIsCancelling(false);
+    }
+  }
+
+  function closeCancelDialog() {
     setCancelTarget(null);
-    setActiveTab('history');
+    setCancelError(null);
   }
 
   return (
@@ -124,7 +164,7 @@ export function AppointmentsPanel({
             <div dir="rtl" className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {history.map((appointment) => (
                 <div key={appointment.id} dir={direction}>
-                  <AppointmentCard appointment={appointment} cancelledInDemo={demoCancelledIds.has(appointment.id)} />
+                  <AppointmentCard appointment={appointment} />
                 </div>
               ))}
             </div>
@@ -134,12 +174,12 @@ export function AppointmentsPanel({
         ) : null}
       </div>
 
-      <p className="mx-auto w-full max-w-3xl text-center text-xs text-[var(--muted)]">{copy.appointments.demoNotice}</p>
-
       {cancelTarget ? (
         <CancelAppointmentDialog
           appointment={cancelTarget}
-          onClose={() => setCancelTarget(null)}
+          pending={isCancelling}
+          error={cancelError}
+          onClose={closeCancelDialog}
           onConfirm={confirmCancel}
         />
       ) : null}

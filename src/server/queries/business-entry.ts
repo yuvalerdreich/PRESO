@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
-import type { BusinessArea, BusinessCategory, JoinableBusiness } from '@/types/domain';
+import { resolvePhotoUrl } from '@/server/queries/shared';
+import type { BusinessArea, BusinessCategory, JoinableBusiness, MyBusiness } from '@/types/domain';
 
 /**
  * Onboarding and join-a-business reads (TECHNICAL_DESIGN.md §10.2, §10.3). Replaces
@@ -75,6 +76,120 @@ export async function listJoinableBusinesses(): Promise<JoinableBusiness[]> {
       employeeCount: (row.employees as unknown as { count: number }[] | null)?.[0]?.count ?? 0,
       pendingRequestStatus: requestByBusiness.get(row.id) ?? null,
     }));
+}
+
+type MyBusinessRow = {
+  id: string;
+  position_title: string;
+  status: MyBusiness['employeeStatus'];
+  businesses: {
+    id: string;
+    name: string;
+    area: string;
+    address: string;
+    photo_paths: string[] | null;
+    owner_profile_id: string;
+    categories: { name: string } | null;
+    employees: { count: number }[] | null;
+  } | null;
+};
+
+type MyPendingRequestRow = {
+  id: string;
+  businesses: {
+    id: string;
+    name: string;
+    area: string;
+    address: string;
+    photo_paths: string[] | null;
+    categories: { name: string } | null;
+    employees: { count: number }[] | null;
+  } | null;
+};
+
+/**
+ * Every business the caller is attached to — owned, worked at, or applied to (`/businesses`).
+ *
+ * Two reads rather than one, because the two states live in different tables and there is no row
+ * that spans them: an approved employee has an `employees` row and no open `join_request`, while a
+ * pending applicant has the reverse (§6.8 rule 5 — approval is what creates the employee row).
+ * Only `PENDING` requests are read; an `APPROVED` one has already become an `employees` row and
+ * would otherwise list the same business twice, and a `REJECTED` one is not an attachment.
+ *
+ * `employees(count)` on the embedded business is the roster size, not a filter — PostgREST's
+ * aggregate embed. The outer `.eq('profile_id', …)` narrows which `employees` rows come back;
+ * `businesses.employees(count)` is a separate embed and counts the whole roster.
+ */
+export async function listMyBusinesses(): Promise<MyBusiness[]> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const businessSelect = 'id, name, area, address, photo_paths, categories(name), employees(count)';
+
+  const [{ data: employments, error: employmentsError }, { data: requests, error: requestsError }] =
+    await Promise.all([
+      supabase
+        .from('employees')
+        .select(`id, position_title, status, businesses(${businessSelect}, owner_profile_id)`)
+        .eq('profile_id', user.id)
+        .order('created_at'),
+      supabase
+        .from('join_requests')
+        .select(`id, businesses(${businessSelect})`)
+        .eq('profile_id', user.id)
+        .eq('status', 'PENDING')
+        .order('created_at', { ascending: false }),
+    ]);
+  if (employmentsError) throw employmentsError;
+  if (requestsError) throw requestsError;
+
+  const employed = ((employments ?? []) as unknown as MyBusinessRow[]).flatMap((row) => {
+    const business = row.businesses;
+    if (!business) return [];
+
+    return [
+      {
+        key: row.id,
+        businessId: business.id,
+        name: business.name,
+        area: business.area,
+        address: business.address,
+        categoryName: business.categories?.name ?? '',
+        photoUrl: resolvePhotoUrl(supabase, business.photo_paths),
+        employeeCount: business.employees?.[0]?.count ?? 0,
+        relation: business.owner_profile_id === user.id ? ('OWNER' as const) : ('STAFF' as const),
+        positionTitle: row.position_title,
+        employeeStatus: row.status,
+      },
+    ];
+  });
+
+  const pending = ((requests ?? []) as unknown as MyPendingRequestRow[]).flatMap((row) => {
+    const business = row.businesses;
+    if (!business) return [];
+
+    return [
+      {
+        key: row.id,
+        businessId: business.id,
+        name: business.name,
+        area: business.area,
+        address: business.address,
+        categoryName: business.categories?.name ?? '',
+        photoUrl: resolvePhotoUrl(supabase, business.photo_paths),
+        employeeCount: business.employees?.[0]?.count ?? 0,
+        relation: 'PENDING' as const,
+        positionTitle: null,
+        employeeStatus: null,
+      },
+    ];
+  });
+
+  return [...employed, ...pending];
 }
 
 /** The caller's own outgoing requests, for `/join`'s "pending" state after submitting. */

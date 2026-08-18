@@ -24,18 +24,14 @@ const STATUS_COPY_KEY: Record<AppointmentStatus, 'confirmed' | 'pending' | 'canc
 
 export function AppointmentCard({
   appointment,
-  cancelledInDemo,
   onCancel,
 }: {
   appointment: ClientAppointment;
-  cancelledInDemo?: boolean;
   onCancel?: () => void;
 }) {
   const { copy } = useLanguage();
 
-  const statusLabel = cancelledInDemo
-    ? copy.appointments.cancelledDemo
-    : copy.appointments[STATUS_COPY_KEY[appointment.status]];
+  const statusLabel = copy.appointments[STATUS_COPY_KEY[appointment.status]];
   const statusStyle = STATUS_STYLES[appointment.status];
 
   return (

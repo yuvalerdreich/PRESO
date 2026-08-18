@@ -230,6 +230,34 @@ export type JoinableBusiness = {
   pendingRequestStatus: JoinRequestStatus | null;
 };
 
+/**
+ * How the caller is attached to one business, for `/businesses` ("My businesses").
+ *
+ * `OWNER` and `STAFF` both come from an `employees` row — the difference is only
+ * `businesses.owner_profile_id`, since `employees` is a *position* and the founder holds one
+ * like everybody else (§2). `PENDING` is the third state and has **no** `employees` row at all:
+ * §6.8 rule 5 means approval is what creates staff, so a pending applicant is a `join_requests`
+ * row and nothing more. That is why this is one union rather than a flag on an employment.
+ */
+export type MyBusinessRelation = 'OWNER' | 'STAFF' | 'PENDING';
+
+export type MyBusiness = {
+  /** `employees.id` for OWNER/STAFF, `join_requests.id` for PENDING — unique either way. */
+  key: string;
+  businessId: string;
+  name: string;
+  area: string;
+  address: string;
+  categoryName: string;
+  photoUrl: string;
+  employeeCount: number;
+  relation: MyBusinessRelation;
+  /** The caller's own position title; null while the request is still pending. */
+  positionTitle: string | null;
+  /** An approved-but-deactivated position still shows here, flagged (§6.9's soft retire). */
+  employeeStatus: EmployeeStatus | null;
+};
+
 // ---------------------------------------------------------------------------
 // Business portal — dashboard
 // ---------------------------------------------------------------------------
