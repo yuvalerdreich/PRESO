@@ -1,20 +1,24 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// `redirect()` throws in Next's real implementation; the routes are one call and nothing else, so
+// a spy is all this needs.
+const redirect = vi.fn();
+vi.mock('next/navigation', () => ({ redirect: (url: string) => redirect(url) }));
 
 import JoinRoute from '@/app/(business)/join/page';
 import OnboardingRoute from '@/app/(business)/onboarding/page';
-import { LanguageProvider } from '@/lib/i18n/language-provider';
 
-// Skipped: (business)/{onboarding,join}/page.tsx are typecheck-only placeholders (CLAUDE.md §8).
-// Remove .skip once the real onboarding/join pages are implemented.
-describe.skip('business-entry pages', () => {
-  it('renders onboarding and join routes with shared localized UI', async () => {
-    const { unmount } = render(<LanguageProvider initialLocale="en">{await OnboardingRoute()}</LanguageProvider>);
-    expect(screen.getByRole('heading', { level: 1, name: 'Start your Preso journey' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /find an existing business/i })).toHaveAttribute('href', '/join');
-    unmount();
+// The real onboarding/join screens are still unbuilt (CLAUDE.md §8, punch-list #3). Until they
+// exist both routes forward to `/businesses` rather than rendering a placeholder that dead-ends —
+// TECHNICAL_DESIGN.md §12.41. Replace these assertions with rendering tests when the screens land.
+describe('business-entry pages', () => {
+  it('forwards /onboarding to the built businesses screen', async () => {
+    await OnboardingRoute();
+    expect(redirect).toHaveBeenCalledWith('/businesses');
+  });
 
-    render(<LanguageProvider initialLocale="en">{await JoinRoute()}</LanguageProvider>);
-    expect(screen.getByRole('heading', { level: 1, name: 'Request to join a business' })).toBeInTheDocument();
+  it('forwards /join to the built businesses screen', async () => {
+    await JoinRoute();
+    expect(redirect).toHaveBeenCalledWith('/businesses');
   });
 });

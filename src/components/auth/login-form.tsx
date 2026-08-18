@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { GoogleButton } from '@/components/auth/google-button';
+import { hasActiveEmployment } from '@/lib/auth/active-employment';
 import { getDefaultDestination } from '@/lib/auth/default-destination';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import { createClient } from '@/lib/supabase/client';
@@ -58,7 +59,11 @@ export function LoginForm({ next, suspended }: { next?: string; suspended?: bool
       return;
     }
 
-    router.push(next ?? getDefaultDestination(profile.account_type));
+    // Only the BUSINESS destination depends on employment (§12.41) — don't spend the query otherwise.
+    const employed =
+      profile.account_type === 'BUSINESS' && (await hasActiveEmployment(supabase, user.id));
+
+    router.push(next ?? getDefaultDestination(profile.account_type, employed));
     router.refresh();
   }
 

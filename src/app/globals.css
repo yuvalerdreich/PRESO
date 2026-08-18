@@ -8,6 +8,10 @@
   --brand: #5945f6;
   --brand-deep: #34238d;
   --brand-dark: #171b46;
+  /* Every button in the business area rests at the dark blue and lightens on hover.
+     See components/business/button-styles.ts */
+  --brand-blue-dark: #1e3a8a;
+  --brand-blue: #2563eb;
   --surface: #ffffff;
   --soft-violet: #f0edff;
 }
