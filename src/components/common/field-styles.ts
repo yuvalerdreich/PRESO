@@ -32,3 +32,9 @@ export const fieldPaddingStartIcon = 'py-3 ps-11 pe-4';
 
 /** Field with an icon pinned to the inline-end edge (a select's chevron). */
 export const fieldPaddingEndIcon = 'py-3 ps-4 pe-11';
+
+/**
+ * Field whose icon sits on the **physical** left in both writing directions — the home search box,
+ * where the design calls for one magnifying glass on the left whatever the language.
+ */
+export const fieldPaddingLeftIcon = 'py-3 pl-11 pr-4';

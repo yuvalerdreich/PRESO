@@ -36,6 +36,7 @@ export const translations = {
       searchPlaceholder: 'חפש לפי שם עסק, שם בעל עסק/מטפל, עיר או קטגוריה...',
       categoryPlaceholder: 'כל הקטגוריות',
       areaPlaceholder: 'כל הערים והאזורים',
+      /** Accessible name for the magnifying-glass button — there is no visible search label. */
       searchButton: 'חיפוש',
       categoriesTitle: 'קטגוריות פופולריות',
       featuredTitle: 'עסקים זמינים לקביעת תורים',
@@ -214,7 +215,7 @@ export const translations = {
       resultCount: 'נמצאו {count} עסקים משויכים',
       emptyTitle: 'לא נמצאו עסקים משויכים',
       emptyDescription: 'עדיין אין עסק בחשבון שלך. אפשר לפתוח עסק חדש או להצטרף לעסק קיים.',
-      noMatchesTitle: 'אין עסקים תואמים',
+      noMatchesTitle: 'לא נמצאו עסקים מתאימים לחיפוש שביצעת',
       noMatchesDescription: 'נסו לשנות את החיפוש או לבחור סינון אחר.',
       relationOwner: 'בבעלותי',
       relationStaff: 'עובד/ת',
@@ -289,8 +290,12 @@ export const translations = {
       businessDashboard: 'לוח בקרה עסקי',
     },
     emptyState: {
-      title: 'לא נמצאו עסקים מתאימים',
-      description: 'נסה לחפש ביטוי אחר, קטגוריה אחרת או אזור אחר.',
+      // Nothing to show because nothing exists yet — a fresh database, not a failed search.
+      title: 'לא קיימים עסקים פעילים',
+      description: 'עסקים חדשים יופיעו כאן ברגע שייפתחו במערכת.',
+      // Nothing to show because the query or the category chip excluded everything.
+      noMatchesTitle: 'לא נמצאו עסקים מתאימים לחיפוש שביצעת',
+      noMatchesDescription: 'נסה לחפש ביטוי אחר, קטגוריה אחרת או אזור אחר.',
       clearFilters: 'נקה סינון',
     },
     auth: {
@@ -567,7 +572,7 @@ export const translations = {
       resultCount: '{count} linked businesses found',
       emptyTitle: 'No businesses linked yet',
       emptyDescription: 'There is no business on this account yet. Open a new business or join an existing one.',
-      noMatchesTitle: 'No matching businesses',
+      noMatchesTitle: 'No businesses match the search you ran',
       noMatchesDescription: 'Try a different search term or another filter.',
       relationOwner: 'Owned by me',
       relationStaff: 'Staff',
@@ -645,8 +650,10 @@ export const translations = {
       businessDashboard: 'Business dashboard',
     },
     emptyState: {
-      title: 'No businesses match those filters',
-      description: 'Try a different search term, category, or area.',
+      title: 'No active businesses yet',
+      description: 'New businesses will appear here as soon as they open on the platform.',
+      noMatchesTitle: 'No businesses match the search you ran',
+      noMatchesDescription: 'Try a different search term, category, or area.',
       clearFilters: 'Clear filters',
     },
     auth: {
