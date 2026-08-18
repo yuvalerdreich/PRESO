@@ -1,8 +1,8 @@
 import { MyBusinessesPage } from '@/components/business/my-businesses-page';
-import { discoveryRepository } from '@/lib/discovery/repository';
+import { searchBusinesses } from '@/server/queries/discovery';
 
 export default async function BusinessesRoute() {
-  const joinableBusinesses = await discoveryRepository.searchBusinesses();
+  const joinableBusinesses = await searchBusinesses();
 
   return <MyBusinessesPage joinableBusinesses={joinableBusinesses} />;
 }

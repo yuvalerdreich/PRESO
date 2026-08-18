@@ -1,4 +1,4 @@
-import type { JoinableBusiness } from '@/types/business-entry';
+import type { JoinableBusiness } from '@/types/domain';
 
 /** Typecheck-only placeholder — the real join-business form isn't built yet (CLAUDE.md §8). */
 export function JoinBusinessForm({ businesses }: { businesses: JoinableBusiness[] }) {

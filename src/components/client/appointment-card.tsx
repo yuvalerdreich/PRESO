@@ -3,12 +3,23 @@
 import { Calendar, Clock, MapPin, XCircle } from 'lucide-react';
 
 import { useLanguage } from '@/lib/i18n/language-provider';
-import type { ClientAppointment } from '@/types/appointments';
+import type { AppointmentStatus, ClientAppointment } from '@/types/domain';
 
-const STATUS_STYLES: Record<'confirmed' | 'pending' | 'cancelled', string> = {
-  confirmed: 'bg-emerald-50 text-emerald-700',
-  pending: 'bg-amber-50 text-amber-700',
-  cancelled: 'bg-[var(--soft-violet)] text-[var(--muted)]',
+const STATUS_STYLES: Record<AppointmentStatus, string> = {
+  CONFIRMED: 'bg-emerald-50 text-emerald-700',
+  PENDING: 'bg-amber-50 text-amber-700',
+  CANCELLED: 'bg-[var(--soft-violet)] text-[var(--muted)]',
+};
+
+/**
+ * The i18n dictionary is keyed independently of the database enum — `copy.appointments.*` is UI
+ * copy, not a mirror of `appointment_status`. This map is the seam between the two rather than
+ * lowercasing the status and hoping the two vocabularies stay aligned.
+ */
+const STATUS_COPY_KEY: Record<AppointmentStatus, 'confirmed' | 'pending' | 'cancelled'> = {
+  CONFIRMED: 'confirmed',
+  PENDING: 'pending',
+  CANCELLED: 'cancelled',
 };
 
 export function AppointmentCard({
@@ -21,7 +32,10 @@ export function AppointmentCard({
   onCancel?: () => void;
 }) {
   const { copy } = useLanguage();
-  const statusLabel = cancelledInDemo ? copy.appointments.cancelledDemo : copy.appointments[appointment.status];
+
+  const statusLabel = cancelledInDemo
+    ? copy.appointments.cancelledDemo
+    : copy.appointments[STATUS_COPY_KEY[appointment.status]];
   const statusStyle = STATUS_STYLES[appointment.status];
 
   return (

@@ -4,8 +4,8 @@ import { AccountSidebar } from '@/components/common/account-sidebar';
 import { ProfileSettingsProvider } from '@/components/common/profile-settings-provider';
 import { PublicHeader } from '@/components/common/public-header';
 import { AppError } from '@/lib/errors';
-import { appointmentsRepository } from '@/lib/appointments/repository';
 import { requireSession } from '@/server/guards';
+import { listClientAppointments } from '@/server/queries/appointments';
 
 /**
  * Shared business area chrome and authorization boundary. Every route in this
@@ -23,7 +23,7 @@ export default async function BusinessLayout({ children }: LayoutProps<'/'>) {
 
   if (profile.account_type !== 'BUSINESS') redirect('/');
 
-  const appointments = await appointmentsRepository.listCurrentClientAppointments();
+  const appointments = await listClientAppointments();
 
   return (
     <ProfileSettingsProvider

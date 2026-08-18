@@ -1,4 +1,4 @@
-import type { BusinessArea, BusinessCategory } from '@/types/business-entry';
+import type { BusinessArea, BusinessCategory } from '@/types/domain';
 
 /** Typecheck-only placeholder — the real create-business form isn't built yet (CLAUDE.md §8). */
 export function CreateBusinessForm({
