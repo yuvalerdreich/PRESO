@@ -5,14 +5,14 @@ import { useRouter } from 'next/navigation';
 import { Building2, CheckCircle2, Plus, Scissors, UserPlus, X } from 'lucide-react';
 
 import { actionButton, actionIconButton, actionTextButton } from '@/components/common/button-styles';
+import { fieldPadding, surfaceFieldSubtle } from '@/components/common/field-styles';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import { createBusiness } from '@/server/actions/business';
 import type { BusinessCategory } from '@/types/domain';
 
 type ServiceDraft = { id: number; name: string; price: string; duration: string };
 
-const fieldClassName =
-  'mt-2 w-full rounded-2xl border border-[var(--line)] bg-slate-50 px-4 py-3 text-sm text-[var(--foreground)] outline-none transition-colors placeholder:text-[var(--muted)] focus:border-[var(--brand)] focus:ring-2 focus:ring-[var(--brand)]/15';
+const fieldClassName = `${surfaceFieldSubtle} ${fieldPadding} mt-2`;
 
 /**
  * The real "open a business" wizard — it calls `createBusiness` (`server/actions/business.ts`),
