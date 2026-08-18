@@ -11,9 +11,16 @@ import type { BusinessSummary, Category } from '@/types/domain';
 export function BusinessResults({
   businesses,
   categories,
+  searchApplied = false,
 }: {
   businesses: BusinessSummary[];
   categories: Category[];
+  /**
+   * True when the rows already went through a `q`/`area` filter on the server (`/search`). It is
+   * the difference between "nothing exists" and "nothing matched": with no query and no chip, an
+   * empty grid means the platform has no active businesses yet.
+   */
+  searchApplied?: boolean;
 }) {
   const { copy } = useLanguage();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
@@ -24,6 +31,8 @@ export function BusinessResults({
     () => (selectedCategoryId ? businesses.filter((business) => business.categoryId === selectedCategoryId) : businesses),
     [businesses, selectedCategoryId],
   );
+
+  const filteredSomething = searchApplied || selectedCategoryId !== null;
 
   return (
     <section className="flex flex-col gap-6">
@@ -43,7 +52,13 @@ export function BusinessResults({
           ))}
         </div>
       ) : (
-        <EmptyState onClear={() => setSelectedCategoryId(null)} />
+        <EmptyState
+          title={filteredSomething ? copy.emptyState.noMatchesTitle : copy.emptyState.title}
+          description={filteredSomething ? copy.emptyState.noMatchesDescription : copy.emptyState.description}
+          // Only offered when there is a filter this button can actually clear — the category chip.
+          // A `q`/`area` search lives in the URL and is cleared by editing the form above.
+          onClear={selectedCategoryId !== null ? () => setSelectedCategoryId(null) : undefined}
+        />
       )}
     </section>
   );

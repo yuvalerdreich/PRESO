@@ -41,6 +41,22 @@ export async function listCategories(): Promise<Category[]> {
 }
 
 /**
+ * Every city that currently has a business, for the search form's area `<select>`.
+ *
+ * Derived from the businesses themselves rather than kept as a lookup table: the option list can
+ * then never offer a city with nothing behind it, and RLS already hides suspended businesses from
+ * the public, so their cities drop out with them.
+ */
+export async function listBusinessAreas(): Promise<string[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.from('businesses').select('area').order('area');
+  if (error) throw error;
+
+  return [...new Set((data ?? []).map((row) => row.area?.trim()).filter((area): area is string => !!area))];
+}
+
+/**
  * The business grid on `/` and the `/search` results.
  *
  * `q` matches the business name **and the name of anyone who works there** — §12.22 asks for the
@@ -98,6 +114,7 @@ export async function searchBusinesses(filters: BusinessSearchFilters = {}): Pro
     photoUrl: resolvePhotoUrl(supabase, row.photo_paths),
     employeeCount: staffByBusiness.get(row.id)?.length ?? 0,
     employeeAvatarUrls: (staffByBusiness.get(row.id) ?? []).flatMap((s) => (s.avatarUrl ? [s.avatarUrl] : [])),
+    employeeNames: (staffByBusiness.get(row.id) ?? []).map((s) => s.fullName).filter(Boolean),
     approvalPolicy: row.approval_policy,
   }));
 }
@@ -220,6 +237,7 @@ export async function searchBusinessesPaged(query: BusinessSearchQuery): Promise
         photoUrl: resolvePhotoUrl(supabase, row.photo_paths),
         employeeCount: staff.length,
         employeeAvatarUrls: staff.flatMap((s) => (s.avatarUrl ? [s.avatarUrl] : [])),
+        employeeNames: staff.map((s) => s.fullName).filter(Boolean),
         approvalPolicy: row.approval_policy,
         category: { id: category.id, slug: category.slug, name: category.name },
         priceRange: priceRanges.get(row.id) ?? null,
@@ -319,6 +337,7 @@ export async function getBusinessProfile(businessId: string): Promise<BusinessPr
     photoUrl: resolvePhotoUrl(supabase, data.photo_paths),
     employeeCount: staff.length,
     employeeAvatarUrls: staff.flatMap((s) => (s.avatarUrl ? [s.avatarUrl] : [])),
+    employeeNames: staff.map((s) => s.fullName).filter(Boolean),
     approvalPolicy: data.approval_policy,
     phone: data.phone,
     timezone: data.timezone,

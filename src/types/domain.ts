@@ -85,6 +85,12 @@ export type BusinessSummary = {
   photoUrl: string;
   employeeCount: number;
   employeeAvatarUrls: string[];
+  /**
+   * Staff names, so a client-side search can match a business by the stylist they know — §12.22's
+   * "search matches the owner's name" rule, applied where the filtering now happens (§12.43).
+   * The server already loads these names to count staff; it used to drop them on the floor.
+   */
+  employeeNames: string[];
   /** `AUTO` confirms a booking immediately; `MANUAL` leaves it `PENDING` until the business approves it (TECHNICAL_DESIGN.md §6.2 step 5). */
   approvalPolicy: ApprovalPolicy;
 };

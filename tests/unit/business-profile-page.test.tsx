@@ -29,6 +29,7 @@ const business: BusinessProfile = {
   photoUrl: 'https://example.test/studio.jpg',
   employeeCount: 2,
   employeeAvatarUrls: [],
+  employeeNames: [],
   approvalPolicy: 'AUTO',
   phone: '03-6001122',
   timezone: 'Asia/Jerusalem',
