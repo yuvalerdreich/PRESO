@@ -45,6 +45,7 @@ export const createBusiness = action('createBusiness', createBusinessInput, asyn
     p_approval_policy: input.approvalPolicy,
     p_cancellation_window_hours: input.cancellationWindowHours,
     p_position_title: input.positionTitle,
+    p_payment_notes: input.paymentNotes || undefined,
   });
   if (error) throw error;
 
@@ -101,6 +102,7 @@ export const updateBusinessDetails = action('updateBusinessDetails', businessDet
       timezone: input.timezone,
       approval_policy: input.approvalPolicy,
       cancellation_window_hours: input.cancellationWindowHours,
+      payment_notes: input.paymentNotes || null,
     })
     .eq('id', input.businessId);
   if (error) throw error;

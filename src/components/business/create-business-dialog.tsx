@@ -6,6 +6,7 @@ import { Building2, CheckCircle2, Plus, Scissors, UserPlus, X } from 'lucide-rea
 
 import { actionButton, actionIconButton, actionTextButton } from '@/components/common/button-styles';
 import { fieldPadding, surfaceFieldSubtle } from '@/components/common/field-styles';
+import { categoryPresentation } from '@/lib/i18n/categories';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import { createBusiness } from '@/server/actions/business';
 import type { BusinessCategory } from '@/types/domain';
@@ -41,7 +42,7 @@ export function CreateBusinessDialog({
   /** Fired after a successful create so the parent can `router.refresh()` its own list. */
   onCreated?: () => void;
 }) {
-  const { copy } = useLanguage();
+  const { copy, locale } = useLanguage();
   const router = useRouter();
   const [services, setServices] = useState<ServiceDraft[]>([{ id: 1, name: '', price: '', duration: '45' }]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -75,6 +76,7 @@ export function CreateBusinessDialog({
         positionTitle: String(form.get('positionTitle') ?? ''),
         approvalPolicy: String(form.get('approvalPolicy') ?? 'AUTO') as 'AUTO' | 'MANUAL',
         cancellationWindowHours: String(form.get('cancellationWindowHours') ?? '24'),
+        paymentNotes: String(form.get('paymentNotes') ?? ''),
         // A blank row is dropped rather than rejected — the form opens with one empty service and
         // "no services yet" is a legal outcome (see `createBusinessInput`).
         services: services
@@ -162,7 +164,7 @@ export function CreateBusinessDialog({
                     </option>
                     {categories.map((category) => (
                       <option key={category.id} value={category.id}>
-                        {category.name}
+                        {categoryPresentation(category.slug, category.name).name[locale]}
                       </option>
                     ))}
                   </select>
@@ -254,8 +256,12 @@ export function CreateBusinessDialog({
               </div>
             </FormSection>
 
+            {/* One field per row rather than §4's original two-column grid: the three policy
+                fields read as a sequence (how late may a client cancel → who approves → what to
+                tell them about paying), and the payment note is a textarea that would dwarf a
+                half-width neighbour. */}
             <FormSection title={copy.createBusiness.policiesStep} icon={Building2}>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="flex flex-col gap-4">
                 <Field
                   label={copy.createBusiness.cancellationWindow}
                   error={fieldErrors.cancellationWindowHours}
@@ -275,6 +281,17 @@ export function CreateBusinessDialog({
                     <option value="AUTO">{copy.createBusiness.autoApproval}</option>
                     <option value="MANUAL">{copy.createBusiness.manualApproval}</option>
                   </select>
+                </Field>
+                <Field
+                  label={copy.createBusiness.paymentNotes}
+                  error={fieldErrors.paymentNotes}
+                  hint={copy.createBusiness.paymentNotesHint}
+                >
+                  <textarea
+                    name="paymentNotes"
+                    className={`${fieldClassName} min-h-24 resize-y`}
+                    placeholder={copy.createBusiness.paymentNotesPlaceholder}
+                  />
                 </Field>
               </div>
             </FormSection>

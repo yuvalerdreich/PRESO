@@ -134,6 +134,7 @@ describe('createBusiness — §6.8 rule 3, one transaction', () => {
       address: '10 Action Street',
       area: 'Tel Aviv',
       phone: '03-1112222',
+      paymentNotes: 'מזומן, אשראי או ביט. התשלום בסיום הטיפול.',
     });
 
     expect(result.ok).toBe(true);
@@ -146,6 +147,15 @@ describe('createBusiness — §6.8 rule 3, one transaction', () => {
 
     expect(employees).toHaveLength(1);
     expect(employees![0]).toMatchObject({ profile_id: user.id, status: 'ACTIVE' });
+
+    // §12.44 — the RPC gained the column in 0020; the wizard's policy step writes it.
+    const { data: business } = await admin
+      .from('businesses')
+      .select('payment_notes')
+      .eq('id', result.data.businessId)
+      .single();
+
+    expect(business!.payment_notes).toBe('מזומן, אשראי או ביט. התשלום בסיום הטיפול.');
   });
 
   it('refuses a CLIENT account without throwing, returning FORBIDDEN', async () => {
