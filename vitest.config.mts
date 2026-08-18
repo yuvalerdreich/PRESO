@@ -1,5 +1,25 @@
+import { basename } from 'node:path';
+
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vitest/config';
+import { defineConfig, type Plugin } from 'vitest/config';
+
+/**
+ * Next turns `import logo from '…/logo.png'` into a `StaticImageData` object — `{ src, width,
+ * height }` — and `next/image` throws without those dimensions. Vite resolves the same import to a
+ * plain URL string, so any component rendering a statically-imported image fails in jsdom for a
+ * reason that has nothing to do with the component. This gives the import Next's shape.
+ */
+const staticImageImports: Plugin = {
+  name: 'static-image-import-stub',
+  enforce: 'pre',
+  load(id) {
+    const file = id.split('?')[0];
+    if (!/\.(png|jpe?g|webp|avif|gif)$/i.test(file)) return null;
+
+    const src = `/${basename(file)}`;
+    return `export default { src: ${JSON.stringify(src)}, width: 512, height: 512, blurWidth: 0, blurHeight: 0 };`;
+  },
+};
 
 /**
  * Two projects, because the two suites need different worlds:
@@ -19,7 +39,7 @@ export default defineConfig({
   test: {
     projects: [
       {
-        plugins: [react()],
+        plugins: [react(), staticImageImports],
         resolve: { tsconfigPaths: true },
         test: {
           name: 'unit',

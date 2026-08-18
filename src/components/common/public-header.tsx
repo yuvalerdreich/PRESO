@@ -29,7 +29,11 @@ export function PublicHeader({
 
   return (
     <header className="border-b border-[var(--line)] bg-[var(--surface)]">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+      {/* Full-bleed, not `max-w-6xl mx-auto`: the brand belongs hard against one edge of the
+          window and the account controls against the other, so the row cannot float in from the
+          sides as the viewport grows. Order is direction-aware for free — the logo is the first
+          flex child, which is the right edge in Hebrew and the left in English. */}
+      <div className="flex w-full items-center justify-between gap-4 px-4 py-4 sm:px-6">
         <PresoLogo />
 
         <div className="flex items-center gap-3">

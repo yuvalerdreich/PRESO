@@ -22,10 +22,12 @@ function renderHeader(currentUser?: { fullName: string } | null) {
 
 describe('public header', () => {
   it('renders the brand mark', () => {
-    renderHeader();
+    const { container } = renderHeader();
 
     expect(screen.getByText(translations.en.brand.name)).toBeInTheDocument();
     expect(screen.getByText(translations.en.header.subtitle)).toBeInTheDocument();
+    // The mark itself is the artwork in `public/images`, decorative next to that text.
+    expect(container.querySelector('img')?.getAttribute('src')).toContain('preso-logo');
   });
 
   it('no longer carries the My Appointments control — it lives in the sidebar now', () => {
