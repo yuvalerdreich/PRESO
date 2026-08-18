@@ -9,14 +9,15 @@ function todayISO(): string {
 /**
  * An appointment is "upcoming" only while it is neither cancelled nor in the
  * past — waitlist entries and completed/past appointments never count here.
- * `demoCancelledIds` covers appointments cancelled client-side during this
- * session (see AppointmentsPanel), which don't carry status: 'CANCELLED'.
+ *
+ * Status is read straight off the row: cancelling goes through
+ * `PATCH /api/appointments/[id]` and `router.refresh()`, so the server's
+ * `status = 'CANCELLED'` is the only thing that moves a row into History.
+ * (There used to be a `demoCancelledIds` override here for the client-side-only
+ * cancel this panel did before the RPC was wired in.)
  */
-export function isUpcomingAppointment(
-  appointment: ClientAppointment,
-  demoCancelledIds?: ReadonlySet<string>,
-): boolean {
-  if (appointment.status === 'CANCELLED' || demoCancelledIds?.has(appointment.id)) return false;
+export function isUpcomingAppointment(appointment: ClientAppointment): boolean {
+  if (appointment.status === 'CANCELLED') return false;
   return appointment.dateISO >= todayISO();
 }
 

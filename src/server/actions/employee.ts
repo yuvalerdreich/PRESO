@@ -44,6 +44,7 @@ export const sendJoinRequest = action('sendJoinRequest', sendJoinRequestInput, a
   if (error) throw error;
 
   revalidatePath('/join');
+  revalidatePath('/businesses');
 
   return { id: data.id };
 });

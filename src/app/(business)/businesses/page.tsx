@@ -1,8 +1,18 @@
 import { MyBusinessesPage } from '@/components/business/my-businesses-page';
-import { searchBusinesses } from '@/server/queries/discovery';
+import { listCategories, listJoinableBusinesses, listMyBusinesses } from '@/server/queries/business-entry';
 
 export default async function BusinessesRoute() {
-  const joinableBusinesses = await searchBusinesses();
+  const [businesses, joinableBusinesses, categories] = await Promise.all([
+    listMyBusinesses(),
+    listJoinableBusinesses(),
+    listCategories(),
+  ]);
 
-  return <MyBusinessesPage joinableBusinesses={joinableBusinesses} />;
+  return (
+    <MyBusinessesPage
+      businesses={businesses}
+      joinableBusinesses={joinableBusinesses}
+      categories={categories}
+    />
+  );
 }

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { dayOfWeek, optionalText, phone, timeHHmm, timezone, uuid } from '@/lib/validation/common';
+import { serviceInput } from '@/lib/validation/service';
 
 /**
  * Business details and operating hours (TECHNICAL_DESIGN.md §9.2, §9.3). Every bound below
@@ -39,10 +40,20 @@ const businessFields = {
  * `createBusiness` (§5.5). `positionTitle` is the creator's own `employees` row, inserted in the
  * same transaction — §6.8 rule 3 means a business is never persisted with zero employees, so
  * the two are one payload rather than two sequential forms.
+ *
+ * `services` is optional and belongs to that same first employee, never to the business (§3.8).
+ * It rides along because §6.8's "an employee needs ≥1 ACTIVE service to be bookable" otherwise
+ * leaves a brand-new business unbookable until a second, separate form is filled in — the
+ * onboarding wizard collects both, so the payload carries both. An empty array is legal: the
+ * business exists, it simply isn't bookable yet, which is the rule working as designed.
  */
 export const createBusinessInput = z.object({
   ...businessFields,
   positionTitle: z.string().trim().min(2).max(60).default('Owner'),
+  services: z
+    .array(serviceInput.omit({ id: true }))
+    .max(20, 'Add up to 20 services here; the rest can be added from the dashboard')
+    .default([]),
 });
 export type CreateBusinessInput = z.infer<typeof createBusinessInput>;
 

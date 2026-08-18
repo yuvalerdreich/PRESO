@@ -9,6 +9,11 @@ vi.mock('@/server/queries/appointments', () => ({
   listClientWaitlistEntries: async () => [],
 }));
 
+// The panel calls `router.refresh()` after a real cancel, so it needs a router in jsdom.
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+}));
+
 import ClientAppointmentsPage from '@/app/(client)/me/appointments/page';
 import { LanguageProvider } from '@/lib/i18n/language-provider';
 

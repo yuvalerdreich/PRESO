@@ -1,33 +1,77 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Building2, CheckCircle2, MapPin, Phone, Search, UserPlus, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Building2, CheckCircle2, MapPin, Search, UserPlus, Users, X } from 'lucide-react';
 
 import { useLanguage } from '@/lib/i18n/language-provider';
-import type { BusinessSummary } from '@/types/domain';
+import { sendJoinRequest } from '@/server/actions/employee';
+import type { JoinableBusiness } from '@/types/domain';
 
-const fieldClassName =
-  'mt-2 w-full rounded-2xl border border-[var(--line)] bg-slate-50 px-4 py-3 text-sm text-[var(--foreground)] outline-none transition-colors placeholder:text-[var(--muted)] focus:border-[var(--brand)] focus:ring-2 focus:ring-[var(--brand)]/15';
-
-export function JoinBusinessDialog({ businesses, onClose }: { businesses: BusinessSummary[]; onClose: () => void }) {
+/**
+ * The real "request to join" dialog — it calls `sendJoinRequest` (`server/actions/employee.ts`),
+ * which inserts the `join_requests` row and lets `join_requests_one_open` reject a duplicate as a
+ * `23505` (§10.3).
+ *
+ * The mock version also collected a position title and a contact phone. Neither is written here,
+ * and both were removed rather than left as decoration: `join_requests` carries only
+ * `profile_id`/`business_id`/`status` (§3.11), because the **founder** names the position when
+ * approving (`decideJoinRequest.positionTitle`, §6.8 rule 6), and the contact number is the
+ * applicant's own `profiles.phone`, edited from profile settings.
+ *
+ * `pendingRequestStatus` comes from `listJoinableBusinesses()` and is what makes an
+ * already-requested business unselectable — surfacing the state beats explaining the 409 the
+ * partial unique index would otherwise raise.
+ */
+export function JoinBusinessDialog({
+  businesses,
+  onClose,
+  onSubmitted,
+}: {
+  businesses: JoinableBusiness[];
+  onClose: () => void;
+  /** Fired after a successful request so the parent can `router.refresh()` its own list. */
+  onSubmitted?: () => void;
+}) {
   const { copy } = useLanguage();
+  const router = useRouter();
   const [query, setQuery] = useState('');
-  const [selectedId, setSelectedId] = useState(businesses[0]?.id ?? '');
+  const selectableBusinesses = businesses.filter((business) => business.pendingRequestStatus !== 'PENDING');
+  const [selectedId, setSelectedId] = useState(selectableBusinesses[0]?.id ?? '');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
   const visibleBusinesses = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
     if (!normalizedQuery) return businesses;
     return businesses.filter((business) =>
-      [business.name, business.area, business.description].join(' ').toLocaleLowerCase().includes(normalizedQuery),
+      [business.name, business.area, business.categoryName].join(' ').toLocaleLowerCase().includes(normalizedQuery),
     );
   }, [businesses, query]);
   const selectedBusiness = businesses.find((business) => business.id === selectedId) ?? null;
 
-  function submit(event: React.FormEvent<HTMLFormElement>) {
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!selectedBusiness) return;
-    setSubmitted(true);
+    if (!selectedBusiness || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setFormError(null);
+
+    try {
+      const result = await sendJoinRequest({ businessId: selectedBusiness.id });
+
+      if (!result.ok) {
+        setFormError(result.error.message);
+        return;
+      }
+
+      setSubmitted(true);
+      router.refresh();
+      onSubmitted?.();
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -65,7 +109,9 @@ export function JoinBusinessDialog({ businesses, onClose }: { businesses: Busine
               <CheckCircle2 className="h-8 w-8" aria-hidden="true" />
             </span>
             <h3 className="mt-5 text-xl font-extrabold text-[var(--foreground)]">{copy.joinBusiness.submittedTitle}</h3>
-            <p className="mt-2 max-w-md text-sm leading-6 text-[var(--muted)]">{copy.joinBusiness.submittedDescription}</p>
+            <p className="mt-2 max-w-md text-sm leading-6 text-[var(--muted)]">
+              {copy.joinBusiness.submittedDescription}
+            </p>
             <button
               type="button"
               onClick={onClose}
@@ -85,7 +131,10 @@ export function JoinBusinessDialog({ businesses, onClose }: { businesses: Busine
               <div className="mt-5 grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
                 <div className="flex flex-col gap-3">
                   <label className="relative block">
-                    <Search className="pointer-events-none absolute inset-y-0 start-4 my-auto h-5 w-5 text-[var(--muted)]" aria-hidden="true" />
+                    <Search
+                      className="pointer-events-none absolute inset-y-0 start-4 my-auto h-5 w-5 text-[var(--muted)]"
+                      aria-hidden="true"
+                    />
                     <input
                       type="search"
                       value={query}
@@ -100,12 +149,15 @@ export function JoinBusinessDialog({ businesses, onClose }: { businesses: Busine
                       <div className="flex flex-col gap-2">
                         {visibleBusinesses.map((business) => {
                           const selected = business.id === selectedId;
+                          const alreadyRequested = business.pendingRequestStatus === 'PENDING';
+
                           return (
                             <button
                               key={business.id}
                               type="button"
+                              disabled={alreadyRequested}
                               onClick={() => setSelectedId(business.id)}
-                              className={`flex w-full items-center gap-3 rounded-2xl p-3 text-right transition-colors ${
+                              className={`flex w-full items-center gap-3 rounded-2xl p-3 text-right transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
                                 selected
                                   ? 'bg-[var(--brand)] text-white shadow-lg shadow-[var(--brand)]/20'
                                   : 'bg-white text-[var(--foreground)] hover:bg-[var(--soft-violet)]'
@@ -116,12 +168,19 @@ export function JoinBusinessDialog({ businesses, onClose }: { businesses: Busine
                               </span>
                               <div className="min-w-0 flex-1">
                                 <p className="truncate text-sm font-extrabold">{business.name}</p>
-                                <p className={`mt-0.5 truncate text-xs ${selected ? 'text-white/75' : 'text-[var(--muted)]'}`}>
-                                  {business.description}
+                                <p
+                                  className={`mt-0.5 truncate text-xs ${
+                                    selected ? 'text-white/75' : 'text-[var(--muted)]'
+                                  }`}
+                                >
+                                  {[business.categoryName, business.area].filter(Boolean).join(' · ')}
                                 </p>
                               </div>
-                              {/* eslint-disable-next-line @next/next/no-img-element -- demo images come from the local discovery fixture */}
-                              <img src={business.photoUrl} alt="" className="h-11 w-11 rounded-xl object-cover" />
+                              {alreadyRequested ? (
+                                <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-700">
+                                  {copy.joinBusiness.alreadyRequested}
+                                </span>
+                              ) : null}
                             </button>
                           );
                         })}
@@ -141,34 +200,31 @@ export function JoinBusinessDialog({ businesses, onClose }: { businesses: Busine
                 <UserPlus className="h-5 w-5" aria-hidden="true" />
                 {copy.joinBusiness.detailsStep}
               </h3>
-              <div className="mt-5 grid gap-4 md:grid-cols-2">
-                <label className="text-sm font-bold text-[var(--foreground)]">
-                  {copy.joinBusiness.position}<span className="ms-1 text-rose-500">*</span>
-                  <input required className={fieldClassName} placeholder="מעצב/ת שיער / נותן/ת שירות" />
-                </label>
-                <label className="text-sm font-bold text-[var(--foreground)]">
-                  {copy.joinBusiness.phone}<span className="ms-1 text-rose-500">*</span>
-                  <span className="relative block">
-                    <Phone className="pointer-events-none absolute inset-y-0 start-4 my-auto h-5 w-5 text-[var(--muted)]" aria-hidden="true" />
-                    <input required type="tel" className={`${fieldClassName} ps-11`} defaultValue="054-1112233" />
-                  </span>
-                </label>
-              </div>
               <p className="mt-4 rounded-3xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-800">
                 {copy.joinBusiness.notice}
               </p>
             </section>
 
+            {formError ? (
+              <p role="alert" className="mt-5 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+                {formError}
+              </p>
+            ) : null}
+
             <div className="mt-7 flex flex-wrap gap-3">
               <button
                 type="submit"
-                disabled={!selectedBusiness}
+                disabled={!selectedBusiness || selectedBusiness.pendingRequestStatus === 'PENDING' || isSubmitting}
                 className="flex items-center gap-2 rounded-2xl bg-[var(--brand)] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[var(--brand)]/25 hover:bg-[var(--brand-deep)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <UserPlus className="h-4 w-4" aria-hidden="true" />
-                {copy.joinBusiness.submit}
+                {isSubmitting ? copy.joinBusiness.submitting : copy.joinBusiness.submit}
               </button>
-              <button type="button" onClick={onClose} className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-bold text-[var(--foreground)] hover:bg-slate-200">
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-bold text-[var(--foreground)] hover:bg-slate-200"
+              >
                 {copy.joinBusiness.cancel}
               </button>
             </div>
@@ -179,25 +235,24 @@ export function JoinBusinessDialog({ businesses, onClose }: { businesses: Busine
   );
 }
 
-function SelectedBusinessCard({ business, label }: { business: BusinessSummary | null; label: string }) {
+function SelectedBusinessCard({ business, label }: { business: JoinableBusiness | null; label: string }) {
   if (!business) return null;
 
   return (
     <aside className="flex h-full flex-col rounded-3xl border border-[#cfcaff] bg-[#f4f2ff] p-5 text-right">
       <p className="text-sm font-bold text-[var(--brand)]">{label}</p>
-      <div className="mt-4 flex items-start gap-3">
-        {/* eslint-disable-next-line @next/next/no-img-element -- demo images come from the local discovery fixture */}
-        <img src={business.photoUrl} alt="" className="h-14 w-14 rounded-2xl object-cover" />
-        <div className="min-w-0 flex-1">
-          <h4 className="text-base font-extrabold text-[var(--foreground)]">{business.name}</h4>
-          <p className="mt-1 flex items-center gap-1 text-sm text-[var(--muted)]">
-            <MapPin className="h-4 w-4 shrink-0 text-[var(--brand)]" aria-hidden="true" />
-            {business.address}
-          </p>
-        </div>
-      </div>
-      <p className="mt-5 text-sm leading-6 text-[var(--muted)]">{business.description}</p>
-      <p className="mt-auto border-t border-[#dcd8ff] pt-4 text-sm font-semibold text-[var(--brand)]">{business.area}</p>
+      <h4 className="mt-4 text-base font-extrabold text-[var(--foreground)]">{business.name}</h4>
+      <p className="mt-1 flex items-center gap-1 text-sm text-[var(--muted)]">
+        <MapPin className="h-4 w-4 shrink-0 text-[var(--brand)]" aria-hidden="true" />
+        {business.area}
+      </p>
+      <p className="mt-3 flex items-center gap-1 text-sm text-[var(--muted)]">
+        <Users className="h-4 w-4 shrink-0 text-[var(--brand)]" aria-hidden="true" />
+        {business.employeeCount}
+      </p>
+      <p className="mt-auto border-t border-[#dcd8ff] pt-4 text-sm font-semibold text-[var(--brand)]">
+        {business.categoryName}
+      </p>
     </aside>
   );
 }
