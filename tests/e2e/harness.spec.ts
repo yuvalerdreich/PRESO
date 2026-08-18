@@ -40,18 +40,33 @@ test.skip('search filters business cards by category', async ({ page }) => {
   await expect(page.getByText('Studio Zohar')).not.toBeVisible();
 });
 
+// Pinned seed ids (supabase/seed.sql §2, §4). Studio Zohar has exactly two staff, each with a
+// service the other doesn't offer — which is what makes "a client sees only the *selected*
+// employee's services" (PDF §8 rule 8) observable from the browser.
+const BUSINESS_ZOHAR = 'b18f6ca9-0c44-45b8-a8d9-3e1a2c6a1001';
+const EMPLOYEE_ZOHAR = 'e0000000-0000-4000-8000-000000000001';
+const EMPLOYEE_MIYA = 'e0000000-0000-4000-8000-000000000002';
+
 test('discovery navigates to a business and switches between its staff-linked services', async ({ page }) => {
-  await page.goto('/b/b18f6ca9-0c44-45b8-a8d9-3e1a2c6a1001');
+  await page.goto(`/b/${BUSINESS_ZOHAR}`);
 
   // /b/[businessId] redirects to the merged profile + staff-picker + services page (§12.24).
-  await expect(page).toHaveURL(/\/b\/b18f6ca9-0c44-45b8-a8d9-3e1a2c6a1001\/e\/e-zohar$/);
+  // Which employee it lands on is `listBusinessEmployees`' `order('position_title')` — a Hebrew
+  // collation detail, not a product rule — so assert the shape, then pick a staff member below.
+  await expect(page).toHaveURL(new RegExp(`/b/${BUSINESS_ZOHAR}/e/[0-9a-f-]{36}$`));
   await expect(page.getByRole('heading', { level: 1, name: 'Studio Zohar - מספרת זוהר' })).toBeVisible();
-  await expect(page.getByRole('heading', { level: 3, name: 'תספורת ועיצוב שיער (גברים/נשים)' })).toBeVisible();
 
   await page.getByRole('link', { name: /מיה כהן/ }).click();
 
-  await expect(page).toHaveURL(/\/b\/b18f6ca9-0c44-45b8-a8d9-3e1a2c6a1001\/e\/e-miya$/);
+  await expect(page).toHaveURL(new RegExp(`/b/${BUSINESS_ZOHAR}/e/${EMPLOYEE_MIYA}$`));
   await expect(page.getByRole('heading', { level: 3, name: 'גוונים וצבע אורגני מקצועי' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 3, name: 'עיצוב זקן וגילוח מסורתי' })).toBeHidden();
+
+  await page.getByRole('link', { name: /זוהר לוי/ }).click();
+
+  await expect(page).toHaveURL(new RegExp(`/b/${BUSINESS_ZOHAR}/e/${EMPLOYEE_ZOHAR}$`));
+  await expect(page.getByRole('heading', { level: 3, name: 'עיצוב זקן וגילוח מסורתי' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 3, name: 'גוונים וצבע אורגני מקצועי' })).toBeHidden();
 });
 
 test('an unknown path renders the not-found page, not a crash', async ({ page }) => {
