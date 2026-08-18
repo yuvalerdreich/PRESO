@@ -1,17 +1,29 @@
--- Development seed (TECHNICAL_DESIGN.md §1's file plan: "dev seed: categories, demo business,
--- demo staff"). Applied automatically after migrations by `supabase db reset`
--- (config.toml [db.seed]).
+-- ############################################################################
+-- LOCAL STACK ONLY — NEVER RUN THIS AGAINST THE HOSTED PROJECT.
+--
+-- Decided 2026-08-18 (TECHNICAL_DESIGN.md §12.40): the hosted project holds **real data only**.
+-- Its demo rows were purged, and from that point every business, employee, service, appointment,
+-- waitlist entry and account there is created through the running app by a real user.
+--
+-- This file exists solely to give the throwaway local Docker stack the fixtures the test suites
+-- sign in to and assert against: `tests/int/*` (100 tests) authenticate as `zohar@demo.local` and
+-- reference the pinned business/employee UUIDs below, as does `tests/e2e/`. `supabase db reset`
+-- rebuilds the local stack from it automatically (config.toml `[db.seed]`); nothing applies it
+-- to hosted unless a person runs it by hand, which is what this banner exists to prevent.
+--
+-- An earlier revision of this header advertised that it was "idempotent, so this can be re-run
+-- against the hosted project without duplicating anyone". It still is idempotent — that is why
+-- re-running it would silently repopulate hosted with fake businesses rather than erroring.
+-- ############################################################################
 --
 -- Categories themselves are NOT here — they are a migration (0011_seed_categories.sql), because
--- they are reference data the application depends on rather than demo content. Everything below
--- is demo content and is joined to those categories **by slug**, never by id: `categories.id` is
--- a per-environment `gen_random_uuid()`, so local, CI and the hosted project all disagree on it.
+-- they are reference data the application depends on rather than demo content (and so they
+-- legitimately remain on hosted after the purge). Everything below is demo content and is joined
+-- to those categories **by slug**, never by id: `categories.id` is a per-environment
+-- `gen_random_uuid()`, so local, CI and the hosted project all disagree on it.
 --
 -- Business ids are pinned to the same UUIDs the old mock fixture used, so URLs and tests written
 -- against the mock keep working now that the data is real.
---
--- Idempotent throughout (`on conflict do nothing`), so this can be re-run against the hosted
--- project without duplicating anyone.
 
 -- ============================================================================
 -- 1. Demo accounts

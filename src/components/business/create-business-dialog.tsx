@@ -152,7 +152,7 @@ export function CreateBusinessDialog({
             <FormSection title={copy.createBusiness.detailsStep} icon={Building2}>
               <div className="grid gap-4 md:grid-cols-2">
                 <Field label={copy.createBusiness.businessName} required error={fieldErrors.name}>
-                  <input required name="name" className={fieldClassName} placeholder="Studio Zohar" />
+                  <input required name="name" className={fieldClassName} placeholder={copy.createBusiness.businessName} />
                 </Field>
                 <Field label={copy.createBusiness.category} required error={fieldErrors.categoryId}>
                   <select required name="categoryId" defaultValue="" className={fieldClassName}>
