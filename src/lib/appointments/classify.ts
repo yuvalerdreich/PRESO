@@ -1,4 +1,4 @@
-import type { ClientAppointment } from '@/types/appointments';
+import type { ClientAppointment } from '@/types/domain';
 
 function todayISO(): string {
   const date = new Date();
@@ -10,13 +10,13 @@ function todayISO(): string {
  * An appointment is "upcoming" only while it is neither cancelled nor in the
  * past — waitlist entries and completed/past appointments never count here.
  * `demoCancelledIds` covers appointments cancelled client-side during this
- * session (see AppointmentsPanel), which don't carry status: 'cancelled'.
+ * session (see AppointmentsPanel), which don't carry status: 'CANCELLED'.
  */
 export function isUpcomingAppointment(
   appointment: ClientAppointment,
   demoCancelledIds?: ReadonlySet<string>,
 ): boolean {
-  if (appointment.status === 'cancelled' || demoCancelledIds?.has(appointment.id)) return false;
+  if (appointment.status === 'CANCELLED' || demoCancelledIds?.has(appointment.id)) return false;
   return appointment.dateISO >= todayISO();
 }
 

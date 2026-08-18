@@ -1,34 +1,35 @@
 import { notFound } from 'next/navigation';
 
 import { BusinessProfile } from '@/components/public/business-profile';
-import { discoveryRepository } from '@/lib/discovery/repository';
-
-function pad(value: number): string {
-  return String(value).padStart(2, '0');
-}
-
-function toISODate(date: Date): string {
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
+import { getDaySlots, getMonthAvailability } from '@/server/queries/availability';
+import {
+  getBusinessEmployee,
+  getBusinessProfile,
+  listBusinessEmployees,
+  listCategories,
+  listEmployeeServices,
+} from '@/server/queries/discovery';
 
 function currentMonthISO(): string {
   const now = new Date();
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}`;
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
-function firstOpenDateOfMonth(monthISO: string): string {
-  const [year, month] = monthISO.split('-').map(Number);
-  let date = new Date(year, month - 1, 1);
-  while (date.getDay() === 6) date = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
-  return toISODate(date);
-}
+/**
+ * Which date the calendar opens on.
+ *
+ * This used to guess — step forward until the day was not a Saturday — because the availability
+ * mock's only rule was "Saturdays are closed" (§12.25). With the real engine the answer is simply
+ * the first date that has slots: it already accounts for business hours, each employee's own
+ * windows, vacations, blocks and existing bookings, none of which a weekday check can see. A
+ * month with no availability at all now correctly opens on nothing rather than on an arbitrary
+ * Sunday that turns out to be empty.
+ */
+function defaultDate(availableDates: string[], monthISO: string): string {
+  const todayISO = new Date().toISOString().slice(0, 10);
+  if (availableDates.includes(todayISO)) return todayISO;
 
-function defaultDateForMonth(monthISO: string): string {
-  if (monthISO !== currentMonthISO()) return firstOpenDateOfMonth(monthISO);
-
-  let date = new Date();
-  while (date.getDay() === 6) date = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
-  return toISODate(date);
+  return availableDates[0] ?? `${monthISO}-01`;
 }
 
 export default async function ServiceAvailabilityPage({
@@ -39,24 +40,27 @@ export default async function ServiceAvailabilityPage({
   const search = await searchParams;
 
   const monthISO = typeof search.month === 'string' ? search.month : currentMonthISO();
-  const dateISO = typeof search.date === 'string' ? search.date : defaultDateForMonth(monthISO);
   const selectedSlot = typeof search.slot === 'string' ? search.slot : undefined;
   const waitlistOpen = search.waitlist === '1';
 
-  const [business, categories, employees, selectedEmployee, services, availableDates, daySlots] = await Promise.all([
-    discoveryRepository.getBusinessProfile(businessId),
-    discoveryRepository.listCategories(),
-    discoveryRepository.listBusinessEmployees(businessId),
-    discoveryRepository.getBusinessEmployee(businessId, employeeId),
-    discoveryRepository.listEmployeeServices(businessId, employeeId),
-    discoveryRepository.getMonthAvailability(employeeId, serviceId, monthISO),
-    discoveryRepository.getDaySlots(employeeId, serviceId, dateISO),
+  const [business, categories, employees, selectedEmployee, services, availableDates] = await Promise.all([
+    getBusinessProfile(businessId),
+    listCategories(),
+    listBusinessEmployees(businessId),
+    getBusinessEmployee(businessId, employeeId),
+    listEmployeeServices(businessId, employeeId),
+    getMonthAvailability(employeeId, serviceId, monthISO),
   ]);
 
   if (!business || !selectedEmployee) notFound();
 
+  // Looked up in *this employee's* list, so a service belonging to a colleague 404s rather than
+  // rendering a calendar for a pair the engine will never return slots for (PDF §8 rule 8).
   const selectedService = services.find((service) => service.id === serviceId);
   if (!selectedService) notFound();
+
+  const dateISO = typeof search.date === 'string' ? search.date : defaultDate(availableDates, monthISO);
+  const daySlots = await getDaySlots(employeeId, serviceId, dateISO);
 
   const category = categories.find((c) => c.id === business.categoryId);
 

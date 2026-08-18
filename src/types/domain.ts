@@ -1,10 +1,69 @@
+import type { Database } from '@/types/database.types';
+
+/**
+ * Hand-written view models (TECHNICAL_DESIGN.md §1: `types/domain.ts`). One file, deliberately:
+ * these are the shapes `server/queries/*` returns and components consume, and splitting them by
+ * feature made it easy to end up with three subtly different ideas of "an appointment".
+ *
+ * The rule dividing this file from `database.types.ts`: that file is **generated** and mirrors
+ * the schema exactly (snake_case columns, `tstzrange` as `unknown`, nullable everywhere the DDL
+ * is). This one is camelCase, resolved, and shaped for rendering. Nothing outside
+ * `server/queries/*` should need to touch the generated types.
+ */
+
+// ---------------------------------------------------------------------------
+// Enums — aliased from the generated types, never re-typed by hand
+// ---------------------------------------------------------------------------
+
+/**
+ * Every domain enum points at `database.types.ts`, so a migration that adds or renames an enum
+ * value fails the build here rather than silently disagreeing with the database. Re-declaring
+ * these as string unions is the obvious shortcut and the reason to avoid it.
+ */
+type Enums = Database['public']['Enums'];
+
+export type AccountType = Enums['account_type'];
+export type ProfileStatus = Enums['profile_status'];
+export type BusinessStatus = Enums['business_status'];
+export type ApprovalPolicy = Enums['approval_policy'];
+export type EmployeeStatus = Enums['employee_status'];
+export type ServiceStatus = Enums['service_status'];
+export type AvailabilityRuleKind = Enums['availability_rule_kind'];
+export type JoinRequestStatus = Enums['join_request_status'];
+export type WaitlistStatus = Enums['waitlist_status'];
+export type NotificationType = Enums['notification_type'];
+export type ReportStatus = Enums['report_status'];
+export type ReportTargetType = Enums['report_target_type'];
+
+/**
+ * `PENDING | CONFIRMED | CANCELLED` — the database's casing, not a lowercase UI variant.
+ *
+ * These values cross the API boundary (`POST /api/appointments` answers
+ * `status: 'PENDING'|'CONFIRMED'` per §5.4) and come straight back out of the booking RPCs, so
+ * carrying a second lowercase spelling internally only bought a translation step in each
+ * direction and a place for the two to drift. The bilingual *labels* remain a separate concern
+ * and still live in `lib/i18n/`, keyed independently of this enum.
+ */
+export type AppointmentStatus = Enums['appointment_status'];
+
+// ---------------------------------------------------------------------------
+// Public discovery and booking
+// ---------------------------------------------------------------------------
+
 export type LocalizedText = { he: string; en: string };
 
 export type CategoryIconId = 'graduation-cap' | 'stethoscope' | 'dumbbell' | 'sparkles' | 'scissors';
 
 export type Category = {
   id: string;
+  /**
+   * The stable key. `categories.id` is a per-environment `gen_random_uuid()`, so local, hosted
+   * and CI all disagree on it — `slug` is what `lib/i18n/` keys its bilingual labels off and
+   * what a `?category=` URL carries.
+   */
+  slug: string;
   icon: CategoryIconId;
+  /** Sourced from `lib/i18n/`, not the database — see the note on `BusinessSummary.name`. */
   name: LocalizedText;
 };
 
@@ -22,15 +81,37 @@ export type BusinessSummary = {
   area: string;
   address: string;
   description: string;
+  /** Resolved from `businesses.photo_paths[0]` via Supabase Storage. */
   photoUrl: string;
   employeeCount: number;
   employeeAvatarUrls: string[];
   /** `AUTO` confirms a booking immediately; `MANUAL` leaves it `PENDING` until the business approves it (TECHNICAL_DESIGN.md §6.2 step 5). */
-  approvalPolicy: 'AUTO' | 'MANUAL';
+  approvalPolicy: ApprovalPolicy;
 };
 
 export type BusinessProfile = BusinessSummary & {
   phone: string;
+  /** IANA zone (§12.3). Every date and time shown for this business is rendered through it. */
+  timezone: string;
+  /** §12.2 — a client may cancel online up to N hours before the start. Staff always may. */
+  cancellationWindowHours: number;
+  ownerProfileId: string;
+};
+
+/** One row of `GET /api/businesses` (§5.2), which carries more than a card needs. */
+export type BusinessSearchResultItem = BusinessSummary & {
+  category: { id: string; slug: string; name: string };
+  /** Across all ACTIVE services of all ACTIVE employees; `null` when the business has none. */
+  priceRange: { min: number; max: number } | null;
+  /** §6.6's `get_next_available()`; `null` unless the query asked for it. */
+  nextAvailableAt: string | null;
+};
+
+export type BusinessSearchResult = {
+  items: BusinessSearchResultItem[];
+  page: number;
+  pageSize: number;
+  total: number;
 };
 
 export type EmployeeSummary = {
@@ -41,6 +122,20 @@ export type EmployeeSummary = {
   avatarUrl: string;
 };
 
+/**
+ * `GET /api/businesses/[id]/employees` (§5.3) — a roster row, not the booking-page view model.
+ * `serviceCount` is what lets the UI explain an unbookable employee instead of showing an empty
+ * service list (§12.10: an employee with zero services is selectable but unbookable).
+ */
+export type EmployeeListItem = {
+  id: string;
+  profileId: string;
+  fullName: string;
+  positionTitle: string;
+  status: EmployeeStatus;
+  serviceCount: number;
+};
+
 export type ServiceSummary = {
   id: string;
   employeeId: string;
@@ -49,11 +144,208 @@ export type ServiceSummary = {
   price: number;
   durationMinutes: number;
   bufferMinutes: number;
-  status: 'ACTIVE' | 'INACTIVE';
+  status: ServiceStatus;
 };
 
 export type BusinessSearchFilters = {
   q?: string;
   category?: string;
   area?: string;
+};
+
+/**
+ * One bookable slot, as `get_available_slots()` returns it. Both instants are absolute; the
+ * `dateISO`/`time` pair is the same instant rendered in the business's timezone, resolved once
+ * server-side so no component has to know about `date-fns-tz`.
+ */
+export type Slot = {
+  startsAt: string;
+  endsAt: string;
+  dateISO: string;
+  time: string;
+};
+
+export type SlotList = {
+  employeeId: string;
+  serviceId: string;
+  timezone: string;
+  slots: Slot[];
+};
+
+// ---------------------------------------------------------------------------
+// Client portal
+// ---------------------------------------------------------------------------
+
+export type ClientAppointment = {
+  id: string;
+  /** Real business/employee/service names are single-language — see `BusinessSummary.name`. */
+  businessName: string;
+  employeeName: string;
+  serviceName: string;
+  address: string;
+  /** ISO date (YYYY-MM-DD) **in the business's timezone**. Past dates fall into the history tab regardless of status. */
+  dateISO: string;
+  /** "HH:mm" start time, likewise in the business's timezone. */
+  time: string;
+  status: AppointmentStatus;
+};
+
+export type ClientWaitlistEntry = {
+  id: string;
+  businessName: string;
+  employeeName: string;
+  serviceName: string;
+  requestedDateISO: string;
+  requestedRange: string;
+  status: WaitlistStatus;
+};
+
+/** Everything needed to create a `ClientAppointment` row, minus its generated `id`. */
+export type CreateAppointmentInput = Omit<ClientAppointment, 'id'>;
+
+export type NotificationItem = {
+  id: string;
+  type: NotificationType;
+  payload: Record<string, unknown>;
+  readAt: string | null;
+  createdAt: string;
+};
+
+// ---------------------------------------------------------------------------
+// Business portal — onboarding and joining
+// ---------------------------------------------------------------------------
+
+export type BusinessCategory = { id: string; slug: string; name: string };
+
+/** §12.20 — `businesses.area` is free text, so the options are whatever is already in use. */
+export type BusinessArea = { id: string; name: string };
+
+export type JoinableBusiness = {
+  id: string;
+  name: string;
+  area: string;
+  categoryName: string;
+  employeeCount: number;
+  /** The caller's own request, when one exists — drives "Requested" vs "Request to join". */
+  pendingRequestStatus: JoinRequestStatus | null;
+};
+
+// ---------------------------------------------------------------------------
+// Business portal — dashboard
+// ---------------------------------------------------------------------------
+
+export type DashboardBusiness = {
+  id: string;
+  name: string;
+  timezone: string;
+  approvalPolicy: ApprovalPolicy;
+  cancellationWindowHours: number;
+  status: BusinessStatus;
+  /** Whether the caller founded this business — the one capability an employee lacks (§12.1). */
+  isOwner: boolean;
+};
+
+export type DashboardEmployee = {
+  id: string;
+  profileId: string;
+  fullName: string;
+  positionTitle: string;
+  status: EmployeeStatus;
+  serviceCount: number;
+  isOwner: boolean;
+};
+
+export type DashboardService = {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  name: string;
+  price: number;
+  durationMinutes: number;
+  bufferMinutes: number;
+  status: ServiceStatus;
+};
+
+export type DashboardAppointment = {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  clientName: string;
+  clientPhone: string | null;
+  serviceName: string;
+  dateISO: string;
+  time: string;
+  status: AppointmentStatus;
+};
+
+export type DashboardKpi = {
+  id: 'appointments-today' | 'active-staff' | 'pending-approval' | 'revenue';
+  value: number;
+  /** Revenue has no source column; it is derived from service prices and flagged as such. */
+  isMock?: boolean;
+};
+
+export type JoinRequestSummary = {
+  id: string;
+  businessId: string;
+  businessName: string;
+  profileId: string;
+  fullName: string;
+  status: JoinRequestStatus;
+  createdAt: string;
+};
+
+export type AvailabilityRule = {
+  id: string;
+  employeeId: string;
+  kind: AvailabilityRuleKind;
+  /** 0 = Sunday. Set for `WEEKLY_WINDOW` only. */
+  dayOfWeek: number | null;
+  /** "HH:mm". Set for `WEEKLY_WINDOW` and `EXCEPTION`. */
+  startsAt: string | null;
+  endsAt: string | null;
+  /** Set for `EXCEPTION`, `VACATION` and `BLOCK`. */
+  effectiveFrom: string | null;
+  effectiveTo: string | null;
+};
+
+export type BusinessHourRow = {
+  id: string;
+  dayOfWeek: number;
+  opensAt: string;
+  closesAt: string;
+};
+
+// ---------------------------------------------------------------------------
+// Admin console
+// ---------------------------------------------------------------------------
+
+export type AdminUser = {
+  id: string;
+  fullName: string;
+  accountType: AccountType;
+  status: ProfileStatus;
+  createdAt: string;
+};
+
+export type AdminBusiness = {
+  id: string;
+  name: string;
+  ownerName: string;
+  categoryName: string;
+  area: string;
+  status: BusinessStatus;
+  employeeCount: number;
+  createdAt: string;
+};
+
+export type ReportSummary = {
+  id: string;
+  targetType: ReportTargetType;
+  targetId: string;
+  reporterName: string;
+  description: string;
+  status: ReportStatus;
+  resolutionNote: string | null;
+  createdAt: string;
 };

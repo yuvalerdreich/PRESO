@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 
 import { countUpcomingAppointments } from '@/lib/appointments/classify';
 import { useLanguage } from '@/lib/i18n/language-provider';
-import type { ClientAppointment } from '@/types/appointments';
+import type { ClientAppointment } from '@/types/domain';
 import type { Database } from '@/types/database.types';
 
 type AccountType = Database['public']['Enums']['account_type'];

@@ -6,7 +6,7 @@ import { AppointmentsPanelContext } from '@/components/common/appointments-panel
 import { AppointmentsPanel } from '@/components/client/appointments-panel';
 import { Modal } from '@/components/common/modal';
 import { useLanguage } from '@/lib/i18n/language-provider';
-import type { ClientAppointment, ClientWaitlistEntry } from '@/types/appointments';
+import type { ClientAppointment, ClientWaitlistEntry } from '@/types/domain';
 
 /**
  * Shares the "My appointments" modal across the sidebar nav item and the

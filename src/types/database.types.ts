@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.15"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -81,8 +76,22 @@ export type Database = {
             foreignKeyName: "appointments_cancelled_by_fkey"
             columns: ["cancelled_by"]
             isOneToOne: false
+            referencedRelation: "business_client_contacts"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "appointments_cancelled_by_fkey"
+            columns: ["cancelled_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_client_profile_id_fkey"
+            columns: ["client_profile_id"]
+            isOneToOne: false
+            referencedRelation: "business_client_contacts"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "appointments_client_profile_id_fkey"
@@ -95,8 +104,22 @@ export type Database = {
             foreignKeyName: "appointments_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
+            referencedRelation: "business_client_contacts"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "appointments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_public_profiles"
+            referencedColumns: ["employee_id"]
           },
           {
             foreignKeyName: "appointments_employee_id_fkey"
@@ -143,6 +166,13 @@ export type Database = {
           metadata?: Json
         }
         Relationships: [
+          {
+            foreignKeyName: "audit_log_actor_profile_id_fkey"
+            columns: ["actor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "business_client_contacts"
+            referencedColumns: ["profile_id"]
+          },
           {
             foreignKeyName: "audit_log_actor_profile_id_fkey"
             columns: ["actor_profile_id"]
@@ -245,6 +275,13 @@ export type Database = {
             foreignKeyName: "businesses_owner_profile_id_fkey"
             columns: ["owner_profile_id"]
             isOneToOne: false
+            referencedRelation: "business_client_contacts"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "businesses_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -304,6 +341,13 @@ export type Database = {
             foreignKeyName: "employee_availability_rules_employee_id_fkey"
             columns: ["employee_id"]
             isOneToOne: false
+            referencedRelation: "employee_public_profiles"
+            referencedColumns: ["employee_id"]
+          },
+          {
+            foreignKeyName: "employee_availability_rules_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -341,6 +385,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "businesses"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employees_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "business_client_contacts"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "employees_profile_id_fkey"
@@ -391,8 +442,22 @@ export type Database = {
             foreignKeyName: "join_requests_decided_by_fkey"
             columns: ["decided_by"]
             isOneToOne: false
+            referencedRelation: "business_client_contacts"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "join_requests_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "join_requests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "business_client_contacts"
+            referencedColumns: ["profile_id"]
           },
           {
             foreignKeyName: "join_requests_profile_id_fkey"
@@ -436,6 +501,13 @@ export type Database = {
             foreignKeyName: "notifications_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
+            referencedRelation: "business_client_contacts"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "notifications_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -444,6 +516,7 @@ export type Database = {
       profiles: {
         Row: {
           account_type: Database["public"]["Enums"]["account_type"]
+          avatar_url: string | null
           created_at: string
           date_of_birth: string | null
           full_name: string
@@ -454,6 +527,7 @@ export type Database = {
         }
         Insert: {
           account_type: Database["public"]["Enums"]["account_type"]
+          avatar_url?: string | null
           created_at?: string
           date_of_birth?: string | null
           full_name: string
@@ -464,6 +538,7 @@ export type Database = {
         }
         Update: {
           account_type?: Database["public"]["Enums"]["account_type"]
+          avatar_url?: string | null
           created_at?: string
           date_of_birth?: string | null
           full_name?: string
@@ -510,6 +585,13 @@ export type Database = {
             foreignKeyName: "reports_reporter_profile_id_fkey"
             columns: ["reporter_profile_id"]
             isOneToOne: false
+            referencedRelation: "business_client_contacts"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "reports_reporter_profile_id_fkey"
+            columns: ["reporter_profile_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -519,6 +601,7 @@ export type Database = {
         Row: {
           buffer_minutes: number
           created_at: string
+          description: string | null
           duration_minutes: number
           employee_id: string
           id: string
@@ -529,6 +612,7 @@ export type Database = {
         Insert: {
           buffer_minutes?: number
           created_at?: string
+          description?: string | null
           duration_minutes: number
           employee_id: string
           id?: string
@@ -539,6 +623,7 @@ export type Database = {
         Update: {
           buffer_minutes?: number
           created_at?: string
+          description?: string | null
           duration_minutes?: number
           employee_id?: string
           id?: string
@@ -547,6 +632,13 @@ export type Database = {
           status?: Database["public"]["Enums"]["service_status"]
         }
         Relationships: [
+          {
+            foreignKeyName: "services_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_public_profiles"
+            referencedColumns: ["employee_id"]
+          },
           {
             foreignKeyName: "services_employee_id_fkey"
             columns: ["employee_id"]
@@ -570,6 +662,13 @@ export type Database = {
           waitlist_entry_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "waitlist_employee_targets_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employee_public_profiles"
+            referencedColumns: ["employee_id"]
+          },
           {
             foreignKeyName: "waitlist_employee_targets_employee_id_fkey"
             columns: ["employee_id"]
@@ -632,6 +731,13 @@ export type Database = {
             foreignKeyName: "waitlist_entries_client_profile_id_fkey"
             columns: ["client_profile_id"]
             isOneToOne: false
+            referencedRelation: "business_client_contacts"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "waitlist_entries_client_profile_id_fkey"
+            columns: ["client_profile_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -646,7 +752,57 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      business_client_contacts: {
+        Row: {
+          business_id: string | null
+          full_name: string | null
+          phone: string | null
+          profile_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_public_profiles: {
+        Row: {
+          avatar_url: string | null
+          business_id: string | null
+          employee_id: string | null
+          full_name: string | null
+          position_title: string | null
+          profile_id: string | null
+          status: Database["public"]["Enums"]["employee_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employees_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "business_client_contacts"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "employees_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       _insert_appointment: {
@@ -760,6 +916,7 @@ export type Database = {
         Args: never
         Returns: {
           account_type: Database["public"]["Enums"]["account_type"]
+          avatar_url: string | null
           created_at: string
           date_of_birth: string | null
           full_name: string
@@ -802,6 +959,64 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_business_with_owner: {
+        Args: {
+          p_address: string
+          p_approval_policy?: Database["public"]["Enums"]["approval_policy"]
+          p_area: string
+          p_cancellation_window_hours?: number
+          p_category_id: string
+          p_description?: string
+          p_name: string
+          p_phone: string
+          p_position_title?: string
+          p_timezone?: string
+        }
+        Returns: {
+          address: string
+          approval_policy: Database["public"]["Enums"]["approval_policy"]
+          area: string
+          cancellation_window_hours: number
+          category_id: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          owner_profile_id: string
+          phone: string
+          photo_paths: string[]
+          status: Database["public"]["Enums"]["business_status"]
+          timezone: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "businesses"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      decide_join_request: {
+        Args: {
+          p_decision: Database["public"]["Enums"]["join_request_status"]
+          p_position_title?: string
+          p_request_id: string
+        }
+        Returns: {
+          business_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          profile_id: string
+          status: Database["public"]["Enums"]["join_request_status"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "join_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       get_available_slots: {
         Args: {
           p_employee_id: string
@@ -813,6 +1028,17 @@ export type Database = {
           ends_at: string
           starts_at: string
         }[]
+      }
+      get_next_available: {
+        Args: {
+          p_business_id: string
+          p_from: string
+          p_hour_from?: string
+          p_hour_to?: string
+          p_service_query?: string
+          p_to: string
+        }
+        Returns: string
       }
       is_admin: { Args: never; Returns: boolean }
       is_employee_of: { Args: { p_business_id: string }; Returns: boolean }
@@ -850,6 +1076,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      remove_employee: { Args: { p_employee_id: string }; Returns: boolean }
       reschedule_appointment: {
         Args: {
           p_actor_profile_id: string
@@ -1071,3 +1298,4 @@ export const Constants = {
     },
   },
 } as const
+

@@ -9,7 +9,7 @@ import { AppointmentsTabs, type AppointmentsTabId } from '@/components/client/ap
 import { CancelAppointmentDialog } from '@/components/client/cancel-appointment-dialog';
 import { isUpcomingAppointment } from '@/lib/appointments/classify';
 import { useLanguage } from '@/lib/i18n/language-provider';
-import type { ClientAppointment, ClientWaitlistEntry } from '@/types/appointments';
+import type { ClientAppointment, ClientWaitlistEntry } from '@/types/domain';
 
 export function AppointmentsPanel({
   appointments,

@@ -4,8 +4,8 @@ import { AccountSidebar } from '@/components/common/account-sidebar';
 import { ProfileSettingsProvider } from '@/components/common/profile-settings-provider';
 import { PublicHeader } from '@/components/common/public-header';
 import { AppError } from '@/lib/errors';
-import { appointmentsRepository } from '@/lib/appointments/repository';
 import { requireSession } from '@/server/guards';
+import { listClientAppointments } from '@/server/queries/appointments';
 
 export default async function MeLayout({ children }: LayoutProps<'/me'>) {
   let profile;
@@ -17,7 +17,7 @@ export default async function MeLayout({ children }: LayoutProps<'/me'>) {
     throw error;
   }
 
-  const appointments = await appointmentsRepository.listCurrentClientAppointments();
+  const appointments = await listClientAppointments();
 
   return (
     <ProfileSettingsProvider

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+﻿import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/navigation', () => ({
@@ -8,19 +8,19 @@ vi.mock('next/navigation', () => ({
 import { AccountSidebar } from '@/components/common/account-sidebar';
 import { LanguageProvider } from '@/lib/i18n/language-provider';
 import { translations } from '@/lib/i18n/translations';
-import type { ClientAppointment } from '@/types/appointments';
+import type { ClientAppointment } from '@/types/domain';
 import type { Database } from '@/types/database.types';
 
 function appointment(overrides: Partial<ClientAppointment>): ClientAppointment {
   return {
     id: 'a',
-    businessName: 'Studio Zohar - מספרת זוהר',
-    employeeName: 'זוהר לוי',
-    serviceName: 'תספורת',
-    address: 'רחוב דיזנגוף 142, תל אביב',
+    businessName: 'Studio Zohar - ׳׳¡׳₪׳¨׳× ׳–׳•׳”׳¨',
+    employeeName: '׳–׳•׳”׳¨ ׳׳•׳™',
+    serviceName: '׳×׳¡׳₪׳•׳¨׳×',
+    address: '׳¨׳—׳•׳‘ ׳“׳™׳–׳ ׳’׳•׳£ 142, ׳×׳ ׳׳‘׳™׳‘',
     dateISO: '2999-01-01',
     time: '10:00',
-    status: 'confirmed',
+    status: 'CONFIRMED',
     ...overrides,
   };
 }
@@ -37,7 +37,7 @@ function renderSidebar(
 }
 
 describe('account sidebar', () => {
-  it('shows a client exactly two entries — home and my appointments', () => {
+  it('shows a client exactly two entries ג€” home and my appointments', () => {
     renderSidebar([]);
 
     const nav = screen.getByRole('navigation', { name: translations.en.sidebar.title });
@@ -69,9 +69,9 @@ describe('account sidebar', () => {
 
   it('badges only future, non-cancelled appointments and hides the badge at zero', () => {
     const { unmount } = renderSidebar([
-      appointment({ id: 'upcoming', dateISO: '2999-01-01', status: 'confirmed' }),
-      appointment({ id: 'upcoming-cancelled', dateISO: '2999-01-01', status: 'cancelled' }),
-      appointment({ id: 'past', dateISO: '2000-01-01', status: 'confirmed' }),
+      appointment({ id: 'upcoming', dateISO: '2999-01-01', status: 'CONFIRMED' }),
+      appointment({ id: 'upcoming-cancelled', dateISO: '2999-01-01', status: 'CANCELLED' }),
+      appointment({ id: 'past', dateISO: '2000-01-01', status: 'CONFIRMED' }),
     ]);
 
     expect(screen.getByText('1')).toBeInTheDocument();
