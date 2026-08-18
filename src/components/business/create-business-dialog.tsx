@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Building2, CheckCircle2, Plus, Scissors, UserPlus, X } from 'lucide-react';
 
+import { businessButton, businessIconButton, businessTextButton } from '@/components/business/button-styles';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import { createBusiness } from '@/server/actions/business';
 import type { BusinessCategory } from '@/types/domain';
@@ -124,7 +125,7 @@ export function CreateBusinessDialog({
             type="button"
             onClick={onClose}
             aria-label={copy.createBusiness.close}
-            className="flex h-10 w-10 items-center justify-center rounded-full text-[var(--muted)] transition-colors hover:bg-[var(--soft-violet)] hover:text-[var(--foreground)]"
+            className={`${businessIconButton} h-10 w-10 rounded-full`}
           >
             <X className="h-6 w-6" aria-hidden="true" />
           </button>
@@ -142,7 +143,7 @@ export function CreateBusinessDialog({
             <button
               type="button"
               onClick={onClose}
-              className="mt-7 rounded-2xl bg-[var(--brand)] px-5 py-3 text-sm font-bold text-white hover:bg-[var(--brand-deep)]"
+              className={`${businessButton} mt-7 rounded-2xl px-5 py-3 text-sm`}
             >
               {copy.createBusiness.close}
             </button>
@@ -197,7 +198,7 @@ export function CreateBusinessDialog({
                       { id: Math.max(0, ...current.map((s) => s.id)) + 1, name: '', price: '', duration: '45' },
                     ])
                   }
-                  className="flex items-center gap-2 text-sm font-bold text-[var(--brand)] hover:text-[var(--brand-deep)]"
+                  className={`${businessTextButton} text-sm`}
                 >
                   <Plus className="h-4 w-4" aria-hidden="true" />
                   {copy.createBusiness.addService}
@@ -288,7 +289,7 @@ export function CreateBusinessDialog({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex items-center gap-2 rounded-2xl bg-[var(--brand)] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[var(--brand)]/25 hover:bg-[var(--brand-deep)] disabled:cursor-not-allowed disabled:opacity-60"
+                className={`${businessButton} rounded-2xl px-5 py-3 text-sm shadow-lg`}
               >
                 <Building2 className="h-4 w-4" aria-hidden="true" />
                 {isSubmitting ? copy.createBusiness.submitting : copy.createBusiness.submit}
@@ -296,7 +297,7 @@ export function CreateBusinessDialog({
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-bold text-[var(--foreground)] hover:bg-slate-200"
+                className={`${businessButton} rounded-2xl px-5 py-3 text-sm`}
               >
                 {copy.createBusiness.cancel}
               </button>

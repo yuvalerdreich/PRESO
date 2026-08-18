@@ -8,6 +8,8 @@
   --brand: #5945f6;
   --brand-deep: #34238d;
   --brand-dark: #171b46;
+  /* The single hover colour for every button in the business area — see components/business/button-styles.ts */
+  --brand-blue: #2563eb;
   --surface: #ffffff;
   --soft-violet: #f0edff;
 }

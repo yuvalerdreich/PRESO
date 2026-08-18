@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Building2, CheckCircle2, MapPin, Search, UserPlus, Users, X } from 'lucide-react';
 
+import { businessButton, businessIconButton } from '@/components/business/button-styles';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import { sendJoinRequest } from '@/server/actions/employee';
 import type { JoinableBusiness } from '@/types/domain';
@@ -97,7 +98,7 @@ export function JoinBusinessDialog({
             type="button"
             onClick={onClose}
             aria-label={copy.joinBusiness.close}
-            className="flex h-10 w-10 items-center justify-center rounded-full text-[var(--muted)] transition-colors hover:bg-[var(--soft-violet)] hover:text-[var(--foreground)]"
+            className={`${businessIconButton} h-10 w-10 rounded-full`}
           >
             <X className="h-6 w-6" aria-hidden="true" />
           </button>
@@ -115,7 +116,7 @@ export function JoinBusinessDialog({
             <button
               type="button"
               onClick={onClose}
-              className="mt-7 rounded-2xl bg-[var(--brand)] px-5 py-3 text-sm font-bold text-white hover:bg-[var(--brand-deep)]"
+              className={`${businessButton} mt-7 rounded-2xl px-5 py-3 text-sm`}
             >
               {copy.joinBusiness.close}
             </button>
@@ -157,10 +158,13 @@ export function JoinBusinessDialog({
                               type="button"
                               disabled={alreadyRequested}
                               onClick={() => setSelectedId(business.id)}
-                              className={`flex w-full items-center gap-3 rounded-2xl p-3 text-right transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                              // A row here is a list option, not an action button, so it keeps the
+                              // white/selected split — but hover follows the same rule as every
+                              // other control in this area: pointer cursor, blue.
+                              className={`flex w-full cursor-pointer items-center gap-3 rounded-2xl p-3 text-right transition-colors hover:bg-[var(--brand-blue)] hover:text-white disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-white disabled:hover:text-[var(--foreground)] ${
                                 selected
-                                  ? 'bg-[var(--brand)] text-white shadow-lg shadow-[var(--brand)]/20'
-                                  : 'bg-white text-[var(--foreground)] hover:bg-[var(--soft-violet)]'
+                                  ? 'bg-[var(--brand)] text-white shadow-lg'
+                                  : 'bg-white text-[var(--foreground)]'
                               }`}
                             >
                               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-current">
@@ -215,7 +219,7 @@ export function JoinBusinessDialog({
               <button
                 type="submit"
                 disabled={!selectedBusiness || selectedBusiness.pendingRequestStatus === 'PENDING' || isSubmitting}
-                className="flex items-center gap-2 rounded-2xl bg-[var(--brand)] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[var(--brand)]/25 hover:bg-[var(--brand-deep)] disabled:cursor-not-allowed disabled:opacity-50"
+                className={`${businessButton} rounded-2xl px-5 py-3 text-sm shadow-lg`}
               >
                 <UserPlus className="h-4 w-4" aria-hidden="true" />
                 {isSubmitting ? copy.joinBusiness.submitting : copy.joinBusiness.submit}
@@ -223,7 +227,7 @@ export function JoinBusinessDialog({
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-bold text-[var(--foreground)] hover:bg-slate-200"
+                className={`${businessButton} rounded-2xl px-5 py-3 text-sm`}
               >
                 {copy.joinBusiness.cancel}
               </button>
