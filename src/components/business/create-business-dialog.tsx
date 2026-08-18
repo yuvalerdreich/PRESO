@@ -155,7 +155,7 @@ export function CreateBusinessDialog({
             <FormSection title={copy.createBusiness.detailsStep} icon={Building2}>
               <div className="grid gap-4 md:grid-cols-2">
                 <Field label={copy.createBusiness.businessName} required error={fieldErrors.name}>
-                  <input required name="name" className={fieldClassName} placeholder={copy.createBusiness.businessName} />
+                  <input required name="name" className={fieldClassName} />
                 </Field>
                 <Field label={copy.createBusiness.category} required error={fieldErrors.categoryId}>
                   <select required name="categoryId" defaultValue="" className={fieldClassName}>
@@ -170,13 +170,13 @@ export function CreateBusinessDialog({
                   </select>
                 </Field>
                 <Field label={copy.createBusiness.city} required error={fieldErrors.area}>
-                  <input required name="area" className={fieldClassName} placeholder="תל אביב" />
+                  <input required name="area" className={fieldClassName} />
                 </Field>
                 <Field label={copy.createBusiness.address} required error={fieldErrors.address}>
-                  <input required name="address" className={fieldClassName} placeholder="דיזנגוף 142" />
+                  <input required name="address" className={fieldClassName} />
                 </Field>
                 <Field label={copy.createBusiness.phone} required error={fieldErrors.phone}>
-                  <input required name="phone" type="tel" className={fieldClassName} placeholder="054-1112233" />
+                  <input required name="phone" type="tel" className={fieldClassName} />
                 </Field>
               </div>
               <Field label={copy.createBusiness.businessDescription} error={fieldErrors.description}>
@@ -228,16 +228,14 @@ export function CreateBusinessDialog({
                         className={fieldClassName}
                         placeholder={copy.createBusiness.price}
                       />
-                      <select
+                      <input
+                        min="10"
+                        type="number"
                         value={service.duration}
                         onChange={(event) => updateService(service.id, 'duration', event.target.value)}
                         className={fieldClassName}
-                      >
-                        <option value="30">30 {copy.createBusiness.minutes}</option>
-                        <option value="45">45 {copy.createBusiness.minutes}</option>
-                        <option value="60">60 {copy.createBusiness.minutes}</option>
-                        <option value="90">90 {copy.createBusiness.minutes}</option>
-                      </select>
+                        placeholder={`${copy.createBusiness.duration} (${copy.createBusiness.minutes})`}
+                      />
                     </div>
                   </div>
                 ))}
@@ -282,11 +280,7 @@ export function CreateBusinessDialog({
                     <option value="MANUAL">{copy.createBusiness.manualApproval}</option>
                   </select>
                 </Field>
-                <Field
-                  label={copy.createBusiness.paymentNotes}
-                  error={fieldErrors.paymentNotes}
-                  hint={copy.createBusiness.paymentNotesHint}
-                >
+                <Field label={copy.createBusiness.paymentNotes} error={fieldErrors.paymentNotes}>
                   <textarea
                     name="paymentNotes"
                     className={`${fieldClassName} min-h-24 resize-y`}
