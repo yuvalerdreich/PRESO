@@ -163,7 +163,7 @@ export function JoinBusinessDialog({
                               // other control in this area: pointer cursor, blue.
                               className={`flex w-full cursor-pointer items-center gap-3 rounded-2xl p-3 text-right transition-colors hover:bg-[var(--brand-blue)] hover:text-white disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-white disabled:hover:text-[var(--foreground)] ${
                                 selected
-                                  ? 'bg-[var(--brand)] text-white shadow-lg'
+                                  ? 'bg-[var(--brand-blue-dark)] text-white shadow-lg'
                                   : 'bg-white text-[var(--foreground)]'
                               }`}
                             >
