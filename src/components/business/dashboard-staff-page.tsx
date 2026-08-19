@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, Clock, Mail, Phone, UserRound, Users, X, type LucideIcon } from 'lucide-react';
+import { Check, Clock, Mail, Phone, UserRound, Users, X } from 'lucide-react';
 
+import { DashboardSectionHeader } from '@/components/business/dashboard-section-header';
 import {
   JoinRequestDecisionDialog,
   type JoinRequestDecision,
@@ -81,7 +82,7 @@ export function DashboardStaffPage({
   return (
     <div className="flex flex-col gap-10">
       <section className="flex flex-col gap-4">
-        <SectionHeader
+        <DashboardSectionHeader
           icon={Users}
           title={copy.dashboard.staff.rosterTitle.replace('{count}', String(employees.length))}
           description={copy.dashboard.staff.rosterDescription}
@@ -103,7 +104,7 @@ export function DashboardStaffPage({
       </section>
 
       <section className="flex flex-col gap-4">
-        <SectionHeader
+        <DashboardSectionHeader
           icon={Clock}
           title={copy.dashboard.staff.requestsTitle.replace('{count}', String(requests.length))}
           description={copy.dashboard.staff.requestsDescription}
@@ -146,31 +147,6 @@ export function DashboardStaffPage({
           }}
         />
       ) : null}
-    </div>
-  );
-}
-
-/**
- * The heading over each list. Same anatomy as the diary's — a brand-coloured mark, the title, then
- * the count — with the subject's own icon in place of that screen's dot, since this screen carries
- * two lists and they have to be told apart at a glance.
- */
-function SectionHeader({
-  icon: Icon,
-  title,
-  description,
-}: {
-  icon: LucideIcon;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-2.5">
-        <Icon className="h-5 w-5 shrink-0 text-[var(--brand)]" aria-hidden="true" />
-        <h2 className="text-base font-extrabold text-[var(--foreground)]">{title}</h2>
-      </div>
-      <p className="text-sm leading-6 text-[var(--muted)]">{description}</p>
     </div>
   );
 }

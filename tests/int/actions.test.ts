@@ -29,7 +29,9 @@ const { decideJoinRequest, removeEmployee, sendJoinRequest, setEmployeeStatus } 
 );
 const { listJoinRequests } = await import('@/server/queries/dashboard');
 const { deleteService, upsertService } = await import('@/server/actions/catalog');
-const { deleteAvailabilityRule, upsertAvailabilityRule } = await import('@/server/actions/availability');
+const { deleteAvailabilityRule, setDaySchedule, upsertAvailabilityRule } = await import(
+  '@/server/actions/availability'
+);
 const { updateProfile } = await import('@/server/actions/identity');
 const { createReport } = await import('@/server/actions/moderation');
 const { suspendBusiness, suspendUser } = await import('@/server/actions/admin');
@@ -306,6 +308,132 @@ describe('services — owned by the acting employee (§3.8, §4.3)', () => {
     expect(data!.status).toBe('INACTIVE');
 
     await admin.from('services').update({ status: 'ACTIVE' }).eq('id', SERVICE_ZOHAR_HAIRCUT);
+  });
+});
+
+describe('setDaySchedule — a day’s shifts as one saved state (§12.50)', () => {
+  const DAY = '2026-11-18';
+
+  async function rulesFor(employeeId: string) {
+    const { data } = await admin
+      .from('employee_availability_rules')
+      .select('kind, day_of_week, starts_at, ends_at, effective_range')
+      .eq('employee_id', employeeId)
+      .order('starts_at', { nullsFirst: false });
+    return data ?? [];
+  }
+
+  afterAll(async () => {
+    await admin
+      .from('employee_availability_rules')
+      .delete()
+      .eq('employee_id', EMPLOYEE_ZOHAR)
+      .in('kind', ['EXCEPTION', 'BLOCK']);
+  });
+
+  it('writes a split shift as two EXCEPTION rows on one date', async () => {
+    state.client = await signIn('zohar@demo.local');
+
+    const saved = await setDaySchedule({
+      employeeId: EMPLOYEE_ZOHAR,
+      scope: 'DATE',
+      dateISO: DAY,
+      isDayOff: false,
+      shifts: [
+        { startsAt: '08:30', endsAt: '14:00' },
+        { startsAt: '16:00', endsAt: '20:30' },
+      ],
+    });
+    expect(saved).toMatchObject({ ok: true, data: { written: 2 } });
+
+    const exceptions = (await rulesFor(EMPLOYEE_ZOHAR)).filter((rule) => rule.kind === 'EXCEPTION');
+    expect(exceptions).toHaveLength(2);
+    expect(exceptions.map((rule) => `${rule.starts_at}-${rule.ends_at}`)).toEqual([
+      '08:30:00-14:00:00',
+      '16:00:00-20:30:00',
+    ]);
+    // Both windows are genuinely bookable — 0022 is what makes the second one count.
+    const { data: slots } = await admin.rpc('get_available_slots', {
+      p_employee_id: EMPLOYEE_ZOHAR,
+      p_service_id: SERVICE_ZOHAR_HAIRCUT,
+      p_from: `${DAY}T00:00:00+02`,
+      p_to: `${DAY}T23:59:59+02`,
+    });
+    const hours = new Set((slots ?? []).map((slot) => new Date(slot.starts_at).getUTCHours()));
+    expect(hours.size).toBeGreaterThan(0);
+    expect([...hours].some((hour) => hour < 12)).toBe(true);
+    expect([...hours].some((hour) => hour >= 13)).toBe(true);
+  });
+
+  it('replaces the day rather than adding to it when saved again', async () => {
+    state.client = await signIn('zohar@demo.local');
+
+    const saved = await setDaySchedule({
+      employeeId: EMPLOYEE_ZOHAR,
+      scope: 'DATE',
+      dateISO: DAY,
+      isDayOff: false,
+      shifts: [{ startsAt: '10:00', endsAt: '15:00' }],
+    });
+    expect(saved).toMatchObject({ ok: true, data: { written: 1, replaced: 2 } });
+
+    const exceptions = (await rulesFor(EMPLOYEE_ZOHAR)).filter((rule) => rule.kind === 'EXCEPTION');
+    expect(exceptions).toHaveLength(1);
+    expect(exceptions[0].starts_at).toBe('10:00:00');
+  });
+
+  it('turns a day off into a whole-day BLOCK, and offers nothing that day', async () => {
+    state.client = await signIn('zohar@demo.local');
+
+    const saved = await setDaySchedule({
+      employeeId: EMPLOYEE_ZOHAR,
+      scope: 'DATE',
+      dateISO: DAY,
+      isDayOff: true,
+      shifts: [],
+    });
+    expect(saved.ok).toBe(true);
+
+    const rules = await rulesFor(EMPLOYEE_ZOHAR);
+    expect(rules.filter((rule) => rule.kind === 'EXCEPTION')).toHaveLength(0);
+    expect(rules.filter((rule) => rule.kind === 'BLOCK')).toHaveLength(1);
+
+    const { data: slots } = await admin.rpc('get_available_slots', {
+      p_employee_id: EMPLOYEE_ZOHAR,
+      p_service_id: SERVICE_ZOHAR_HAIRCUT,
+      p_from: `${DAY}T00:00:00+02`,
+      p_to: `${DAY}T23:59:59+02`,
+    });
+    expect(slots ?? []).toHaveLength(0);
+  });
+
+  it('refuses overlapping shifts, and a colleague’s schedule', async () => {
+    state.client = await signIn('zohar@demo.local');
+
+    expect(
+      await setDaySchedule({
+        employeeId: EMPLOYEE_ZOHAR,
+        scope: 'DATE',
+        dateISO: DAY,
+        isDayOff: false,
+        shifts: [
+          { startsAt: '09:00', endsAt: '13:00' },
+          { startsAt: '12:00', endsAt: '17:00' },
+        ],
+      }),
+    ).toMatchObject({ ok: false, error: { code: 'VALIDATION' } });
+
+    // §12.1 lets any employee edit the business's opening hours; working hours belong to the
+    // person who works them.
+    expect(
+      await setDaySchedule({
+        employeeId: EMPLOYEE_MIYA,
+        scope: 'DATE',
+        dateISO: DAY,
+        isDayOff: true,
+        shifts: [],
+      }),
+    ).toMatchObject({ ok: false, error: { code: 'FORBIDDEN' } });
   });
 });
 

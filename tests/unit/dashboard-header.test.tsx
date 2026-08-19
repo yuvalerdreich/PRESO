@@ -56,6 +56,7 @@ describe('business dashboard header', () => {
     );
     expect(screen.getByRole('link', { name: /Staff & stations/ })).toHaveAttribute('href', '/dashboard/staff');
     expect(screen.getByRole('link', { name: /Services/ })).toHaveAttribute('href', '/dashboard/services');
+    expect(screen.getByRole('link', { name: /Hours & shifts/ })).toHaveAttribute('href', '/dashboard/hours');
     expect(screen.getByRole('link', { name: /Waitlist/ })).toHaveAttribute('href', '/dashboard/waitlist');
     expect(screen.getByRole('link', { name: 'Business settings' })).toHaveAttribute('href', '/dashboard/details');
 

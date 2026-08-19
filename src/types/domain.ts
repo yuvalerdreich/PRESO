@@ -318,6 +318,8 @@ export type DashboardService = {
   employeeId: string;
   employeeName: string;
   name: string;
+  /** `services.description` (0015) — already rendered publicly; the dashboard form writes it. */
+  description: string;
   price: number;
   durationMinutes: number;
   bufferMinutes: number;

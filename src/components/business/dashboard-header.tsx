@@ -1,6 +1,17 @@
 'use client';
 
-import { Bell, Building2, CalendarDays, MapPin, Phone, Scissors, Settings, Users, type LucideIcon } from 'lucide-react';
+import {
+  Bell,
+  Building2,
+  CalendarClock,
+  CalendarDays,
+  MapPin,
+  Phone,
+  Scissors,
+  Settings,
+  Users,
+  type LucideIcon,
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -46,6 +57,9 @@ export function DashboardHeader({
       icon: Scissors,
       count: counts.activeServices,
     },
+    // No badge, like the settings link: opening hours and shift windows are a *configuration*, so
+    // a number here would not answer "how much is waiting for me" the way the other four do.
+    { href: '/dashboard/hours', label: copy.dashboard.nav.hours, icon: CalendarClock },
     { href: '/dashboard/waitlist', label: copy.dashboard.nav.waitlist, icon: Bell, count: counts.openWaitlist },
     { href: '/dashboard/details', label: copy.dashboard.nav.settings, icon: Settings },
   ];

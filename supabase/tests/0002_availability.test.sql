@@ -2,7 +2,7 @@
 -- scenarios verified by hand while building 0006_fn_availability.sql, now committed so a
 -- future change to the packing/subtraction logic can't regress silently.
 begin;
-select plan(9);
+select plan(11);
 
 -- profiles are auto-created by handle_new_user() (0009_triggers.sql) from this metadata —
 -- no separate insert into profiles needed, or wanted (it would conflict with the trigger).
@@ -85,6 +85,30 @@ select is(
      '2026-09-02T00:00:00+03', '2026-09-02T23:59:59+03')),
   3,
   'EXCEPTION 10:00-12:00 on a day with no WEEKLY_WINDOW: 3 slots (10:00, 10:40, 11:20)'
+);
+
+-- test 4b (0022): a *second* EXCEPTION on the same date is honoured, not silently ignored.
+-- This is what a split shift is — morning and evening on one day — and the old `limit 1` read of
+-- the day's exception dropped whichever row lost the created_at race.
+insert into employee_availability_rules (employee_id, kind, effective_range, starts_at, ends_at) values
+  ('00000000-0000-0000-0000-0000000000a4', 'EXCEPTION',
+   tstzrange('2026-09-02T00:00:00+03', '2026-09-03T00:00:00+03', '[)'), '16:00', '18:00');
+select is(
+  (select count(*)::int from get_available_slots(
+     '00000000-0000-0000-0000-0000000000a4', '00000000-0000-0000-0000-0000000000a5',
+     '2026-09-02T00:00:00+03', '2026-09-02T23:59:59+03')),
+  6,
+  'two EXCEPTIONs on one date both apply: 3 slots in each of 10:00-12:00 and 16:00-18:00'
+);
+
+-- ...and they still *replace* the weekly pattern rather than adding to it: the weekly window for
+-- this weekday is untouched above, and nothing outside the two exception windows is bookable.
+select is(
+  (select count(*)::int from get_available_slots(
+     '00000000-0000-0000-0000-0000000000a4', '00000000-0000-0000-0000-0000000000a5',
+     '2026-09-02T12:00:00+03', '2026-09-02T16:00:00+03')),
+  0,
+  'the gap between two exception windows stays closed — exceptions replace the weekly pattern'
 );
 
 -- test 5: guards — a suspended business, service, or employee all yield zero rows, not an error

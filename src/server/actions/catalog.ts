@@ -26,6 +26,7 @@ export const upsertService = action('upsertService', serviceInput, async (input)
   const row = {
     employee_id: employment.employeeId,
     name: input.name,
+    description: input.description?.trim() || null,
     price: input.price,
     duration_minutes: input.durationMinutes,
     buffer_minutes: input.bufferMinutes,

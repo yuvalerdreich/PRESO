@@ -255,7 +255,7 @@ export async function listDashboardServices(businessId: string): Promise<Dashboa
   const [{ data, error }, profiles] = await Promise.all([
     supabase
       .from('services')
-      .select('id, employee_id, name, price, duration_minutes, buffer_minutes, status')
+      .select('id, employee_id, name, description, price, duration_minutes, buffer_minutes, status')
       .in('employee_id', employeeIds)
       .order('name'),
     loadStaffProfiles(employeeIds),
@@ -267,6 +267,7 @@ export async function listDashboardServices(businessId: string): Promise<Dashboa
     employeeId: row.employee_id,
     employeeName: profiles.get(row.employee_id)?.fullName ?? '',
     name: row.name,
+    description: row.description ?? '',
     price: Number(row.price),
     durationMinutes: row.duration_minutes,
     bufferMinutes: row.buffer_minutes,
