@@ -3,12 +3,11 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { BriefcaseBusiness, Building2, Clock, MapPin, Plus, Search, UserPlus, Users } from 'lucide-react';
+import { BriefcaseBusiness, Building2, Clock, MapPin, Plus, UserPlus, Users } from 'lucide-react';
 
 import { CreateBusinessDialog } from '@/components/business/create-business-dialog';
 import { JoinBusinessDialog } from '@/components/business/join-business-dialog';
 import { actionButton, actionButtonSelected } from '@/components/common/button-styles';
-import { fieldPaddingStartIcon, surfaceField } from '@/components/common/field-styles';
 import { PanelHero } from '@/components/common/panel-hero';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import type { BusinessCategory, JoinableBusiness, MyBusiness, MyBusinessRelation } from '@/types/domain';
@@ -26,8 +25,6 @@ const FILTER_RELATION: Record<Exclude<BusinessFilter, 'all'>, MyBusinessRelation
  *
  * The rows come from `listMyBusinesses()` (`server/queries/business-entry.ts`); the counts on the
  * filter chips and the result line are derived from those rows rather than written as literals.
- * The search box filters the already-fetched list client-side on purpose: this is the caller's own
- * handful of businesses, not `/search`'s trigram query over every business in the system.
  */
 export function MyBusinessesPage({
   businesses,
@@ -41,7 +38,6 @@ export function MyBusinessesPage({
   const { copy } = useLanguage();
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState<BusinessFilter>('all');
-  const [query, setQuery] = useState('');
   const [isCreateBusinessOpen, setIsCreateBusinessOpen] = useState(false);
   const [isJoinBusinessOpen, setIsJoinBusinessOpen] = useState(false);
 
@@ -55,19 +51,13 @@ export function MyBusinessesPage({
     [businesses],
   );
 
-  const visibleBusinesses = useMemo(() => {
-    const normalizedQuery = query.trim().toLocaleLowerCase();
-
-    return businesses.filter((business) => {
-      if (activeFilter !== 'all' && business.relation !== FILTER_RELATION[activeFilter]) return false;
-      if (!normalizedQuery) return true;
-
-      return [business.name, business.area, business.address, business.categoryName, business.positionTitle ?? '']
-        .join(' ')
-        .toLocaleLowerCase()
-        .includes(normalizedQuery);
-    });
-  }, [businesses, activeFilter, query]);
+  const visibleBusinesses = useMemo(
+    () =>
+      businesses.filter(
+        (business) => activeFilter === 'all' || business.relation === FILTER_RELATION[activeFilter],
+      ),
+    [businesses, activeFilter],
+  );
 
   const filters: { id: BusinessFilter; label: string; count: number }[] = [
     { id: 'all', label: copy.myBusinesses.all, count: counts.all },
@@ -134,24 +124,9 @@ export function MyBusinessesPage({
         </div>
       </PanelHero>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm font-semibold text-[var(--muted)]">
-          {copy.myBusinesses.resultCount.replace('{count}', String(visibleBusinesses.length))}
-        </p>
-        <label className="relative w-full sm:max-w-md">
-          <Search
-            className="pointer-events-none absolute inset-y-0 start-4 my-auto h-5 w-5 text-[var(--muted)]"
-            aria-hidden="true"
-          />
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder={copy.myBusinesses.searchPlaceholder}
-            className={`${surfaceField} ${fieldPaddingStartIcon}`}
-          />
-        </label>
-      </div>
+      <p className="text-sm font-semibold text-[var(--muted)]">
+        {copy.myBusinesses.resultCount.replace('{count}', String(visibleBusinesses.length))}
+      </p>
 
       {visibleBusinesses.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -252,12 +227,6 @@ function BusinessCard({ business }: { business: MyBusiness }) {
       </div>
 
       <div className="mt-auto flex flex-wrap gap-2 pt-1">
-        <Link
-          href={`/b/${business.businessId}`}
-          className={`${actionButton} rounded-full px-4 py-2 text-sm`}
-        >
-          {copy.myBusinesses.viewPublicPage}
-        </Link>
         {business.relation !== 'PENDING' && !isInactive ? (
           <Link href="/dashboard" className={`${actionButton} rounded-full px-4 py-2 text-sm`}>
             {copy.myBusinesses.manage}
