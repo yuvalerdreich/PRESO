@@ -271,12 +271,29 @@ export type MyBusiness = {
 export type DashboardBusiness = {
   id: string;
   name: string;
+  categoryName: string;
+  address: string;
+  area: string;
+  phone: string;
+  photoUrl: string;
   timezone: string;
   approvalPolicy: ApprovalPolicy;
   cancellationWindowHours: number;
   status: BusinessStatus;
   /** Whether the caller founded this business — the one capability an employee lacks (§12.1). */
   isOwner: boolean;
+};
+
+/**
+ * The badge numbers on the dashboard header's section nav. Each one answers "how much is waiting
+ * for me here", which is why appointments are counted for *today* and the others by what is live:
+ * a nav badge is a workload cue, not a lifetime total.
+ */
+export type DashboardNavCounts = {
+  appointmentsToday: number;
+  activeStaff: number;
+  activeServices: number;
+  openWaitlist: number;
 };
 
 export type DashboardEmployee = {

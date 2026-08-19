@@ -88,3 +88,49 @@ html[dir='ltr'] input,
 html[dir='ltr'] select {
   text-align: left;
 }
+
+/**
+ * `.picker-select` — a <select> whose option list is drawn by the page rather than by the OS.
+ *
+ * A plain <select> hands its popup to the operating system, so nothing inside it can be styled:
+ * `cursor`, hover colour and radius on an <option> are all silently dropped (Chrome and Safari on
+ * Windows and macOS). `appearance: base-select` is the standard opt-in that moves the picker into
+ * the page, at which point our rules apply — including the pointer cursor.
+ *
+ * Wrapped in @supports, so a browser without it keeps today's native popup rather than breaking:
+ * this is an enhancement, never a requirement. Add the class to any select that should follow the
+ * app's own surface instead of the platform's.
+ */
+@supports (appearance: base-select) {
+  select.picker-select,
+  select.picker-select::picker(select) {
+    appearance: base-select;
+  }
+
+  select.picker-select::picker(select) {
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    background: var(--surface);
+    padding: 0.25rem;
+    box-shadow: 0 16px 35px -28px rgba(23, 27, 70, 0.55);
+  }
+
+  select.picker-select option {
+    cursor: pointer;
+    border-radius: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    font-weight: 500;
+  }
+
+  select.picker-select option:hover,
+  select.picker-select option:focus {
+    background: var(--soft-violet);
+    color: var(--brand-deep);
+  }
+
+  /* The control already draws its own chevron, and the selected row already reads as selected. */
+  select.picker-select::picker-icon,
+  select.picker-select option::checkmark {
+    display: none;
+  }
+}
