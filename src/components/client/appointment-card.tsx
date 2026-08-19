@@ -2,26 +2,10 @@
 
 import { Calendar, Clock, MapPin, XCircle } from 'lucide-react';
 
+import { AppointmentStatusBadge } from '@/components/common/appointment-status-badge';
 import { actionButton } from '@/components/common/button-styles';
 import { useLanguage } from '@/lib/i18n/language-provider';
-import type { AppointmentStatus, ClientAppointment } from '@/types/domain';
-
-const STATUS_STYLES: Record<AppointmentStatus, string> = {
-  CONFIRMED: 'bg-emerald-50 text-emerald-700',
-  PENDING: 'bg-amber-50 text-amber-700',
-  CANCELLED: 'bg-[var(--soft-violet)] text-[var(--muted)]',
-};
-
-/**
- * The i18n dictionary is keyed independently of the database enum — `copy.appointments.*` is UI
- * copy, not a mirror of `appointment_status`. This map is the seam between the two rather than
- * lowercasing the status and hoping the two vocabularies stay aligned.
- */
-const STATUS_COPY_KEY: Record<AppointmentStatus, 'confirmed' | 'pending' | 'cancelled'> = {
-  CONFIRMED: 'confirmed',
-  PENDING: 'pending',
-  CANCELLED: 'cancelled',
-};
+import type { ClientAppointment } from '@/types/domain';
 
 export function AppointmentCard({
   appointment,
@@ -31,9 +15,6 @@ export function AppointmentCard({
   onCancel?: () => void;
 }) {
   const { copy } = useLanguage();
-
-  const statusLabel = copy.appointments[STATUS_COPY_KEY[appointment.status]];
-  const statusStyle = STATUS_STYLES[appointment.status];
 
   return (
     <article className="overflow-hidden rounded-3xl border border-[var(--line)] bg-white shadow-[0_16px_35px_-28px_rgba(23,27,70,0.55)]">
@@ -46,9 +27,7 @@ export function AppointmentCard({
             <p className="mt-1 text-sm font-semibold text-[var(--brand)]">{appointment.businessName}</p>
             <p className="mt-1 text-sm text-[var(--muted)]">{appointment.serviceName}</p>
           </div>
-          <span className={`w-fit shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${statusStyle}`}>
-            {statusLabel}
-          </span>
+          <AppointmentStatusBadge status={appointment.status} />
         </div>
 
         <div className="grid gap-3 rounded-2xl border border-[var(--line)] bg-slate-50/70 p-4 text-sm sm:grid-cols-2">

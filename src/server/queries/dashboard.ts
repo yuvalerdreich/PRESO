@@ -168,6 +168,16 @@ export async function getDashboardNavCounts(businessId: string): Promise<Dashboa
   };
 }
 
+/**
+ * The roster (§10.7). Name and photo come from `employee_public_profiles`, phone and email from
+ * `business_staff_contacts` (0021) — two views rather than one because they answer to different
+ * audiences: the first is granted to `anon` and feeds the public booking page, so it must never
+ * carry a phone number, while the second is staff-only and carries nothing else.
+ *
+ * Neither can be replaced by embedding `profiles`: that embed is scoped by `profiles_select`
+ * (own-row-or-admin), so it returns `null` for every colleague and reads as missing data rather
+ * than as a permission decision.
+ */
 export async function listDashboardEmployees(businessId: string): Promise<DashboardEmployee[]> {
   const supabase = await createClient();
 
@@ -182,17 +192,45 @@ export async function listDashboardEmployees(businessId: string): Promise<Dashbo
   if (error) throw error;
 
   const rows = data ?? [];
-  const names = await loadNames(rows.map((row) => row.id));
+  const [profiles, contacts] = await Promise.all([
+    loadStaffProfiles(rows.map((row) => row.id)),
+    loadStaffContacts(businessId),
+  ]);
 
-  return rows.map((row) => ({
-    id: row.id,
-    profileId: row.profile_id,
-    fullName: names.get(row.id) ?? '',
-    positionTitle: row.position_title,
-    status: row.status,
-    serviceCount: (row.services as unknown as { count: number }[] | null)?.[0]?.count ?? 0,
-    isOwner: business?.owner_profile_id === row.profile_id,
-  }));
+  return rows.map((row) => {
+    const contact = contacts.get(row.id);
+
+    return {
+      id: row.id,
+      profileId: row.profile_id,
+      fullName: profiles.get(row.id)?.fullName ?? '',
+      avatarUrl: profiles.get(row.id)?.avatarUrl ?? '',
+      positionTitle: row.position_title,
+      status: row.status,
+      phone: contact?.phone ?? null,
+      email: contact?.email ?? null,
+      serviceCount: (row.services as unknown as { count: number }[] | null)?.[0]?.count ?? 0,
+      isOwner: business?.owner_profile_id === row.profile_id,
+    };
+  });
+}
+
+async function loadStaffContacts(
+  businessId: string,
+): Promise<Map<string, { phone: string | null; email: string | null }>> {
+  const contacts = new Map<string, { phone: string | null; email: string | null }>();
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('business_staff_contacts')
+    .select('employee_id, phone, email')
+    .eq('business_id', businessId);
+  if (error) throw error;
+
+  for (const row of data ?? []) {
+    if (row.employee_id) contacts.set(row.employee_id, { phone: row.phone, email: row.email });
+  }
+  return contacts;
 }
 
 /**
@@ -214,20 +252,20 @@ export async function listDashboardServices(businessId: string): Promise<Dashboa
   const employeeIds = (employees ?? []).map((row) => row.id);
   if (employeeIds.length === 0) return [];
 
-  const [{ data, error }, names] = await Promise.all([
+  const [{ data, error }, profiles] = await Promise.all([
     supabase
       .from('services')
       .select('id, employee_id, name, price, duration_minutes, buffer_minutes, status')
       .in('employee_id', employeeIds)
       .order('name'),
-    loadNames(employeeIds),
+    loadStaffProfiles(employeeIds),
   ]);
   if (error) throw error;
 
   return (data ?? []).map((row) => ({
     id: row.id,
     employeeId: row.employee_id,
-    employeeName: names.get(row.employee_id) ?? '',
+    employeeName: profiles.get(row.employee_id)?.fullName ?? '',
     name: row.name,
     price: Number(row.price),
     durationMinutes: row.duration_minutes,
@@ -398,30 +436,54 @@ export async function listDashboardKpis(businessId: string): Promise<DashboardKp
   ];
 }
 
-/** `/dashboard/staff/requests`. Visible to all staff; only the founder may decide them (§6.8 rule 6). */
+/**
+ * The join queue, shown on `/dashboard/staff`. Visible to all staff; only the founder may decide
+ * them (§6.8 rule 6).
+ *
+ * The applicant's name comes from `business_join_request_contacts` (0021), not from an embedded
+ * `profiles`. The embed this replaced was scoped by `profiles_select` (own-row-or-admin), so the
+ * founder was being asked to approve or reject a request from a blank name — the same trap the
+ * appointments query documents, one step earlier in the roster's life. An applicant holds no
+ * `employees` row yet (§6.8 rule 5), so `employee_public_profiles` cannot answer this either.
+ */
 export async function listJoinRequests(businessId: string): Promise<JoinRequestSummary[]> {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from('join_requests')
-    // `profiles` is hinted with the column: join_requests references it twice (profile_id and
-    // decided_by), so an unqualified embed is ambiguous and PostgREST refuses it.
-    .select(
-      'id, business_id, profile_id, status, created_at, businesses(name), profiles!join_requests_profile_id_fkey(full_name)',
-    )
-    .eq('business_id', businessId)
-    .order('created_at', { ascending: false });
+  const [{ data, error }, { data: contactRows, error: contactsError }] = await Promise.all([
+    supabase
+      .from('join_requests')
+      .select('id, business_id, profile_id, status, created_at, businesses(name)')
+      .eq('business_id', businessId)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('business_join_request_contacts')
+      .select('request_id, full_name, phone, email')
+      .eq('business_id', businessId),
+  ]);
   if (error) throw error;
+  if (contactsError) throw contactsError;
 
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    businessId: row.business_id,
-    businessName: (row.businesses as { name: string } | null)?.name ?? '',
-    profileId: row.profile_id,
-    fullName: (row.profiles as { full_name: string } | null)?.full_name ?? '',
-    status: row.status,
-    createdAt: row.created_at,
-  }));
+  const contacts = new Map(
+    (contactRows ?? [])
+      .filter((row): row is typeof row & { request_id: string } => Boolean(row.request_id))
+      .map((row) => [row.request_id, row]),
+  );
+
+  return (data ?? []).map((row) => {
+    const contact = contacts.get(row.id);
+
+    return {
+      id: row.id,
+      businessId: row.business_id,
+      businessName: (row.businesses as { name: string } | null)?.name ?? '',
+      profileId: row.profile_id,
+      fullName: contact?.full_name ?? '',
+      phone: contact?.phone ?? null,
+      email: contact?.email ?? null,
+      status: row.status,
+      createdAt: row.created_at,
+    };
+  });
 }
 
 export async function listBusinessHours(businessId: string): Promise<BusinessHourRow[]> {
@@ -470,19 +532,23 @@ export async function listAvailabilityRules(employeeId: string): Promise<Availab
   });
 }
 
-async function loadNames(employeeIds: string[]): Promise<Map<string, string>> {
-  const names = new Map<string, string>();
-  if (employeeIds.length === 0) return names;
+async function loadStaffProfiles(
+  employeeIds: string[],
+): Promise<Map<string, { fullName: string; avatarUrl: string }>> {
+  const profiles = new Map<string, { fullName: string; avatarUrl: string }>();
+  if (employeeIds.length === 0) return profiles;
 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('employee_public_profiles')
-    .select('employee_id, full_name')
+    .select('employee_id, full_name, avatar_url')
     .in('employee_id', employeeIds);
   if (error) throw error;
 
   for (const row of data ?? []) {
-    if (row.employee_id) names.set(row.employee_id, row.full_name ?? '');
+    if (row.employee_id) {
+      profiles.set(row.employee_id, { fullName: row.full_name ?? '', avatarUrl: row.avatar_url ?? '' });
+    }
   }
-  return names;
+  return profiles;
 }

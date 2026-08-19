@@ -27,6 +27,7 @@ const { createBusiness, setOperatingHours, updateBusinessDetails } = await impor
 const { decideJoinRequest, removeEmployee, sendJoinRequest, setEmployeeStatus } = await import(
   '@/server/actions/employee'
 );
+const { listJoinRequests } = await import('@/server/queries/dashboard');
 const { deleteService, upsertService } = await import('@/server/actions/catalog');
 const { deleteAvailabilityRule, upsertAvailabilityRule } = await import('@/server/actions/availability');
 const { updateProfile } = await import('@/server/actions/identity');
@@ -375,6 +376,15 @@ describe('join requests and roster — the founder’s exclusive powers (§6.8 r
     });
 
     state.client = await signIn('zohar@demo.local');
+
+    // The founder decides on a *person*, so the queue has to name them. `profiles_select` is
+    // own-row-or-admin, so the embed this used to read returned a blank name and no way to make
+    // contact; `business_join_request_contacts` (0021) is what answers it now.
+    const pending = (await listJoinRequests(STUDIO_ZOHAR)).find(
+      (request) => request.id === requested.data.id,
+    );
+    expect(pending).toMatchObject({ status: 'PENDING', fullName: 'Actions Tester', email: joiner.email });
+
     const decided = await decideJoinRequest({
       id: requested.data.id,
       decision: 'APPROVED',
