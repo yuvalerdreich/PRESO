@@ -4,7 +4,7 @@ import { Bell, Building2, CalendarDays, MapPin, Phone, Scissors, Settings, Users
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { actionButton, actionButtonSelected } from '@/components/common/button-styles';
+import { actionButton, actionButtonChip, actionButtonSelected } from '@/components/common/button-styles';
 import { PanelHero } from '@/components/common/panel-hero';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import type { DashboardBusiness, DashboardNavCounts } from '@/types/domain';
@@ -84,7 +84,7 @@ export function DashboardHeader({
               key={section.href}
               href={section.href}
               aria-current={isActive ? 'page' : undefined}
-              className={`${actionButton} rounded-2xl px-4 py-2.5 text-sm ${isActive ? actionButtonSelected : ''}`}
+              className={`${actionButton} ${actionButtonChip} ${isActive ? actionButtonSelected : ''}`}
             >
               <section.icon className="h-4 w-4 shrink-0" aria-hidden="true" />
               {section.label}

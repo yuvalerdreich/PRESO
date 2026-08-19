@@ -3,7 +3,8 @@
 import { useRef } from 'react';
 import { ChevronDown, Search } from 'lucide-react';
 
-import { fieldPaddingEndIcon, fieldPaddingLeftIcon, heroField } from '@/components/common/field-styles';
+import { actionButton, actionButtonChipNoInline } from '@/components/common/button-styles';
+import { fieldPaddingLeftIcon, heroField } from '@/components/common/field-styles';
 import { useLanguage } from '@/lib/i18n/language-provider';
 
 /**
@@ -19,6 +20,14 @@ import { useLanguage } from '@/lib/i18n/language-provider';
  * The glass is a real button: with no submit to perform it puts the caret in the field and selects
  * what is there, which is what clicking a search icon on an already-filtering box should do.
  */
+/**
+ * `cursor-pointer` here reaches only the browsers that draw the option list in-page (Firefox, and
+ * Chrome's own `appearance:base-select` opt-in). Where the popup is drawn by the OS — Chrome and
+ * Safari on Windows and macOS today — the cursor is the platform's to choose and no CSS applies.
+ * The control itself carries the pointer either way, via `actionButton`.
+ */
+const optionClassName = 'cursor-pointer bg-white font-medium text-[var(--foreground)]';
+
 export function SearchForm({
   areas = [],
   query,
@@ -38,25 +47,34 @@ export function SearchForm({
 
   return (
     <div role="search" className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      {/* The area picker is a *choice*, not something you type into — so it wears the button
+          treatment its equivalents wear on the other screens (the filter tabs on "העסקים שלי",
+          the section links on the dashboard), not the translucent field treatment of the search
+          box beside it. Only the free-text query stays a field. */}
       <div className="relative sm:w-64 sm:shrink-0">
         <select
           name="area"
           value={area}
           onChange={(event) => onAreaChange(event.target.value)}
           aria-label={copy.discovery.areaPlaceholder}
-          className={`${heroField} ${fieldPaddingEndIcon} cursor-pointer appearance-none font-semibold`}
+          // `picker-select` (globals.css) is what lets the option list below be styled at all —
+          // without it the popup belongs to the OS and drops every rule, cursor included.
+          className={`picker-select ${actionButton} ${actionButtonChipNoInline} w-full appearance-none ps-3.5 pe-9 font-bold`}
         >
-          <option value="" className="text-[var(--foreground)]">
+          {/* The native dropdown inherits the control's own background, and the control is now a
+              dark blue button — which left dark option text on a dark list. Each option states the
+              white surface it is really drawn on. */}
+          <option value="" className={optionClassName}>
             {copy.discovery.areaPlaceholder}
           </option>
           {areas.map((option) => (
-            <option key={option} value={option} className="text-[var(--foreground)]">
+            <option key={option} value={option} className={optionClassName}>
               {option}
             </option>
           ))}
         </select>
         <ChevronDown
-          className="pointer-events-none absolute inset-y-0 my-auto h-4 w-4 text-white/70 ltr:right-4 rtl:left-4"
+          className="pointer-events-none absolute inset-y-0 my-auto h-4 w-4 text-white ltr:right-3.5 rtl:left-3.5"
           aria-hidden="true"
         />
       </div>

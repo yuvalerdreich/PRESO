@@ -1,6 +1,6 @@
 'use client';
 
-import { actionButton, actionButtonSelected } from '@/components/common/button-styles';
+import { actionButton, actionButtonChip, actionButtonSelected } from '@/components/common/button-styles';
 
 export type AppointmentsTabId = 'upcoming' | 'waitlist' | 'history';
 
@@ -30,7 +30,7 @@ export function AppointmentsTabs({
             onClick={() => onChange(tab.id)}
             // Both variants share the one colour; only the selected ring separates them, exactly
             // as the business area's filter chips do (components/common/button-styles.ts).
-            className={`${actionButton} rounded-2xl px-4 py-3 text-sm ${selected ? actionButtonSelected : ''}`}
+            className={`${actionButton} ${actionButtonChip} ${selected ? actionButtonSelected : ''}`}
           >
             <span>{tab.label}</span>
             <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white/20 px-1 text-xs font-semibold text-white">

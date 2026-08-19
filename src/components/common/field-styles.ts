@@ -36,5 +36,9 @@ export const fieldPaddingEndIcon = 'py-3 ps-4 pe-11';
 /**
  * Field whose icon sits on the **physical** left in both writing directions — the home search box,
  * where the design calls for one magnifying glass on the left whatever the language.
+ *
+ * `py-2`, one step tighter than the other three, so the box lines up exactly with the area picker
+ * sitting beside it in the same row: that control is a button now (`actionButtonChipNoInline`), and
+ * a field and a button of the same text size only share a height if they share their padding.
  */
-export const fieldPaddingLeftIcon = 'py-3 pl-11 pr-4';
+export const fieldPaddingLeftIcon = 'py-2 pl-11 pr-4';

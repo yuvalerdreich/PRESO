@@ -10,13 +10,32 @@
  * a second colour (a selected filter tab, a "secondary" cancel button) is carried by a ring instead,
  * so the one-colour rule holds without losing the state it encoded.
  *
- * Sizing (padding, radius, text size) stays at the call site — only colour and interaction live
- * here, so a chip and a wizard's submit button can differ in shape while never differing in colour.
+ * Colour and interaction are the base; the two **shapes** below are the sizes that repeat across
+ * screens — a control-row chip and a hero's primary action. Anything genuinely one-off (a card's
+ * round action pill, a dialog's full-width submit) still sizes itself at the call site.
  */
 
 /** Filled action button/link: the base every button in these two areas shares. */
 export const actionButton =
   'inline-flex items-center justify-center gap-2 cursor-pointer font-bold text-white bg-[var(--brand-blue-dark)] transition-colors hover:bg-[var(--brand-blue)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-[var(--brand-blue-dark)]';
+
+/**
+ * A control-row button: a filter tab, a category chip, a dashboard section link, the home hero's
+ * area picker. One shape for all of them — the category chips were the odd row out as fully-round
+ * pills while every equivalent row elsewhere was a soft rectangle.
+ */
+export const actionButtonChip = 'rounded-2xl px-3.5 py-2 text-sm';
+
+/**
+ * The same chip with its inline padding left off, for a control that has to set its own — a
+ * `<select>` with a chevron inset needs `ps-4 pe-10`, and stacking that on `px-4` would leave two
+ * competing `padding-inline` declarations whose winner depends on stylesheet order (the same trap
+ * `field-styles.ts` documents).
+ */
+export const actionButtonChipNoInline = 'rounded-2xl py-2 text-sm';
+
+/** The primary action in a hero control row — the same shape, one step taller. */
+export const actionButtonLarge = 'rounded-2xl px-4 py-2.5 text-sm';
 
 /** Added to `actionButton` for a selected tab on a dark panel — a ring, not a different colour. */
 export const actionButtonSelected = 'ring-2 ring-white/80';

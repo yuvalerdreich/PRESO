@@ -2,7 +2,11 @@
 
 import { Dumbbell, GraduationCap, Scissors, Sparkles, Stethoscope, Wand2, type LucideIcon } from 'lucide-react';
 
-import { actionButton, actionButtonSelectedOnLight } from '@/components/common/button-styles';
+import {
+  actionButton,
+  actionButtonChip,
+  actionButtonSelectedOnLight,
+} from '@/components/common/button-styles';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import type { Category, CategoryIconId } from '@/types/domain';
 
@@ -14,10 +18,10 @@ const ICONS: Record<CategoryIconId, LucideIcon> = {
   scissors: Scissors,
 };
 
-// Same one-colour rule as the business area's filter chips, on the light page background — so the
-// selected ring is blue rather than white (components/common/button-styles.ts).
+// Same one-colour rule *and* the same shape as the business area's filter chips, on the light page
+// background — so the selected ring is blue rather than white (components/common/button-styles.ts).
 function chipClassName(active: boolean) {
-  return `${actionButton} rounded-full px-4 py-2 text-sm ${active ? actionButtonSelectedOnLight : ''}`;
+  return `${actionButton} ${actionButtonChip} ${active ? actionButtonSelectedOnLight : ''}`;
 }
 
 export function CategoryChips({

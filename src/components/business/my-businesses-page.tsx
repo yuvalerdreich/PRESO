@@ -7,7 +7,12 @@ import { BriefcaseBusiness, Building2, Clock, MapPin, Plus, UserPlus, Users } fr
 
 import { CreateBusinessDialog } from '@/components/business/create-business-dialog';
 import { JoinBusinessDialog } from '@/components/business/join-business-dialog';
-import { actionButton, actionButtonSelected } from '@/components/common/button-styles';
+import {
+  actionButton,
+  actionButtonChip,
+  actionButtonLarge,
+  actionButtonSelected,
+} from '@/components/common/button-styles';
 import {
   cardAction,
   cardChip,
@@ -100,7 +105,7 @@ export function MyBusinessesPage({
             <button
               type="button"
               onClick={() => setIsCreateBusinessOpen(true)}
-              className={`${actionButton} rounded-2xl px-4 py-3 text-sm shadow-lg`}
+              className={`${actionButton} ${actionButtonLarge} shadow-lg`}
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
               {copy.myBusinesses.openBusiness}
@@ -108,7 +113,7 @@ export function MyBusinessesPage({
             <button
               type="button"
               onClick={() => setIsJoinBusinessOpen(true)}
-              className={`${actionButton} rounded-2xl px-4 py-3 text-sm shadow-lg`}
+              className={`${actionButton} ${actionButtonLarge} shadow-lg`}
             >
               <UserPlus className="h-4 w-4" aria-hidden="true" />
               {copy.myBusinesses.joinBusiness}
@@ -125,9 +130,7 @@ export function MyBusinessesPage({
                   role="tab"
                   aria-selected={selected}
                   onClick={() => setActiveFilter(filter.id)}
-                  className={`${actionButton} rounded-2xl px-3 py-2 text-sm ${
-                    selected ? actionButtonSelected : ''
-                  }`}
+                  className={`${actionButton} ${actionButtonChip} ${selected ? actionButtonSelected : ''}`}
                 >
                   {filter.label} <span className="ms-1 rounded-full bg-white/15 px-1.5 py-0.5 text-xs">{filter.count}</span>
                 </button>
