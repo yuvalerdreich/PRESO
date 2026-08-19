@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { Building2 } from 'lucide-react';
 
 import { BusinessCard } from '@/components/public/business-card';
 import { CategoryChips } from '@/components/public/category-chips';
@@ -45,14 +46,17 @@ export function BusinessResults({
         </span>
       </div>
 
+      {/* Four across on a wide screen, not three: the cards carry a photo, a description and a
+          meta row, and at 1/3 of a 1280px page each one reads as a poster rather than a listing. */}
       {filtered.length > 0 ? (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtered.map((business) => (
             <BusinessCard key={business.id} business={business} category={categoryById.get(business.categoryId)} />
           ))}
         </div>
       ) : (
         <EmptyState
+          icon={Building2}
           title={filteredSomething ? copy.emptyState.noMatchesTitle : copy.emptyState.title}
           description={filteredSomething ? copy.emptyState.noMatchesDescription : copy.emptyState.description}
           // Only offered when there is a filter this button can actually clear — the category chip.

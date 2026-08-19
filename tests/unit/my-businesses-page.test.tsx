@@ -102,8 +102,14 @@ describe('my businesses page', () => {
 
     // The pending row has no position yet — approval is what creates the employees row (§6.8).
     expect(screen.getByText('Waiting for the owner to decide on your request')).toBeInTheDocument();
-    // …and therefore no dashboard link, unlike the two approved ones.
-    expect(screen.getAllByRole('link', { name: 'Manage business' })).toHaveLength(2);
+    // …and therefore no dashboard link, unlike the two approved ones. The link is named after its
+    // business — it is stretched over the whole card, and three identical "Manage business" links
+    // would name nothing.
+    expect(screen.getAllByRole('link', { name: /^Manage business —/ })).toHaveLength(2);
+    expect(screen.getByRole('link', { name: 'Manage business — Studio Zohar' })).toHaveAttribute(
+      'href',
+      '/dashboard',
+    );
   });
 
   it('filters by relation', () => {

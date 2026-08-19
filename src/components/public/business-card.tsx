@@ -3,19 +3,35 @@
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight, MapPin } from 'lucide-react';
 
+import { actionButton } from '@/components/common/button-styles';
+import {
+  cardAction,
+  cardChipBrand,
+  cardMetaIcon,
+  cardMetaRow,
+  cardStretchedLink,
+  cardTitle,
+  surfaceCardInteractive,
+} from '@/components/common/card-styles';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import type { BusinessSummary, Category } from '@/types/domain';
 
+/**
+ * A business in the discovery grid.
+ *
+ * The card is an `<article>` whose booking pill is the only link, stretched over the whole card
+ * (`cardStretchedLink`) — it used to be a `<Link>` wrapping everything, which is why the call to
+ * action could only ever be text-and-arrow rather than the app's button. It is now the same filled
+ * pill as "ניהול העסק" on `/businesses`, and the shell, title and meta rows are the same shared
+ * card treatment as well, so a business looks like a business on either screen.
+ */
 export function BusinessCard({ business, category }: { business: BusinessSummary; category?: Category }) {
   const { copy, locale, direction } = useLanguage();
   const ForwardArrow = direction === 'rtl' ? ArrowLeft : ArrowRight;
 
   return (
-    <Link
-      href={`/b/${business.id}`}
-      className="group relative flex flex-col overflow-hidden rounded-2xl border border-[var(--line)] bg-white transition-all duration-200 hover:z-10 hover:-translate-y-1 hover:shadow-xl"
-    >
-      <div className="aspect-[4/3] w-full overflow-hidden bg-[var(--soft-violet)]">
+    <article className={surfaceCardInteractive}>
+      <div className="aspect-[16/10] w-full overflow-hidden bg-[var(--soft-violet)]">
         {/* A business with no uploaded photo resolves to '' (server/queries/shared.ts's
             resolvePhotoUrl), and <img src=""> makes the browser re-request the page itself —
             leave the tinted container as the placeholder instead. */}
@@ -29,43 +45,32 @@ export function BusinessCard({ business, category }: { business: BusinessSummary
         ) : null}
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 p-4">
-        {category ? (
-          <span className="-mt-8 w-fit rounded-full bg-[var(--brand)] px-3 py-1 text-xs font-semibold text-white shadow-sm">
-            {category.name[locale]}
-          </span>
-        ) : null}
+      <div className="flex flex-1 flex-col gap-2 p-4">
+        {category ? <span className={`${cardChipBrand} -mt-7`}>{category.name[locale]}</span> : null}
 
-        <h3 className="text-lg font-bold text-[var(--foreground)]">{business.name}</h3>
-        <p className="line-clamp-2 text-sm text-[var(--muted)]">{business.description}</p>
+        <h3 className={cardTitle}>{business.name}</h3>
+        <p className="line-clamp-2 text-sm leading-5 text-[var(--muted)]">{business.description}</p>
 
-        <p className="flex items-center gap-1.5 text-sm text-[var(--muted)]">
-          <MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />
-          {business.address}
+        <p className={cardMetaRow}>
+          <MapPin className={cardMetaIcon} aria-hidden="true" />
+          <span className="truncate">{business.address}</span>
         </p>
 
-        <div className="mt-auto flex items-center justify-between border-t border-[var(--line)] pt-3">
-          <span className="flex items-center gap-1.5 text-sm font-semibold text-[var(--brand)]">
+        {/* Staff count and avatars used to sit opposite the action here. Removed by request: the
+            grid is a list of *businesses*, and who works there is the business page's answer. */}
+        <div className="mt-auto flex border-t border-[var(--line)] pt-3">
+          <Link
+            href={`/b/${business.id}`}
+            // The card carries no other link, so the accessible name has to say *which* business
+            // this books — "Book appointment" repeated down the grid names nothing.
+            aria-label={`${copy.discovery.bookAction} — ${business.name}`}
+            className={`${actionButton} ${cardAction} ${cardStretchedLink}`}
+          >
             {copy.discovery.bookAction}
             <ForwardArrow className="h-4 w-4" aria-hidden="true" />
-          </span>
-
-          <span className="flex items-center gap-2 text-xs text-[var(--muted)]">
-            {business.employeeCount} {copy.discovery.staffCount}
-            <span className="flex -space-x-2 rtl:space-x-reverse">
-              {business.employeeAvatarUrls.map((url) => (
-                // eslint-disable-next-line @next/next/no-img-element -- mock photo host isn't in next.config's image remotePatterns
-                <img
-                  key={url}
-                  src={url}
-                  alt=""
-                  className="h-6 w-6 rounded-full border-2 border-white object-cover"
-                />
-              ))}
-            </span>
-          </span>
+          </Link>
         </div>
       </div>
-    </Link>
+    </article>
   );
 }

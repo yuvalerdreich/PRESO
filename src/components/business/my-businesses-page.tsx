@@ -8,6 +8,19 @@ import { BriefcaseBusiness, Building2, Clock, MapPin, Plus, UserPlus, Users } fr
 import { CreateBusinessDialog } from '@/components/business/create-business-dialog';
 import { JoinBusinessDialog } from '@/components/business/join-business-dialog';
 import { actionButton, actionButtonSelected } from '@/components/common/button-styles';
+import {
+  cardAction,
+  cardChip,
+  cardHoverLift,
+  cardMetaIcon,
+  cardMetaList,
+  cardMetaRow,
+  cardStretchedLink,
+  cardSubtitle,
+  cardTitle,
+  surfaceCard,
+} from '@/components/common/card-styles';
+import { EmptyState } from '@/components/common/empty-state';
 import { PanelHero } from '@/components/common/panel-hero';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import type { BusinessCategory, JoinableBusiness, MyBusiness, MyBusinessRelation } from '@/types/domain';
@@ -135,17 +148,15 @@ export function MyBusinessesPage({
           ))}
         </div>
       ) : (
-        <section className="flex min-h-80 flex-col items-center justify-center rounded-[2rem] border border-[var(--line)] bg-white px-6 py-14 text-center shadow-[0_16px_35px_-28px_rgba(23,27,70,0.55)]">
-          <span className="flex h-20 w-20 items-center justify-center rounded-3xl bg-emerald-50 text-emerald-600">
-            <Building2 className="h-9 w-9" aria-hidden="true" />
-          </span>
-          <h2 className="mt-5 text-xl font-extrabold text-[var(--foreground)]">
-            {businesses.length === 0 ? copy.myBusinesses.emptyTitle : copy.myBusinesses.noMatchesTitle}
-          </h2>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--muted)]">
-            {businesses.length === 0 ? copy.myBusinesses.emptyDescription : copy.myBusinesses.noMatchesDescription}
-          </p>
-        </section>
+        <EmptyState
+          icon={Building2}
+          title={businesses.length === 0 ? copy.myBusinesses.emptyTitle : copy.myBusinesses.noMatchesTitle}
+          description={
+            businesses.length === 0 ? copy.myBusinesses.emptyDescription : copy.myBusinesses.noMatchesDescription
+          }
+          // The relation filter is a tab strip that always shows its own "all" escape hatch, so
+          // there is no separate clear button to offer here.
+        />
       )}
 
       {isCreateBusinessOpen ? (
@@ -184,33 +195,35 @@ function BusinessCard({ business }: { business: MyBusiness }) {
   // An approved position that was later deactivated (§6.9's soft retire) still lists, flagged —
   // it is not bookable and the dashboard link would be a dead end.
   const isInactive = business.employeeStatus === 'INACTIVE';
+  const canManage = business.relation !== 'PENDING' && !isInactive;
 
   return (
-    <article className="flex h-full flex-col gap-4 rounded-3xl border border-[var(--line)] bg-white p-5 shadow-[0_16px_35px_-28px_rgba(23,27,70,0.55)]">
+    // `relative` + `cursor-pointer` only where there is a dashboard to open: the whole card is the
+    // link's hit area then, exactly like a business on `/`. A pending or retired position lifts on
+    // hover like its neighbours but keeps the arrow cursor — there is nothing behind it to open.
+    <article
+      className={`${surfaceCard} ${cardHoverLift} h-full gap-4 p-4 ${canManage ? 'relative cursor-pointer' : ''}`}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="truncate text-base font-extrabold text-[var(--foreground)]">{business.name}</h3>
-          {business.categoryName ? (
-            <p className="mt-1 text-sm font-semibold text-[var(--brand)]">{business.categoryName}</p>
-          ) : null}
+          <h3 className={cardTitle}>{business.name}</h3>
+          {business.categoryName ? <p className={`mt-1 ${cardSubtitle}`}>{business.categoryName}</p> : null}
         </div>
-        <span className={`w-fit shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${relationStyle}`}>
-          {relationLabel}
-        </span>
+        <span className={`${cardChip} ${relationStyle}`}>{relationLabel}</span>
       </div>
 
-      <div className="grid gap-2 rounded-2xl border border-[var(--line)] bg-slate-50/70 p-4 text-sm">
-        <span className="flex items-start gap-2 text-[var(--muted)]">
-          <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand)]" aria-hidden="true" />
+      <div className={cardMetaList}>
+        <span className={`${cardMetaRow} items-start`}>
+          <MapPin className={`mt-0.5 ${cardMetaIcon}`} aria-hidden="true" />
           {[business.address, business.area].filter(Boolean).join(', ')}
         </span>
-        <span className="flex items-center gap-2 text-[var(--muted)]">
-          <Users className="h-4 w-4 shrink-0 text-[var(--brand)]" aria-hidden="true" />
+        <span className={cardMetaRow}>
+          <Users className={cardMetaIcon} aria-hidden="true" />
           {copy.myBusinesses.teamSize}: {business.employeeCount}
         </span>
         {business.positionTitle ? (
           <span className="flex items-center gap-2 font-semibold text-[var(--foreground)]">
-            <BriefcaseBusiness className="h-4 w-4 shrink-0 text-[var(--brand)]" aria-hidden="true" />
+            <BriefcaseBusiness className={cardMetaIcon} aria-hidden="true" />
             {business.positionTitle}
             {isInactive ? (
               <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-bold text-slate-600">
@@ -227,8 +240,15 @@ function BusinessCard({ business }: { business: MyBusiness }) {
       </div>
 
       <div className="mt-auto flex flex-wrap gap-2 pt-1">
-        {business.relation !== 'PENDING' && !isInactive ? (
-          <Link href="/dashboard" className={`${actionButton} rounded-full px-4 py-2 text-sm`}>
+        {canManage ? (
+          <Link
+            href="/dashboard"
+            // Same reasoning as the discovery card: several cards carry this identical label, so the
+            // accessible name has to name the business. The link is stretched over the card, which
+            // is what gives the pointer cursor something real underneath it.
+            aria-label={`${copy.myBusinesses.manage} — ${business.name}`}
+            className={`${actionButton} ${cardAction} ${cardStretchedLink}`}
+          >
             {copy.myBusinesses.manage}
           </Link>
         ) : null}
