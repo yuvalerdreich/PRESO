@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { AlertCircle, ArrowLeft, ArrowRight, Check, CheckCircle2, Clock, List, X } from 'lucide-react';
 
 import { Modal } from '@/components/common/modal';
+import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/lib/i18n/language-provider';
 
 function formatDisplayDate(dateISO: string): string {
@@ -132,22 +133,25 @@ export function BookingConfirmDialog({
         </div>
 
         <div className="flex items-center gap-3 border-t border-[var(--line)] pt-4">
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="pill"
             onClick={close}
-            className="flex flex-1 items-center justify-center gap-2 rounded-full border border-[var(--line)] px-4 py-3 text-sm font-medium text-[var(--foreground)] hover:bg-[var(--soft-violet)]"
+            className="flex-1 shadow-none"
           >
             <BackArrow className="h-4 w-4" aria-hidden="true" />
             {copy.bookingConfirm.bookAnotherAction}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            size="pill"
             onClick={() => router.push('/me/appointments')}
-            className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--brand)] px-4 py-3 text-sm font-semibold text-white hover:bg-[var(--brand-deep)]"
+            className="flex-1 font-semibold hover:bg-[var(--brand-deep)]"
           >
             <List className="h-4 w-4" aria-hidden="true" />
             {copy.bookingConfirm.viewAppointmentsAction}
-          </button>
+          </Button>
         </div>
       </Modal>
     );
@@ -183,24 +187,27 @@ export function BookingConfirmDialog({
       </div>
 
       <div className="flex items-center gap-3 border-t border-[var(--line)] pt-4">
-        <button
+        <Button
           type="button"
+          size="pill"
           onClick={handleConfirm}
           disabled={isSubmitting}
-          className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--brand)] px-4 py-3 text-sm font-semibold text-white hover:bg-[var(--brand-deep)] disabled:opacity-60"
+          className="flex-1 font-semibold hover:bg-[var(--brand-deep)]"
         >
           <Check className="h-4 w-4" aria-hidden="true" />
           {copy.bookingConfirm.confirm}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="outline"
+          size="pill"
           onClick={close}
           disabled={isSubmitting}
-          className="flex items-center justify-center gap-2 rounded-full border border-[var(--line)] px-4 py-3 text-sm font-medium text-[var(--foreground)] hover:bg-[var(--soft-violet)] disabled:opacity-60"
+          className="shadow-none"
         >
           <X className="h-4 w-4" aria-hidden="true" />
           {copy.bookingConfirm.cancel}
-        </button>
+        </Button>
       </div>
     </Modal>
   );

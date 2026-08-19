@@ -3,12 +3,12 @@
 import { useEffect } from 'react';
 
 /**
- * Root error boundary (TECHNICAL_DESIGN.md §8.3). Route groups add their own
+ * Root error boundary. Route groups add their own
  * boundaries later so that, for example, the business dashboard keeps its
  * navigation and the user is not stranded on a bare page.
  *
  * No raw error message, SQLSTATE or stack trace ever reaches the browser
- * (§8.4); the digest is the only handle, and it correlates with the server log.
+ * The digest is the only handle, and it correlates with the server log.
  */
 export default function RootError({
   error,

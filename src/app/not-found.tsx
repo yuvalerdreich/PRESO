@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 /**
  * `NOT_FOUND` and `FORBIDDEN` are deliberately indistinguishable for
- * cross-tenant reads (TECHNICAL_DESIGN.md §8.1): answering "you may not see
+ * cross-tenant reads: answering "you may not see
  * this" would confirm the row exists. So this copy never speculates about why.
  */
 export default function NotFound() {
