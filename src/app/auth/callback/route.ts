@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-import { hasActiveEmployment } from '@/lib/auth/active-employment';
 import { getDefaultDestination } from '@/lib/auth/default-destination';
 import { createClient } from '@/lib/supabase/route';
 
@@ -70,10 +69,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/signup/choose-role', origin));
   }
 
-  // Only the BUSINESS destination depends on employment (§12.41) — don't spend the query otherwise.
-  const accountType = profile?.account_type ?? 'CLIENT';
-  const employed = accountType === 'BUSINESS' && (await hasActiveEmployment(supabase, user!.id));
-
-  const destination = next ?? getDefaultDestination(accountType, employed);
+  const destination = next ?? getDefaultDestination();
   return NextResponse.redirect(new URL(destination, origin));
 }

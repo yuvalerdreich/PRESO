@@ -47,8 +47,11 @@ export function BusinessProfile({
       </Link>
 
       <div className="relative aspect-[21/9] w-full overflow-hidden rounded-3xl bg-[var(--soft-violet)]">
-        {/* eslint-disable-next-line @next/next/no-img-element -- mock photo host isn't in next.config's image remotePatterns */}
-        <img src={business.photoUrl} alt="" className="h-full w-full object-cover grayscale" />
+        {/* Empty when no photo was uploaded — see the note in business-card.tsx. */}
+        {business.photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- mock photo host isn't in next.config's image remotePatterns
+          <img src={business.photoUrl} alt="" className="h-full w-full object-cover grayscale" />
+        ) : null}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
         <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 p-6">
