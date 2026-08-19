@@ -8,6 +8,7 @@ import {
   toTimeHHmm,
   toTstzRange,
 } from '@/lib/time';
+import { resolvePhotoUrl } from '@/server/queries/shared';
 import type {
   AvailabilityRule,
   BusinessHourRow,
@@ -15,6 +16,7 @@ import type {
   DashboardBusiness,
   DashboardEmployee,
   DashboardKpi,
+  DashboardNavCounts,
   DashboardService,
   JoinRequestSummary,
 } from '@/types/domain';
@@ -74,7 +76,10 @@ export async function getCurrentBusinessDashboard(): Promise<DashboardBusiness |
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('businesses')
-    .select('id, name, timezone, approval_policy, cancellation_window_hours, status')
+    .select(
+      `id, name, address, area, phone, photo_paths, timezone, approval_policy,
+       cancellation_window_hours, status, categories(name)`,
+    )
     .eq('id', employment.businessId)
     .maybeSingle();
   if (error) throw error;
@@ -83,11 +88,83 @@ export async function getCurrentBusinessDashboard(): Promise<DashboardBusiness |
   return {
     id: data.id,
     name: data.name,
+    categoryName: (data.categories as { name: string } | null)?.name ?? '',
+    address: data.address,
+    area: data.area,
+    phone: data.phone,
+    photoUrl: resolvePhotoUrl(supabase, data.photo_paths),
     timezone: data.timezone,
     approvalPolicy: data.approval_policy,
     cancellationWindowHours: data.cancellation_window_hours,
     status: data.status,
     isOwner: employment.isOwner,
+  };
+}
+
+/**
+ * The header nav's badge numbers, in one round trip per section rather than by loading the four
+ * lists and measuring them — the header renders on every dashboard route, including the ones whose
+ * own screen already fetches the same rows in full.
+ *
+ * Counted with `head: true`, so Postgres returns the count and no rows at all. Appointments use
+ * the same two rules as `listDashboardKpis`: the business's own day (not the server's), and
+ * `overlaps` because `slot` is a `tstzrange`.
+ */
+export async function getDashboardNavCounts(businessId: string): Promise<DashboardNavCounts> {
+  const supabase = await createClient();
+
+  const [{ data: business }, { data: employeeRows, error: employeesError }] = await Promise.all([
+    supabase.from('businesses').select('timezone').eq('id', businessId).maybeSingle(),
+    supabase.from('employees').select('id, status').eq('business_id', businessId),
+  ]);
+  if (employeesError) throw employeesError;
+
+  const rows = employeeRows ?? [];
+  const activeStaff = rows.filter((row) => row.status === 'ACTIVE').length;
+  const employeeIds = rows.map((row) => row.id);
+
+  const timezone = business?.timezone ?? DEFAULT_TIME_ZONE;
+  const todayISO = toDateISO(new Date(), timezone);
+  const today = toTstzRange(startOfLocalDay(todayISO, timezone), endOfLocalDay(todayISO, timezone));
+
+  // A MATCHED entry is still the business's to watch — it becomes an appointment only once the
+  // client claims it (§6.9). CLAIMED and EXPIRED are both closed.
+  const waitlistQuery = supabase
+    .from('waitlist_entries')
+    .select('id', { count: 'exact', head: true })
+    .eq('business_id', businessId)
+    .in('status', ['ACTIVE', 'MATCHED']);
+
+  if (employeeIds.length === 0) {
+    const { count, error } = await waitlistQuery;
+    if (error) throw error;
+    return { appointmentsToday: 0, activeStaff, activeServices: 0, openWaitlist: count ?? 0 };
+  }
+
+  const [appointments, services, waitlist] = await Promise.all([
+    supabase
+      .from('appointments')
+      .select('id', { count: 'exact', head: true })
+      .in('employee_id', employeeIds)
+      .neq('status', 'CANCELLED')
+      .overlaps('slot', today),
+    supabase
+      .from('services')
+      .select('id', { count: 'exact', head: true })
+      .in('employee_id', employeeIds)
+      .eq('status', 'ACTIVE'),
+    waitlistQuery,
+  ]);
+
+  for (const result of [appointments, services, waitlist]) {
+    if (result.error) throw result.error;
+  }
+
+  return {
+    appointmentsToday: appointments.count ?? 0,
+    activeStaff,
+    activeServices: services.count ?? 0,
+    openWaitlist: waitlist.count ?? 0,
   };
 }
 

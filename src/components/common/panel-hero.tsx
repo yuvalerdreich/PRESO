@@ -11,16 +11,30 @@ import type { ReactNode } from 'react';
  * side, the icon badge opposite, and `children` — the screen's own controls (action buttons, tabs,
  * a search form) — on a row below a hairline divider. Anything rendered there should use
  * `components/common/button-styles.ts` and `field-styles.ts` so the controls match too.
+ *
+ * A screen about *one named thing* rather than about a section — the business dashboard, whose
+ * subject has a photo, a category and contact details — passes `media` and `badge` instead of an
+ * `icon`: the media badge takes the icon badge's place at the start of the row, so the identity
+ * reads before the name. It stays one component so the gradient, radius and type scale still have
+ * exactly one definition.
  */
 export function PanelHero({
   title,
   description,
   icon: Icon,
+  media,
+  badge,
   children,
 }: {
   title: string;
-  description: string;
-  icon: LucideIcon;
+  /** A node, not just a string, so a screen can put a contact/meta row here (inline content only). */
+  description: ReactNode;
+  /** The section icon, opposite the title. Omitted when `media` identifies the subject instead. */
+  icon?: LucideIcon;
+  /** Subject imagery (a business photo), rendered at the start of the title row. */
+  media?: ReactNode;
+  /** A short qualifier beside the title — the business's category, say. */
+  badge?: string;
   /** The screen's controls. Omit it and the divider disappears with them. */
   children?: ReactNode;
 }) {
@@ -31,13 +45,25 @@ export function PanelHero({
           children ? 'border-b border-white/10 pb-6' : ''
         }`}
       >
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{title}</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">{description}</p>
+        <div className="flex min-w-0 items-start gap-4">
+          {media}
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{title}</h1>
+              {badge ? (
+                <span className="rounded-full border border-[#7169ef] bg-[#4237aa] px-3 py-1 text-xs font-bold text-white">
+                  {badge}
+                </span>
+              ) : null}
+            </div>
+            <div className="mt-2 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">{description}</div>
+          </div>
         </div>
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[#7169ef] bg-[#4237aa] text-[#a8b0ff] shadow-inner">
-          <Icon className="h-7 w-7" aria-hidden="true" />
-        </span>
+        {Icon ? (
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[#7169ef] bg-[#4237aa] text-[#a8b0ff] shadow-inner">
+            <Icon className="h-7 w-7" aria-hidden="true" />
+          </span>
+        ) : null}
       </div>
 
       {children ? <div className="mt-6">{children}</div> : null}

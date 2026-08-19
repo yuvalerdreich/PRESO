@@ -200,6 +200,18 @@ export const translations = {
       demoNotice: 'הדגמת ממשק מקומית בלבד — לא נשלחת ולא נשמרת בקשה.',
     },
     dashboard: {
+      // The business-dashboard header (§10.7). The keys below it on this line still describe the
+      // unbuilt demo screens — rewrite each group as its screen is built.
+      nav: {
+        label: 'ניווט בלוח הבקרה',
+        appointments: 'יומן תורים',
+        staff: 'ניהול צוות ועמדות',
+        services: 'ניהול שירותים',
+        waitlist: 'רשימת המתנה',
+        settings: 'הגדרות עסק',
+      },
+      ownerBadge: 'בעל/ת העסק',
+      suspendedBadge: 'העסק מושעה',
       eyebrow: 'פורטל עסקי — הדגמת ממשק', title: 'לוח הבקרה של העסק', overview: 'סקירה', appointments: 'תורים', services: 'שירותים', staff: 'עובדים', availability: 'זמינות', today: 'היום', appointmentOverview: 'תורים להיום', viewAll: 'לכל התורים', date: 'תאריך', employee: 'עובד/ת', allEmployees: 'כל העובדים', mockNotice: 'נתוני הדגמה מקומיים בלבד', revenueMock: 'הכנסות להצגה בלבד', appointmentsKpi: 'תורים היום', staffKpi: 'אנשי צוות פעילים', pendingKpi: 'ממתינים לאישור', revenueKpi: 'הכנסות מדומות', detailsTitle: 'תורים מתוכננים', detailsDescription: 'סינון מקומי של נתוני הדגמה בלבד. לא מתבצע שינוי, אישור או שמירה.', client: 'לקוח/ה', contact: 'יצירת קשר', service: 'שירות', noAppointments: 'אין תורים תואמים לסינון שנבחר.', servicesTitle: 'ניהול שירותים', servicesDescription: 'כל שירות משויך לאיש או אשת צוות. השינויים בדף הם הדגמה מקומית בלבד ואינם נשמרים.', addService: 'הוספת שירות', editService: 'עריכת שירות', serviceName: 'שם השירות', serviceDescription: 'תיאור השירות', duration: 'משך (דקות)', buffer: 'מרווח (דקות)', price: 'מחיר (₪)', status: 'סטטוס', active: 'פעיל', inactive: 'לא פעיל', activate: 'הפעלה בהדגמה', deactivate: 'השבתה בהדגמה', saveService: 'שמירה בהדגמה', updateService: 'עדכון בהדגמה', close: 'סגירה', requiredField: 'יש למלא שדה זה', validNumber: 'יש להזין מספר תקין', serviceSaved: 'השירות עודכן בהדגמה בלבד', noServices: 'אין שירותים להצגה כרגע.', demoChanges: 'שינויים כאן נשמרים רק כל עוד הדף פתוח.',
     },
     myBusinesses: {
@@ -557,6 +569,16 @@ export const translations = {
       demoNotice: 'Local UI demonstration only — no request is sent or saved.',
     },
     dashboard: {
+      nav: {
+        label: 'Dashboard sections',
+        appointments: 'Appointment diary',
+        staff: 'Staff & stations',
+        services: 'Services',
+        waitlist: 'Waitlist',
+        settings: 'Business settings',
+      },
+      ownerBadge: 'Business owner',
+      suspendedBadge: 'Business suspended',
       eyebrow: 'Business portal — UI demo', title: 'Business dashboard', overview: 'Overview', appointments: 'Appointments', services: 'Services', staff: 'Staff', availability: 'Availability', today: 'Today', appointmentOverview: 'Today’s appointments', viewAll: 'View all appointments', date: 'Date', employee: 'Employee', allEmployees: 'All employees', mockNotice: 'Local demonstration data only', revenueMock: 'Display-only revenue', appointmentsKpi: 'Appointments today', staffKpi: 'Active staff', pendingKpi: 'Pending approval', revenueKpi: 'Mock revenue', detailsTitle: 'Scheduled appointments', detailsDescription: 'Local filtering of demonstration data only. No changes, approvals, or information are saved.', client: 'Client', contact: 'Contact', service: 'Service', noAppointments: 'No appointments match the selected filters.', servicesTitle: 'Service management', servicesDescription: 'Every service belongs to a team member. Changes on this page are local UI demonstrations only and are not saved.', addService: 'Add service', editService: 'Edit service', serviceName: 'Service name', serviceDescription: 'Service description', duration: 'Duration (minutes)', buffer: 'Buffer (minutes)', price: 'Price (₪)', status: 'Status', active: 'Active', inactive: 'Inactive', activate: 'Activate in demo', deactivate: 'Deactivate in demo', saveService: 'Save in demo', updateService: 'Update in demo', close: 'Close', requiredField: 'This field is required', validNumber: 'Enter a valid number', serviceSaved: 'Service updated in demo only', noServices: 'There are no services to show right now.', demoChanges: 'Changes here last only while this page remains open.',
     },
     myBusinesses: {
