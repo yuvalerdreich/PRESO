@@ -68,6 +68,7 @@ export const createBusiness = action('createBusiness', createBusinessInput, asyn
       input.services.map((service) => ({
         employee_id: employee.id,
         name: service.name,
+        description: service.description?.trim() || null,
         price: service.price,
         duration_minutes: service.durationMinutes,
         buffer_minutes: service.bufferMinutes,

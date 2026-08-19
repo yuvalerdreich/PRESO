@@ -300,8 +300,15 @@ export type DashboardEmployee = {
   id: string;
   profileId: string;
   fullName: string;
+  avatarUrl: string;
   positionTitle: string;
   status: EmployeeStatus;
+  /**
+   * Contact details of a colleague, from `business_staff_contacts` (0021) — null only if that
+   * view's predicate excluded the caller, never because the column is missing.
+   */
+  phone: string | null;
+  email: string | null;
   serviceCount: number;
   isOwner: boolean;
 };
@@ -311,6 +318,8 @@ export type DashboardService = {
   employeeId: string;
   employeeName: string;
   name: string;
+  /** `services.description` (0015) — already rendered publicly; the dashboard form writes it. */
+  description: string;
   price: number;
   durationMinutes: number;
   bufferMinutes: number;
@@ -342,6 +351,9 @@ export type JoinRequestSummary = {
   businessName: string;
   profileId: string;
   fullName: string;
+  /** From `business_join_request_contacts` (0021) — the founder decides on a person, not an id. */
+  phone: string | null;
+  email: string | null;
   status: JoinRequestStatus;
   createdAt: string;
 };

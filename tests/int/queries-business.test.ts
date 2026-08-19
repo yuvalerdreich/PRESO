@@ -85,13 +85,21 @@ describe('dashboard reads (signed in as the founder)', () => {
     });
   });
 
-  it('lists staff with service counts and an owner flag', async () => {
+  it('lists staff with service counts, an owner flag and reachable contact details', async () => {
     const employees = await listDashboardEmployees(STUDIO_ZOHAR);
 
     expect(employees).toHaveLength(2);
     expect(employees.every((employee) => employee.serviceCount === 3)).toBe(true);
     expect(employees.filter((employee) => employee.isOwner)).toHaveLength(1);
     expect(employees.every((employee) => employee.fullName !== '')).toBe(true);
+
+    // §10.7's roster screen shows how to reach a colleague. Neither column survives an embedded
+    // `profiles` read — phone is hidden by `profiles_select` and email lives on `auth.users` —
+    // so both come from `business_staff_contacts` (0021). Asserting the *colleague's* row, not
+    // the founder's own, is what makes this catch a regression back to the embed.
+    const colleague = employees.find((employee) => !employee.isOwner)!;
+    expect(colleague.phone).not.toBeNull();
+    expect(colleague.email).toBe('miya@demo.local');
   });
 
   it('lists every service in the business, annotated with its owning employee', async () => {

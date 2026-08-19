@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { uuid } from '@/lib/validation/common';
+import { optionalText, uuid } from '@/lib/validation/common';
 
 /**
  * Service schema (TECHNICAL_DESIGN.md §9's worked example, reproduced as specified).
@@ -16,6 +16,11 @@ export const serviceInput = z.object({
     .trim()
     .min(2, 'Service name must be at least 2 characters')
     .max(80, 'Service name must be at most 80 characters'),
+  /**
+   * `services.description` (0015). The column existed to feed the *public* booking page before
+   * any screen could write it — the dashboard's service form is what closes that loop.
+   */
+  description: optionalText(1000, 'Description is limited to 1000 characters'),
   price: z.coerce.number().min(0, 'Price cannot be negative').max(99_999, 'Price is too high'),
   durationMinutes: z.coerce
     .number()

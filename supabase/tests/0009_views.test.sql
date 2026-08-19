@@ -1,11 +1,12 @@
--- The two public-projection views (0015_display_fields.sql, 0016_client_contacts.sql).
+-- The projection views (0015_display_fields.sql, 0016_client_contacts.sql, 0021_staff_contacts.sql).
 --
--- Both run with `security_invoker = false`, i.e. as their owner, which means they bypass RLS on
--- `profiles` entirely. That is deliberate and it is also the whole risk: a mistake in either
--- definition leaks personal data to anyone who can reach the view. These assertions pin what each
--- one is allowed to expose, and to whom.
+-- All of them run with `security_invoker = false`, i.e. as their owner, which means they bypass RLS
+-- on `profiles` entirely — and 0021's two bypass `auth.users`, which no policy exposes at all. That
+-- is deliberate and it is also the whole risk: a mistake in any definition leaks personal data to
+-- anyone who can reach the view. These assertions pin what each one is allowed to expose, and to
+-- whom.
 begin;
-select plan(11);
+select plan(19);
 
 set local role postgres;
 insert into auth.users (id, email, raw_user_meta_data) values
@@ -137,6 +138,85 @@ select is(
   (select count(*)::int from business_client_contacts where profile_id = '00000000-0000-0000-0000-0000000000b2'),
   1,
   'an admin can read client contacts, matching is_admin() in every other policy'
+);
+
+-- ---------------------------------------------------------------------------
+-- business_staff_contacts / business_join_request_contacts (0021)
+-- ---------------------------------------------------------------------------
+--
+-- These two carry the columns the roster screen needs and the public view deliberately refuses:
+-- a colleague's phone, and their sign-in email — which lives on `auth.users`, a table no policy
+-- exposes to `authenticated` at all.
+
+set local role postgres;
+reset request.jwt.claims;
+update profiles set phone = '+972500000011' where id = '00000000-0000-0000-0000-0000000000b1';
+-- b3 asks to join b1's business, so there is a pending applicant to name.
+insert into join_requests (id, business_id, profile_id)
+values ('00000000-0000-0000-0000-0000000000b8', '00000000-0000-0000-0000-0000000000b5',
+        '00000000-0000-0000-0000-0000000000b3');
+-- b3 was promoted to ADMIN by the block above; put it back, or every scoping assertion below
+-- passes through is_admin() instead of through the predicate being tested.
+update profiles set account_type = 'BUSINESS' where id = '00000000-0000-0000-0000-0000000000b3';
+
+set local role anon;
+reset request.jwt.claims;
+
+select throws_ok(
+  $$ select count(*) from business_staff_contacts $$,
+  '42501',
+  null,
+  'anon cannot read staff contacts — the view is granted to authenticated only'
+);
+
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b1","role":"authenticated"}';
+
+select is(
+  (select phone from business_staff_contacts where employee_id = '00000000-0000-0000-0000-0000000000b6'),
+  '+972500000011',
+  'staff can read a colleague’s phone, which profiles RLS hides'
+);
+
+select is(
+  (select email from business_staff_contacts where employee_id = '00000000-0000-0000-0000-0000000000b6'),
+  'owner-view@test.local',
+  'and their sign-in email, which lives on auth.users and no policy exposes'
+);
+
+select set_eq(
+  $$ select column_name::text from information_schema.columns
+      where table_name = 'business_staff_contacts' $$,
+  $$ values ('employee_id'),('business_id'),('profile_id'),('phone'),('email') $$,
+  'business_staff_contacts carries only the non-public columns — name and photo stay in the public view'
+);
+
+select is(
+  (select full_name from business_join_request_contacts where request_id = '00000000-0000-0000-0000-0000000000b8'),
+  'Unrelated Owner',
+  'the founder can name the person asking to join — an applicant has no employees row to read'
+);
+
+select is(
+  (select email from business_join_request_contacts where request_id = '00000000-0000-0000-0000-0000000000b8'),
+  'other-view@test.local',
+  'and can reach them, which is what deciding the request needs'
+);
+
+-- The scoping predicate is the entire boundary, as above: the applicant is a business user with no
+-- position here, and must not read the roster of a business that has not accepted them.
+set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000b3","role":"authenticated"}';
+
+select is(
+  (select count(*)::int from business_staff_contacts),
+  0,
+  'an outsider — including a pending applicant — sees no staff contacts'
+);
+
+select is(
+  (select count(*)::int from business_join_request_contacts),
+  0,
+  'and cannot read join requests through the view either, not even their own'
 );
 
 select * from finish();
