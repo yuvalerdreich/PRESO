@@ -1,4 +1,4 @@
-name: verify
+name: ci
 
 # Runs on GitHub's servers, not locally.
 #
@@ -14,16 +14,45 @@ name: verify
 #                  verified as it actually stands.
 #
 # Locally the equivalent single command is `npm run verify`.
+#
+# Two independent jobs, not one: `static` (lint/typecheck/unit) never touches
+# Supabase, while `integration` (int/db/e2e) needs the local stack booted.
+# Splitting them lets GitHub run both in parallel instead of the Supabase
+# boot + e2e run sitting behind lint/typecheck/unit in a single serial job —
+# the wall-clock cost is now max(static, integration), not their sum. The
+# price is a duplicated checkout/npm ci in the second job, which is cheap and
+# doesn't add to wall-clock since it runs concurrently with the first.
 on:
   pull_request:
     branches: [main]
 
 concurrency:
-  group: verify-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  verify:
+  static:
+    name: lint, typecheck, unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Must match the Volta pin in package.json.
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:unit
+
+  integration:
+    name: int, db, e2e
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -82,9 +111,6 @@ jobs:
       - name: Write test environment
         run: npm run env:test
 
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm run test:unit
       - run: npm run test:int
 
       # pgTAP: the exclusion constraint, the availability engine and every RLS
@@ -92,8 +118,17 @@ jobs:
       # where this system puts correctness (ARCHITECTURE.md §11).
       - run: npm run test:db
 
+      # `--with-deps` is deliberately NOT used here: it forces a full
+      # `apt-get update` against every configured mirror (azure archive,
+      # packages.microsoft.com, dl.google.com) and then installs a batch of
+      # locale font packages this app never renders (CJK/Thai/Cyrillic) —
+      # together several minutes on the runner's slow apt link. Confirmed by
+      # hand: every shared lib Chromium actually needs (libnss3, libgbm1,
+      # libx11-6, libasound2t64, …) is already present on ubuntu-latest, only
+      # the unused font packages were new. Only `chromium` is registered in
+      # playwright.config.ts, so this installs just that binary.
       - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
 
       - run: npm run test:e2e
 
