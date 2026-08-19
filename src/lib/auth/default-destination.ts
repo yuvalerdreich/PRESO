@@ -1,25 +1,17 @@
 /**
- * Post-login default destination (TECHNICAL_DESIGN.md §12.21) — `?next=` still wins over this
- * when present; this is only the fallback when there's nowhere specific to bounce back to.
+ * Post-login default destination — `?next=` still wins over this when present; this is only the
+ * fallback when there's nowhere specific to bounce back to.
  *
- * `hasActiveEmployment` refines the BUSINESS case (§12.41): an account with no ACTIVE `employees`
- * row has no dashboard to be sent to — `(business)/dashboard/layout.tsx` would bounce it straight
- * back out — so it lands on the public home screen instead, one sidebar click from `/businesses`
- * and its "open a business / join a business" actions. Resolve the flag with
- * `hasActiveEmployment()` (`lib/auth/active-employment.ts`); it is required rather than defaulted
- * so a caller cannot silently strand a business owner on `/` by forgetting it.
+ * **Every role lands on the public home screen** (מסך ראשי), CLIENT, BUSINESS and ADMIN alike.
+ * This supersedes the earlier role-split routing (§12.21: client→`/`, business→`/dashboard`,
+ * admin→`/admin`) and its §12.41 refinement, which sent only an *unemployed* BUSINESS account to
+ * `/` and left an employed one on `/dashboard`. Signing in now always opens the same screen, and
+ * the portals are one sidebar click away from it.
+ *
+ * Deliberately still a function rather than an inlined `'/'`: it keeps one named place that both
+ * sign-in paths (`components/auth/login-form.tsx` and `app/auth/callback/route.ts`) agree on, so
+ * reintroducing role-dependent routing is a single edit rather than a hunt.
  */
-export function getDefaultDestination(
-  accountType: 'CLIENT' | 'BUSINESS' | 'ADMIN',
-  hasActiveEmployment: boolean,
-): string {
-  switch (accountType) {
-    case 'BUSINESS':
-      return hasActiveEmployment ? '/dashboard' : '/';
-    case 'ADMIN':
-      return '/admin';
-    case 'CLIENT':
-    default:
-      return '/';
-  }
+export function getDefaultDestination(): string {
+  return '/';
 }

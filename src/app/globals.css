@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 :root {
   --background: #faf9ff;
@@ -8,12 +9,26 @@
   --brand: #5945f6;
   --brand-deep: #34238d;
   --brand-dark: #171b46;
-  /* Every button in the business area rests at the dark blue and lightens on hover.
-     See components/business/button-styles.ts */
   --brand-blue-dark: #1e3a8a;
   --brand-blue: #2563eb;
   --surface: #ffffff;
   --soft-violet: #f0edff;
+  --primary: var(--brand);
+  --primary-foreground: #ffffff;
+  --secondary: var(--soft-violet);
+  --secondary-foreground: var(--brand-deep);
+  --accent: var(--soft-violet);
+  --accent-foreground: var(--brand-deep);
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--brand);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: #ffffff;
+  --radius: 1rem;
 }
 
 @theme inline {
@@ -21,6 +36,30 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* shadcn semantic utilities: bg-primary, text-muted-foreground, border-border… */
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--soft-violet);
+  --color-muted-foreground: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
 body {

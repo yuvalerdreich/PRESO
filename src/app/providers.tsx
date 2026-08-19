@@ -9,7 +9,7 @@ import type { Locale } from '@/lib/i18n/types';
 
 /**
  * TanStack Query caches exactly one read in this product: the availability
- * request (TECHNICAL_DESIGN.md §7.1). Everything else is fetched by a server
+ * request. Everything else is fetched by a server
  * component on navigation, so there is nothing else to keep in sync.
  *
  * The client is created in state rather than at module scope so that each

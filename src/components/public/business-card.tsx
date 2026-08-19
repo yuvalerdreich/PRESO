@@ -16,12 +16,17 @@ export function BusinessCard({ business, category }: { business: BusinessSummary
       className="group relative flex flex-col overflow-hidden rounded-2xl border border-[var(--line)] bg-white transition-all duration-200 hover:z-10 hover:-translate-y-1 hover:shadow-xl"
     >
       <div className="aspect-[4/3] w-full overflow-hidden bg-[var(--soft-violet)]">
-        {/* eslint-disable-next-line @next/next/no-img-element -- mock photo host isn't in next.config's image remotePatterns */}
-        <img
-          src={business.photoUrl}
-          alt={business.name}
-          className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
-        />
+        {/* A business with no uploaded photo resolves to '' (server/queries/shared.ts's
+            resolvePhotoUrl), and <img src=""> makes the browser re-request the page itself —
+            leave the tinted container as the placeholder instead. */}
+        {business.photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- mock photo host isn't in next.config's image remotePatterns
+          <img
+            src={business.photoUrl}
+            alt={business.name}
+            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+          />
+        ) : null}
       </div>
 
       <div className="flex flex-1 flex-col gap-3 p-4">

@@ -25,12 +25,24 @@ export function EmployeeCard({
       }`}
     >
       <span className="relative">
-        {/* eslint-disable-next-line @next/next/no-img-element -- mock photo host isn't in next.config's image remotePatterns */}
-        <img
-          src={employee.avatarUrl}
-          alt=""
-          className="h-14 w-14 rounded-full object-cover"
-        />
+        {/* avatarUrl is '' for a staff member with no photo (discovery.ts maps a null
+            avatar_url to ''), and <img src=""> re-requests the page. Fall back to the
+            initial so the circle keeps its size instead of collapsing the layout. */}
+        {employee.avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- mock photo host isn't in next.config's image remotePatterns
+          <img
+            src={employee.avatarUrl}
+            alt=""
+            className="h-14 w-14 rounded-full object-cover"
+          />
+        ) : (
+          <span
+            aria-hidden="true"
+            className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--soft-violet)] text-lg font-bold text-[var(--brand-deep)]"
+          >
+            {employee.fullName.trim().charAt(0)}
+          </span>
+        )}
         {selected ? (
           <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--brand)] text-white">
             <Check className="h-3 w-3" aria-hidden="true" />
