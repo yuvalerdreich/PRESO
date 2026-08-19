@@ -3,7 +3,7 @@
 -- accidentally renames/drops something these depend on, this fails loudly instead of the
 -- app just breaking silently at runtime.
 begin;
-select plan(32);
+select plan(34);
 
 -- §3.1 extensions
 select has_extension('public', 'btree_gist', 'btree_gist is installed (0001, required by 0005''s exclusion constraint)');
@@ -33,6 +33,8 @@ select has_column('public', 'businesses', 'timezone', 'businesses.timezone exist
 select col_default_is('public', 'businesses', 'timezone', 'Asia/Jerusalem', 'businesses.timezone defaults to Asia/Jerusalem');
 select has_column('public', 'businesses', 'cancellation_window_hours', 'businesses.cancellation_window_hours exists (§12.2)');
 select col_default_is('public', 'businesses', 'cancellation_window_hours', '24', 'cancellation_window_hours defaults to 24');
+select has_column('public', 'businesses', 'payment_notes', 'businesses.payment_notes exists (§12.44)');
+select col_is_null('public', 'businesses', 'payment_notes', 'payment_notes is nullable — a business need not state one');
 
 -- §3.9 appointments — the exclusion constraint is THE guarantee (§3.9, §6.2)
 select ok(

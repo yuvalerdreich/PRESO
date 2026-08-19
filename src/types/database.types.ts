@@ -226,6 +226,7 @@ export type Database = {
           id: string
           name: string
           owner_profile_id: string
+          payment_notes: string | null
           phone: string
           photo_paths: string[]
           status: Database["public"]["Enums"]["business_status"]
@@ -242,6 +243,7 @@ export type Database = {
           id?: string
           name: string
           owner_profile_id: string
+          payment_notes?: string | null
           phone: string
           photo_paths?: string[]
           status?: Database["public"]["Enums"]["business_status"]
@@ -258,6 +260,7 @@ export type Database = {
           id?: string
           name?: string
           owner_profile_id?: string
+          payment_notes?: string | null
           phone?: string
           photo_paths?: string[]
           status?: Database["public"]["Enums"]["business_status"]
@@ -968,6 +971,7 @@ export type Database = {
           p_category_id: string
           p_description?: string
           p_name: string
+          p_payment_notes?: string
           p_phone: string
           p_position_title?: string
           p_timezone?: string
@@ -983,6 +987,7 @@ export type Database = {
           id: string
           name: string
           owner_profile_id: string
+          payment_notes: string | null
           phone: string
           photo_paths: string[]
           status: Database["public"]["Enums"]["business_status"]

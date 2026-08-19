@@ -34,6 +34,11 @@ const businessFields = {
     .min(0, 'Cancellation notice must be between 0 and 168 hours')
     .max(168, 'Cancellation notice must be between 0 and 168 hours')
     .default(24),
+  /**
+   * §12.44 — the free-text half of the policy step. Untyped on purpose, unlike
+   * `cancellationWindowHours` above: no code branches on it, so there is nothing to type.
+   */
+  paymentNotes: optionalText(1000, 'Payment notes are limited to 1000 characters'),
 };
 
 /**
