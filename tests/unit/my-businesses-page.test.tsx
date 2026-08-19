@@ -106,7 +106,7 @@ describe('my businesses page', () => {
     expect(screen.getAllByRole('link', { name: 'Manage business' })).toHaveLength(2);
   });
 
-  it('filters by relation and by the search box', () => {
+  it('filters by relation', () => {
     renderPage();
 
     fireEvent.click(screen.getByRole('tab', { name: /owned by me/i }));
@@ -115,12 +115,9 @@ describe('my businesses page', () => {
     expect(screen.queryByText('Glow Clinic')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: /^all/i }));
-    fireEvent.change(screen.getByPlaceholderText('Search by business name, city, or role…'), {
-      target: { value: 'herzliya' },
-    });
-    expect(screen.getByText('1 linked businesses found')).toBeInTheDocument();
+    expect(screen.getByText('3 linked businesses found')).toBeInTheDocument();
     expect(screen.getByText('Glow Clinic')).toBeInTheDocument();
-    expect(screen.queryByText('Studio Zohar')).not.toBeInTheDocument();
+    expect(screen.getByText('Studio Zohar')).toBeInTheDocument();
   });
 
   it('shows the empty state only when the account has no businesses at all', () => {

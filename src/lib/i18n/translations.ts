@@ -211,7 +211,6 @@ export const translations = {
       owned: 'בבעלותי',
       activeStaff: 'כעובד/ת פעיל/ה',
       pending: 'בקשות ממתינות',
-      searchPlaceholder: 'חפש לפי שם עסק, עיר או תפקיד...',
       resultCount: 'נמצאו {count} עסקים משויכים',
       emptyTitle: 'לא נמצאו עסקים משויכים',
       emptyDescription: 'עדיין אין עסק בחשבון שלך. אפשר לפתוח עסק חדש או להצטרף לעסק קיים.',
@@ -223,7 +222,6 @@ export const translations = {
       teamSize: 'אנשי צוות',
       awaitingApproval: 'הבקשה ממתינה להחלטת בעל/ת העסק',
       inactivePosition: 'לא פעיל',
-      viewPublicPage: 'לעמוד העסק',
       manage: 'ניהול העסק',
     },
     createBusiness: {
@@ -570,7 +568,6 @@ export const translations = {
       owned: 'Owned by me',
       activeStaff: 'Active staff',
       pending: 'Pending requests',
-      searchPlaceholder: 'Search by business name, city, or role…',
       resultCount: '{count} linked businesses found',
       emptyTitle: 'No businesses linked yet',
       emptyDescription: 'There is no business on this account yet. Open a new business or join an existing one.',
@@ -582,7 +579,6 @@ export const translations = {
       teamSize: 'Team members',
       awaitingApproval: 'Waiting for the owner to decide on your request',
       inactivePosition: 'Inactive',
-      viewPublicPage: 'View business page',
       manage: 'Manage business',
     },
     createBusiness: {
