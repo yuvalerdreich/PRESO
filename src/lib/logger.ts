@@ -80,9 +80,13 @@ export const log = {
  * The `CONFLICT` case is the one worth stating out loud: **a 409 is `info`, not `error`.** It is
  * expected system behaviour — two clients wanting the same slot — and alerting on it would page
  * someone for healthy contention.
+ *
+ * `UNAVAILABLE` joins the `error` tier because it only ever means a required env var is missing
+ * (§12.58) — nobody is going to notice that from a warn line, and every request meanwhile is a
+ * silent no-op. `METHOD_NOT_ALLOWED` stays at the default `warn`: it is somebody probing a URL.
  */
 export function levelForCode(code: AppErrorCode): LogLevel {
   if (code === 'CONFLICT') return 'info';
-  if (code === 'INTERNAL' || code === 'UPSTREAM') return 'error';
+  if (code === 'INTERNAL' || code === 'UPSTREAM' || code === 'UNAVAILABLE') return 'error';
   return 'warn';
 }

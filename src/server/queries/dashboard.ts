@@ -184,8 +184,19 @@ export async function getDashboardNavCounts(businessId: string): Promise<Dashboa
  * Neither can be replaced by embedding `profiles`: that embed is scoped by `profiles_select`
  * (own-row-or-admin), so it returns `null` for every colleague and reads as missing data rather
  * than as a permission decision.
+ *
+ * **Contacts are opt-in** (§12.58). Four screens call this, and only the roster displays a phone or
+ * an email; the other three — the diary's staff filter, the hours picker, the services filter — want
+ * a name and an id. Loading contacts for all four sent every colleague's email address into the RSC
+ * payload of three screens that never render it, where it is readable in the browser's network tab.
+ * The caller is ACTIVE staff and `business_staff_contacts` is scoped to them, so this was never a
+ * cross-tenant leak — it was data travelling further than the screen asking for it needed, which is
+ * the kind that goes unnoticed. It also drops a query from three pages.
  */
-export async function listDashboardEmployees(businessId: string): Promise<DashboardEmployee[]> {
+export async function listDashboardEmployees(
+  businessId: string,
+  { withContacts = false }: { withContacts?: boolean } = {},
+): Promise<DashboardEmployee[]> {
   const supabase = await createClient();
 
   const [{ data, error }, { data: business }] = await Promise.all([
@@ -201,7 +212,9 @@ export async function listDashboardEmployees(businessId: string): Promise<Dashbo
   const rows = data ?? [];
   const [profiles, contacts] = await Promise.all([
     loadStaffProfiles(rows.map((row) => row.id)),
-    loadStaffContacts(businessId),
+    withContacts
+      ? loadStaffContacts(businessId)
+      : Promise.resolve(new Map<string, { phone: string | null; email: string | null }>()),
   ]);
 
   return rows.map((row) => {

@@ -30,6 +30,10 @@ const { POST: postAppointment } = await import('@/app/api/appointments/route');
 const { PATCH: patchAppointment } = await import('@/app/api/appointments/[id]/route');
 const { POST: postWaitlist } = await import('@/app/api/waitlist/route');
 const { DELETE: deleteWaitlist } = await import('@/app/api/waitlist/[id]/route');
+// §12.58 — the same `methodNotAllowed` handler each route binds its unsupported verbs to.
+const { GET: appointmentsNotAllowed } = await import('@/app/api/appointments/route');
+const { GET: waitlistNotAllowed } = await import('@/app/api/waitlist/route');
+const { DELETE: businessesNotAllowed } = await import('@/app/api/businesses/route');
 const { listDashboardWaitlist } = await import('@/server/queries/dashboard');
 
 const URL_ = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -975,4 +979,35 @@ describe('waitlist routes — §5.4', () => {
       .eq('id', id);
     expect(count).toBe(1);
   });
+});
+
+/**
+ * §12.58 — the verbs a route does *not* export.
+ *
+ * Without an explicit handler these were answered by Next itself: `405` with an empty body and no
+ * `content-type`, the one response in the API that told a caller nothing — and the one a person
+ * meets by accident, since it is what a POST-only URL returns when typed into the address bar.
+ *
+ * `Allow` is asserted alongside the body because it is required of a 405 (RFC 9110 §15.5.6) and is
+ * the half that says what to do instead.
+ */
+describe('unsupported verbs answer the §8.4 envelope', () => {
+  const cases: [string, (request: Request) => Promise<Response> | Response, string][] = [
+    ['GET /api/appointments', appointmentsNotAllowed, 'POST'],
+    ['GET /api/waitlist', waitlistNotAllowed, 'POST'],
+    ['DELETE /api/businesses', businessesNotAllowed, 'GET'],
+  ];
+
+  for (const [name, handler, allow] of cases) {
+    it(`${name} → 405 naming ${allow}`, async () => {
+      const response = await handler(req('/x'));
+
+      expect(response.status).toBe(405);
+      expect(response.headers.get('allow')).toBe(allow);
+      expect(response.headers.get('content-type')).toContain('application/json');
+      expect(await response.json()).toEqual({
+        error: { code: 'METHOD_NOT_ALLOWED', message: `This endpoint only accepts ${allow}.` },
+      });
+    });
+  }
 });

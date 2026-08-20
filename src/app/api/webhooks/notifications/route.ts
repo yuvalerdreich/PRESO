@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { timingSafeEqual } from 'node:crypto';
 
+import { AppError, toHttp, type AppErrorCode } from '@/lib/errors';
+import { methodNotAllowed } from '@/lib/http';
 import { renderNotificationEmail } from '@/lib/email/templates';
 import { sendEmail } from '@/lib/email/send';
 import { log } from '@/lib/logger';
@@ -43,11 +45,25 @@ type WebhookBody = {
   };
 };
 
+/**
+ * §12.58 — this handler is deliberately *not* wrapped in `withErrorHandling` (rule 3 above: it must
+ * choose its own statuses so an impossible send is a 200, not a retried 5xx), which is how its
+ * error bodies drifted to a bare `{ error: 'string' }` while every other route returned §8.4's
+ * envelope. It emits the same envelope through `toHttp()` instead of hand-rolling a second shape.
+ *
+ * Its *successes* stay as they are: `{ status: 'sent' | 'skipped' | 'already-sent' | … }` is not an
+ * error envelope and shouldn't be dressed as one — Supabase reads them as "delivered, stop retrying".
+ */
+function fail(code: AppErrorCode, message: string): NextResponse {
+  const { status, body } = toHttp(new AppError(code, message));
+  return NextResponse.json(body, { status });
+}
+
 export async function POST(request: NextRequest) {
   const secret = process.env.NOTIFICATIONS_WEBHOOK_SECRET;
   if (!secret) {
     log.error({ event: 'webhook.notifications.misconfigured' });
-    return NextResponse.json({ error: 'Webhook is not configured' }, { status: 503 });
+    return fail('UNAVAILABLE', 'Email delivery is not configured on this deployment.');
   }
 
   const presented =
@@ -55,14 +71,14 @@ export async function POST(request: NextRequest) {
 
   if (!matches(presented, secret)) {
     log.warn({ event: 'webhook.notifications.unauthorized' });
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return fail('UNAUTHENTICATED', 'This webhook requires a valid shared secret.');
   }
 
   const body = (await request.json().catch(() => null)) as WebhookBody | null;
   const record = body?.record;
 
   if (!record?.id || !record.profile_id || !record.type) {
-    return NextResponse.json({ error: 'Unexpected webhook body' }, { status: 400 });
+    return fail('VALIDATION', 'Expected a notifications INSERT payload with a `record`.');
   }
 
   const supabase = createAdminClient();
@@ -78,7 +94,7 @@ export async function POST(request: NextRequest) {
     .maybeSingle();
   if (claimError) {
     log.error({ event: 'webhook.notifications.claim_failed', reason: claimError.message });
-    return NextResponse.json({ error: 'Could not claim the notification' }, { status: 500 });
+    return fail('INTERNAL', 'Could not claim the notification for sending.');
   }
   if (!claimed) {
     return NextResponse.json({ status: 'already-sent' });
@@ -112,6 +128,10 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ status: 'sent', id: result.id });
 }
+
+/** §12.58 — every other verb answers the envelope with an `Allow`, not Next's empty 405. */
+const notAllowed = methodNotAllowed('POST');
+export { notAllowed as GET, notAllowed as PUT, notAllowed as PATCH, notAllowed as DELETE };
 
 /** Constant-time compare, and length-safe: `timingSafeEqual` throws on a length mismatch. */
 function matches(presented: string, expected: string): boolean {

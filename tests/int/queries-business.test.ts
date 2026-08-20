@@ -86,7 +86,7 @@ describe('dashboard reads (signed in as the founder)', () => {
   });
 
   it('lists staff with service counts, an owner flag and reachable contact details', async () => {
-    const employees = await listDashboardEmployees(STUDIO_ZOHAR);
+    const employees = await listDashboardEmployees(STUDIO_ZOHAR, { withContacts: true });
 
     expect(employees).toHaveLength(2);
     expect(employees.every((employee) => employee.serviceCount === 3)).toBe(true);
@@ -100,6 +100,20 @@ describe('dashboard reads (signed in as the founder)', () => {
     const colleague = employees.find((employee) => !employee.isOwner)!;
     expect(colleague.phone).not.toBeNull();
     expect(colleague.email).toBe('miya@demo.local');
+  });
+
+  // §12.58 — the diary, hours and services screens take this default. They render a name and an id,
+  // and used to receive every colleague's email in their RSC payload anyway. The assertion is on the
+  // *colleague*: the founder reading their own contact details back is not the case that mattered.
+  it('omits staff contact details unless the caller asks for them', async () => {
+    const employees = await listDashboardEmployees(STUDIO_ZOHAR);
+
+    expect(employees).toHaveLength(2);
+    expect(employees.every((employee) => employee.fullName !== '')).toBe(true);
+
+    const colleague = employees.find((employee) => !employee.isOwner)!;
+    expect(colleague.phone).toBeNull();
+    expect(colleague.email).toBeNull();
   });
 
   it('lists every service in the business, annotated with its owning employee', async () => {
