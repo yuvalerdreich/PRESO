@@ -48,7 +48,7 @@ export const upsertService = action('upsertService', serviceInput, async (input)
   if (error) throw error;
   if (!data) throw new AppError('NOT_FOUND', 'That service no longer exists.');
 
-  revalidatePath('/dashboard/services');
+  revalidatePath('/businesses/manage/services');
   revalidatePath(`/b/${employment.businessId}`);
 
   return { id: data.id };
@@ -89,7 +89,7 @@ export const deleteService = action('deleteService', deleteServiceInput, async (
     softDeleted = true;
   }
 
-  revalidatePath('/dashboard/services');
+  revalidatePath('/businesses/manage/services');
   revalidatePath(`/b/${employment.businessId}`);
 
   return { id: input.id, softDeleted };

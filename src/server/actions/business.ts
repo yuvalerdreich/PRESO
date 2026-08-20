@@ -46,6 +46,10 @@ export const createBusiness = action('createBusiness', createBusinessInput, asyn
     p_cancellation_window_hours: input.cancellationWindowHours,
     p_position_title: input.positionTitle,
     p_payment_notes: input.paymentNotes || undefined,
+    p_booking_notes: input.bookingNotes || undefined,
+    // Inside the RPC rather than an UPDATE afterwards: §6.8 rule 3 makes opening a business one
+    // transaction, and a second statement that can fail on its own would open photoless businesses.
+    p_photo_url: input.photoUrl || undefined,
   });
   if (error) throw error;
 
@@ -80,7 +84,7 @@ export const createBusiness = action('createBusiness', createBusinessInput, asyn
     servicesCreated = input.services.length;
   }
 
-  revalidatePath('/dashboard');
+  revalidatePath('/businesses/manage');
   revalidatePath('/businesses');
   revalidatePath('/');
 
@@ -104,12 +108,21 @@ export const updateBusinessDetails = action('updateBusinessDetails', businessDet
       approval_policy: input.approvalPolicy,
       cancellation_window_hours: input.cancellationWindowHours,
       payment_notes: input.paymentNotes || null,
+      booking_notes: input.bookingNotes || null,
+      // One photo is `array[url]`, not a scalar column: `photo_paths` already allows up to 8 and a
+      // gallery is the obvious next step. Clearing the field empties the array rather than storing
+      // an empty string, which `resolvePhotoUrl()` would hand back as a broken `src`.
+      photo_paths: input.photoUrl ? [input.photoUrl] : [],
     })
     .eq('id', input.businessId);
   if (error) throw error;
 
-  revalidatePath('/dashboard/details');
+  revalidatePath('/businesses/manage/details');
+  revalidatePath('/businesses/manage');
+  revalidatePath('/businesses');
   revalidatePath(`/b/${input.businessId}`);
+  // The name, category and photo all show on the discovery grid.
+  revalidatePath('/');
 
   return { businessId: input.businessId };
 });
@@ -146,7 +159,7 @@ export const setOperatingHours = action('setOperatingHours', setOperatingHoursIn
     if (insertError) throw insertError;
   }
 
-  revalidatePath('/dashboard/hours');
+  revalidatePath('/businesses/manage/hours');
   revalidatePath(`/b/${input.businessId}`);
 
   return { businessId: input.businessId, rows: input.rows.length };

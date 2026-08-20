@@ -39,6 +39,28 @@ const businessFields = {
    * `cancellationWindowHours` above: no code branches on it, so there is nothing to type.
    */
   paymentNotes: optionalText(1000, 'Payment notes are limited to 1000 characters'),
+  /** §12.53 — the same class of operational prose as `paymentNotes`, about booking and arriving. */
+  bookingNotes: optionalText(1000, 'Booking notes are limited to 1000 characters'),
+  /**
+   * §12.53 — the business photo, stored as `photo_paths[1]`.
+   *
+   * Deliberately loose: `resolvePhotoUrl()` accepts an absolute URL *or* a Storage object path,
+   * because no Storage bucket exists yet and both have to keep working when one does. Rejecting
+   * anything that is neither is the point — a half-typed address saved silently renders as a
+   * broken image on the public booking page, where the business never looks.
+   */
+  photoUrl: z
+    .union([
+      z
+        .string()
+        .trim()
+        .max(500, 'That image link is too long')
+        .refine((value) => /^https?:\/\/\S+$/i.test(value) || /^[\w.-]+(\/[\w.-]+)+$/.test(value), {
+          message: 'Enter a full image link (https://…) or a stored file path',
+        }),
+      z.literal(''),
+    ])
+    .optional(),
 };
 
 /**

@@ -9,7 +9,7 @@ import type { Database } from '@/types/database.types';
  * `proxy.ts` — this project's design docs (and file tree) predate the framework renaming
  * `middleware.ts` to `proxy.ts`; see TECHNICAL_DESIGN.md §12.32 for the deviation note.
  *
- * `/me/*` requires a session; `/dashboard/*`, `/businesses`, `/onboarding`, `/join` require
+ * `/me/*` requires a session; `/businesses/manage/*`, `/businesses`, `/onboarding`, `/join` require
  * `account_type = 'BUSINESS'`; `/admin/*` requires `ADMIN`. Fine-grained membership (does
  * this specific caller have an ACTIVE `employees` row for *this* business) is the job of
  * `server/guards.ts` inside each route group's layout, re-checked again by RLS — this file
@@ -55,7 +55,7 @@ export async function proxy(request: NextRequest) {
   };
 
   const requiresBusiness =
-    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/businesses/manage') ||
     pathname === '/businesses' ||
     pathname === '/onboarding' ||
     pathname === '/join';

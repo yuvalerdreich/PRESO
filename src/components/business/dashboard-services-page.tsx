@@ -21,7 +21,7 @@ import type { DashboardEmployee, DashboardService } from '@/types/domain';
 type FormTarget = { mode: 'add' } | { mode: 'edit'; service: DashboardService };
 
 /**
- * `/dashboard/services` — the business's catalogue and pricing.
+ * `/businesses/manage/services` — the business's catalogue and pricing.
  *
  * The staff filter is client state filtering rows already in hand, exactly like the appointment
  * diary's: the whole catalogue is one small list, so a round trip per chip would buy nothing
@@ -64,7 +64,7 @@ export function DashboardServicesPage({
     setFormTarget(null);
   }
 
-  // `upsertService`/`deleteService` revalidate `/dashboard/services`; this re-runs the server
+  // `upsertService`/`deleteService` revalidate `/businesses/manage/services`; this re-runs the server
   // component that fetched these rows, so the card list and the nav badge both follow the write.
   function afterSave() {
     router.refresh();

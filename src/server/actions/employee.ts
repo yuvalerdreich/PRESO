@@ -67,8 +67,8 @@ export const decideJoinRequest = action('decideJoinRequest', decideJoinRequestIn
   });
   if (error) throw error;
 
-  revalidatePath('/dashboard/staff');
-  revalidatePath('/dashboard/staff/requests');
+  revalidatePath('/businesses/manage/staff');
+  revalidatePath('/businesses/manage/staff/requests');
 
   return { id: data.id, status: data.status };
 });
@@ -92,7 +92,7 @@ export const setEmployeeStatus = action('setEmployeeStatus', employeeStatusInput
     .eq('id', input.employeeId);
   if (error) throw error;
 
-  revalidatePath('/dashboard/staff');
+  revalidatePath('/businesses/manage/staff');
   revalidatePath(`/b/${employee.business_id}`);
 
   return { employeeId: input.employeeId, status: input.status };
@@ -125,7 +125,7 @@ export const removeEmployee = action('removeEmployee', removeEmployeeInput, asyn
   });
   if (error) throw error;
 
-  revalidatePath('/dashboard/staff');
+  revalidatePath('/businesses/manage/staff');
   if (employee) revalidatePath(`/b/${employee.business_id}`);
 
   return { employeeId: input.employeeId, retired: retired ?? false };

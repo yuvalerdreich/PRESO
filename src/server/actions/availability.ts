@@ -92,7 +92,7 @@ export const upsertAvailabilityRule = action(
     if (!data) throw new AppError('NOT_FOUND', 'That availability rule no longer exists.');
 
     // §7.2 — this invalidates every availability key for this employee, not just one date.
-    revalidatePath('/dashboard/availability');
+    revalidatePath('/businesses/manage/hours');
     revalidatePath(`/b/${employment.businessId}`);
 
     return { id: data.id };
@@ -114,7 +114,7 @@ export const deleteAvailabilityRule = action(
       .eq('employee_id', employment.employeeId);
     if (error) throw error;
 
-    revalidatePath('/dashboard/availability');
+    revalidatePath('/businesses/manage/hours');
     revalidatePath(`/b/${employment.businessId}`);
 
     return { id: input.id };
@@ -122,7 +122,7 @@ export const deleteAvailabilityRule = action(
 );
 
 /**
- * `/dashboard/hours` — save one day's shifts as a finished state (§12.50).
+ * `/businesses/manage/hours` — save one day's shifts as a finished state (§12.50).
  *
  * The screen edits a day, not a row, so this takes the day's shifts and works out the writes. Two
  * scopes, mapping onto §3.7's kinds:
@@ -179,6 +179,10 @@ export const setDaySchedule = action('setDaySchedule', dayScheduleInput, async (
       : await existing.eq('kind', 'WEEKLY_WINDOW').eq('day_of_week', input.dayOfWeek!);
   if (replacedError) throw replacedError;
 
+  // Clearing a day's hours is a normal save, not an error — it just has to arrive as what it is. The
+  // schema refuses `shifts: []` unless `isDayOff` says so (a day with no windows offers nothing, so
+  // "working" over an empty list is a claim the engine contradicts), which is why nothing needs
+  // normalising here.
   const rows: Database['public']['Tables']['employee_availability_rules']['Insert'][] = input.isDayOff
     ? input.scope === 'DATE'
       ? [
@@ -216,8 +220,8 @@ export const setDaySchedule = action('setDaySchedule', dayScheduleInput, async (
     if (error) throw error;
   }
 
-  revalidatePath('/dashboard/hours');
-  revalidatePath('/dashboard/availability');
+  revalidatePath('/businesses/manage/hours');
+  revalidatePath('/businesses/manage/hours');
   revalidatePath(`/b/${employment.businessId}`);
 
   return { written: rows.length, replaced: replacedIds.length };

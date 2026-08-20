@@ -1,8 +1,10 @@
 ﻿import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const pathname = vi.hoisted(() => ({ current: '/' }));
 
 vi.mock('next/navigation', () => ({
-  usePathname: () => '/',
+  usePathname: () => pathname.current,
 }));
 
 import { AccountSidebar } from '@/components/common/account-sidebar';
@@ -37,6 +39,10 @@ function renderSidebar(
 }
 
 describe('account sidebar', () => {
+  beforeEach(() => {
+    pathname.current = '/';
+  });
+
   it('shows a client exactly two entries ג€” home and my appointments', () => {
     renderSidebar([]);
 
@@ -92,5 +98,20 @@ describe('account sidebar', () => {
       '/businesses',
     );
     expect(screen.queryByRole('link', { name: translations.en.sidebar.businessDashboard })).not.toBeInTheDocument();
+  });
+
+  it('keeps My Businesses lit while inside business management', () => {
+    // Managing a business happens under `/businesses/manage/**`, which is still that section of the
+    // site — the entry going dark there made the portal look like somewhere else entirely.
+    pathname.current = '/businesses/manage/hours';
+    renderSidebar([], 'BUSINESS');
+
+    expect(screen.getByRole('link', { name: translations.en.sidebar.myBusinesses })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    expect(screen.getByRole('link', { name: translations.en.sidebar.home })).not.toHaveAttribute(
+      'aria-current',
+    );
   });
 });

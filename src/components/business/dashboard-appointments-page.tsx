@@ -11,7 +11,7 @@ import { useLanguage } from '@/lib/i18n/language-provider';
 import type { DashboardAppointment, DashboardEmployee } from '@/types/domain';
 
 /**
- * `/dashboard/appointments` — the business's diary for one day.
+ * `/businesses/manage/appointments` — the business's diary for one day.
  *
  * The two controls are deliberately answered at different levels, and the split is the point:
  *
@@ -52,7 +52,7 @@ export function DashboardAppointmentsPage({
   function selectDate(value: string) {
     // A cleared date input reports an empty string; there is no "no day" view to navigate to.
     if (!value) return;
-    router.push(`/dashboard/appointments?date=${value}`, { scroll: false });
+    router.push(`/businesses/manage/appointments?date=${value}`, { scroll: false });
   }
 
   return (

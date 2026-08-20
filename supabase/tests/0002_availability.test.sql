@@ -2,7 +2,7 @@
 -- scenarios verified by hand while building 0006_fn_availability.sql, now committed so a
 -- future change to the packing/subtraction logic can't regress silently.
 begin;
-select plan(11);
+select plan(13);
 
 -- profiles are auto-created by handle_new_user() (0009_triggers.sql) from this metadata —
 -- no separate insert into profiles needed, or wanted (it would conflict with the trigger).
@@ -109,6 +109,33 @@ select is(
      '2026-09-02T12:00:00+03', '2026-09-02T16:00:00+03')),
   0,
   'the gap between two exception windows stays closed — exceptions replace the weekly pattern'
+);
+
+-- test 4c: the case the schedule screen exists for — a date-specific change to a weekday that
+-- *does* have a weekly window. Tuesdays are 09:00-17:00 weekly; this one Tuesday is 13:00-15:00.
+-- The exception must win outright: three slots inside it, and nothing at all in the morning the
+-- weekly pattern would otherwise open.
+insert into employee_availability_rules (employee_id, kind, effective_range, starts_at, ends_at) values
+  ('00000000-0000-0000-0000-0000000000a4', 'EXCEPTION',
+   tstzrange('2026-09-08T00:00:00+03', '2026-09-09T00:00:00+03', '[)'), '13:00', '15:00');
+select results_eq(
+  $$ select starts_at from get_available_slots(
+       '00000000-0000-0000-0000-0000000000a4', '00000000-0000-0000-0000-0000000000a5',
+       '2026-09-08T00:00:00+03', '2026-09-08T23:59:59+03'
+     ) order by starts_at $$,
+  $$ select generate_series(
+       '2026-09-08T13:00:00+03'::timestamptz, '2026-09-08T14:20:00+03'::timestamptz, interval '40 minutes'
+     ) $$,
+  'a date EXCEPTION overrides the WEEKLY_WINDOW of that weekday: only 13:00-15:00 is bookable'
+);
+-- ...and the untouched Tuesday a week earlier still runs on the weekly pattern, so the override is
+-- scoped to its own date rather than to the weekday.
+select is(
+  (select count(*)::int from get_available_slots(
+     '00000000-0000-0000-0000-0000000000a4', '00000000-0000-0000-0000-0000000000a5',
+     '2026-09-15T00:00:00+03', '2026-09-15T23:59:59+03')),
+  12,
+  'the following Tuesday, with no exception of its own, still runs 09:00-17:00 weekly'
 );
 
 -- test 5: guards — a suspended business, service, or employee all yield zero rows, not an error

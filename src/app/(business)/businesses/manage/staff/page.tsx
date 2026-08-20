@@ -8,7 +8,7 @@ import {
 } from '@/server/queries/dashboard';
 
 /**
- * `/dashboard/staff` — the roster and the join queue on one screen (§10.7, §4.2).
+ * `/businesses/manage/staff` — the roster and the join queue on one screen (§10.7, §4.2).
  *
  * Only PENDING requests reach the queue: an approved one is already a card in the roster above it,
  * and a rejected one is settled — `decide_join_request()` refuses to re-decide either, so listing

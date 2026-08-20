@@ -9,7 +9,7 @@ import {
 } from '@/server/queries/dashboard';
 
 /**
- * `/dashboard/services` — the whole business's catalogue (§10.7, §4.3).
+ * `/businesses/manage/services` — the whole business's catalogue (§10.7, §4.3).
  *
  * Reading across every employee is deliberate: a price list is a business-wide thing, and staff
  * need to see what a colleague charges. Writing is a different question — `upsertService` acts on

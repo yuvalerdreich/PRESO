@@ -99,22 +99,22 @@ test.skip('business onboarding navigates to the demo join flow', async ({ page }
   await expect(page.getByRole('heading', { level: 1, name: 'Request to join a business' })).toBeVisible();
 });
 
-// Skipped: /dashboard and /dashboard/appointments only render placeholders (CLAUDE.md §8).
+// Skipped: /businesses/manage and /businesses/manage/appointments only render placeholders (CLAUDE.md §8).
 // Remove .skip once the real business dashboard is implemented.
 test.skip('business dashboard navigates from overview to detailed appointments', async ({ page }) => {
-  await page.goto('/dashboard');
+  await page.goto('/businesses/manage');
   await page.getByRole('button', { name: 'Switch to English' }).click();
   await page.getByRole('link', { name: /view all appointments/i }).click();
-  await expect(page).toHaveURL(/\/dashboard\/appointments$/);
+  await expect(page).toHaveURL(/\/businesses\/manage\/appointments$/);
   await expect(page.getByRole('heading', { level: 2, name: 'Scheduled appointments' })).toBeVisible();
 });
 
-// Skipped: /dashboard/services only renders a placeholder (CLAUDE.md §8).
+// Skipped: /businesses/manage/services only renders a placeholder (CLAUDE.md §8).
 // Remove .skip once the real service management page is implemented.
 test.skip('business portal navigates to employee-linked services', async ({ page }) => {
-  await page.goto('/dashboard');
+  await page.goto('/businesses/manage');
   await page.getByRole('button', { name: 'Switch to English' }).click();
   await page.getByRole('link', { name: 'Services' }).first().click();
-  await expect(page).toHaveURL(/\/dashboard\/services$/);
+  await expect(page).toHaveURL(/\/businesses\/manage\/services$/);
   await expect(page.getByRole('heading', { level: 2, name: 'Service management' })).toBeVisible();
 });

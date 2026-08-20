@@ -73,6 +73,7 @@ export function CreateBusinessDialog({
         address: String(form.get('address') ?? ''),
         phone: String(form.get('phone') ?? ''),
         description: String(form.get('description') ?? ''),
+        photoUrl: String(form.get('photoUrl') ?? ''),
         positionTitle: String(form.get('positionTitle') ?? ''),
         approvalPolicy: String(form.get('approvalPolicy') ?? 'AUTO') as 'AUTO' | 'MANUAL',
         cancellationWindowHours: String(form.get('cancellationWindowHours') ?? '24'),
@@ -185,6 +186,18 @@ export function CreateBusinessDialog({
                   className={`${fieldClassName} min-h-24 resize-y`}
                   placeholder="ספר/י בכמה מילים על העסק, המומחיות והאווירה במקום..."
                 />
+              </Field>
+              {/* The photo goes in with the business rather than only in settings afterwards
+                  (§12.53): it is what a client sees first on the discovery grid, and a business
+                  that opens without one is invisible there until someone remembers to go back.
+                  It rides inside `create_business_with_owner()`, so it is written in the same
+                  transaction as the business itself. */}
+              <Field
+                label={copy.createBusiness.photoUrl}
+                error={fieldErrors.photoUrl}
+                hint={copy.createBusiness.photoUrlHint}
+              >
+                <input name="photoUrl" dir="ltr" placeholder="https://…" className={fieldClassName} />
               </Field>
             </FormSection>
 

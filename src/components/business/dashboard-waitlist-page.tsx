@@ -24,7 +24,7 @@ const STATUS_STYLES: Partial<Record<WaitlistStatus, string>> = {
 };
 
 /**
- * `/dashboard/waitlist` — the people waiting for a cancellation, and the window each of them asked
+ * `/businesses/manage/waitlist` — the people waiting for a cancellation, and the window each of them asked
  * for.
  *
  * Read-only on purpose. The business does not choose who gets a freed slot: cancelling an

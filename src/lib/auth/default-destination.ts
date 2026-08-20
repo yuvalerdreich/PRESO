@@ -3,9 +3,9 @@
  * fallback when there's nowhere specific to bounce back to.
  *
  * **Every role lands on the public home screen** (מסך ראשי), CLIENT, BUSINESS and ADMIN alike.
- * This supersedes the earlier role-split routing (§12.21: client→`/`, business→`/dashboard`,
+ * This supersedes the earlier role-split routing (§12.21: client→`/`, business→`/businesses/manage`,
  * admin→`/admin`) and its §12.41 refinement, which sent only an *unemployed* BUSINESS account to
- * `/` and left an employed one on `/dashboard`. Signing in now always opens the same screen, and
+ * `/` and left an employed one on `/businesses/manage`. Signing in now always opens the same screen, and
  * the portals are one sidebar click away from it.
  *
  * Deliberately still a function rather than an inlined `'/'`: it keeps one named place that both

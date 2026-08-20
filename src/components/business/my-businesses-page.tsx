@@ -245,7 +245,7 @@ function BusinessCard({ business }: { business: MyBusiness }) {
       <div className="mt-auto flex flex-wrap gap-2 pt-1">
         {canManage ? (
           <Link
-            href="/dashboard"
+            href="/businesses/manage"
             // Same reasoning as the discovery card: several cards carry this identical label, so the
             // accessible name has to name the business. The link is stretched over the card, which
             // is what gives the pointer cursor something real underneath it.

@@ -271,14 +271,21 @@ export type MyBusiness = {
 export type DashboardBusiness = {
   id: string;
   name: string;
+  categoryId: string;
   categoryName: string;
+  description: string;
   address: string;
   area: string;
   phone: string;
   photoUrl: string;
+  /** What was actually stored in `photo_paths[1]` — the settings form edits this, not the resolved
+   *  URL, so a Storage object path round-trips instead of being rewritten to a signed URL. */
+  photoRef: string;
   timezone: string;
   approvalPolicy: ApprovalPolicy;
   cancellationWindowHours: number;
+  paymentNotes: string;
+  bookingNotes: string;
   status: BusinessStatus;
   /** Whether the caller founded this business — the one capability an employee lacks (§12.1). */
   isOwner: boolean;
@@ -339,7 +346,7 @@ export type DashboardAppointment = {
 };
 
 /**
- * One row of `/dashboard/waitlist` — a client waiting to be told when a slot frees up.
+ * One row of `/businesses/manage/waitlist` — a client waiting to be told when a slot frees up.
  *
  * `employeeName`/`serviceName` are empty when the entry names none: §3.10 lets an entry mean "any
  * employee, any service", which is a real choice the client made rather than missing data, so the

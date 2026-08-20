@@ -10,7 +10,7 @@ import {
 } from '@/server/queries/dashboard';
 
 /**
- * `/dashboard/hours` — working windows and shifts (§10.7, §4.5).
+ * `/businesses/manage/hours` — working windows and shifts (§10.7, §4.5).
  *
  * `?employee=` decides whose rules are loaded, so it is a URL param; the date the screen is editing
  * is not, because `listAvailabilityRules` returns that employee's whole rule set and every date is
@@ -19,7 +19,7 @@ import {
  * It opens on the caller's own position — the schedule they can actually edit — rather than on the
  * first person in the roster.
  */
-export default async function DashboardHoursRoute({ searchParams }: PageProps<'/dashboard/hours'>) {
+export default async function DashboardHoursRoute({ searchParams }: PageProps<'/businesses/manage/hours'>) {
   const search = await searchParams;
 
   const business = await getCurrentBusinessDashboard();

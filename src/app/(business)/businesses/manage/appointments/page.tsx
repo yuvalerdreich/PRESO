@@ -21,7 +21,7 @@ const DATE_ISO = /^\d{4}-\d{2}-\d{2}$/;
  */
 export default async function DashboardAppointmentsRoute({
   searchParams,
-}: PageProps<'/dashboard/appointments'>) {
+}: PageProps<'/businesses/manage/appointments'>) {
   const search = await searchParams;
 
   // The layout already redirects when there is no ACTIVE employees row; this resolves the same
