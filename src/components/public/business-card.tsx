@@ -55,7 +55,16 @@ export function BusinessCard({ business, category }: { business: BusinessSummary
       </div>
 
       <div className="flex flex-1 flex-col gap-2 p-4">
-        <div className="-mt-7 flex flex-wrap items-center gap-2">
+        {/* `relative` is load-bearing, not styling. The chips are *meant* to straddle the photo's
+            bottom edge (`-mt-7`), but a non-positioned element loses that overlap: CSS paints a
+            replaced element's content (the <img>) in a later phase than a following sibling's
+            background, so the photo drew over the top half of both chips even though they come
+            after it in the DOM. `relative` moves the row into the positioned-descendants phase,
+            which paints last. No `z-10` on purpose — that would lift the chips above the booking
+            link's `cardStretchedLink` ::after and punch two dead spots in the card's hit area;
+            plain `relative` paints above the photo while staying below the ::after, which comes
+            later in tree order. */}
+        <div className="relative -mt-7 flex flex-wrap items-center gap-2">
           {category ? <span className={cardChipBrand}>{category.name[locale]}</span> : null}
           {/* §12.55 — a business you own or work at is marked before you open it, so the refusal
               on the other side is expected rather than a surprise. */}
