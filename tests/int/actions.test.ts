@@ -138,6 +138,7 @@ describe('createBusiness — §6.8 rule 3, one transaction', () => {
       area: 'Tel Aviv',
       phone: '03-1112222',
       paymentNotes: 'מזומן, אשראי או ביט. התשלום בסיום הטיפול.',
+      photoUrl: 'https://images.example.com/opening-day.jpg',
     });
 
     expect(result.ok).toBe(true);
@@ -152,13 +153,44 @@ describe('createBusiness — §6.8 rule 3, one transaction', () => {
     expect(employees![0]).toMatchObject({ profile_id: user.id, status: 'ACTIVE' });
 
     // §12.44 — the RPC gained the column in 0020; the wizard's policy step writes it.
+    // §12.53 — and the photo goes in with the business, in the same transaction, rather than in a
+    // follow-up UPDATE that could fail on its own and open a business with no photo.
     const { data: business } = await admin
       .from('businesses')
-      .select('payment_notes')
+      .select('payment_notes, photo_paths')
       .eq('id', result.data.businessId)
       .single();
 
     expect(business!.payment_notes).toBe('מזומן, אשראי או ביט. התשלום בסיום הטיפול.');
+    expect(business!.photo_paths).toEqual(['https://images.example.com/opening-day.jpg']);
+  });
+
+  it('opens a business with no photo as an empty array, never a blank entry', async () => {
+    const user = await createTestUser('BUSINESS');
+    createdUserIds.push(user.id);
+    state.client = await signIn(user.email);
+
+    const { data: category } = await admin.from('categories').select('id').eq('slug', 'beauty').single();
+
+    const result = await createBusiness({
+      name: 'Photoless Salon',
+      categoryId: category!.id,
+      address: '12 Action Street',
+      area: 'Tel Aviv',
+      phone: '03-1112224',
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const { data: business } = await admin
+      .from('businesses')
+      .select('photo_paths')
+      .eq('id', result.data.businessId)
+      .single();
+
+    // `resolvePhotoUrl()` would hand `['']` back as a broken `src`, so "no photo" has to be no row.
+    expect(business!.photo_paths).toEqual([]);
   });
 
   it('refuses a CLIENT account without throwing, returning FORBIDDEN', async () => {
@@ -208,9 +240,43 @@ describe('business details and hours — §12.1 lets any ACTIVE employee edit', 
       area: 'תל אביב',
       phone: '03-6001122',
       cancellationWindowHours: 24,
+      bookingNotes: 'קביעת תורים עד 30 יום מראש. מומלץ להגיע 5 דקות לפני.',
+      paymentNotes: 'מזומן, ביט או אשראי.',
+      photoUrl: 'https://images.example.com/studio.jpg',
     });
 
     expect(result.ok).toBe(true);
+
+    // §12.53 — the settings screen's five groups are one row, so one save has to land all of them.
+    const { data: saved } = await admin
+      .from('businesses')
+      .select('booking_notes, payment_notes, photo_paths')
+      .eq('id', STUDIO_ZOHAR)
+      .single();
+
+    expect(saved!.booking_notes).toBe('קביעת תורים עד 30 יום מראש. מומלץ להגיע 5 דקות לפני.');
+    expect(saved!.payment_notes).toBe('מזומן, ביט או אשראי.');
+    expect(saved!.photo_paths).toEqual(['https://images.example.com/studio.jpg']);
+  });
+
+  it('refuses a photo link that is neither a URL nor a stored path', async () => {
+    state.client = await signIn('zohar@demo.local');
+
+    const result = await updateBusinessDetails({
+      businessId: STUDIO_ZOHAR,
+      name: 'Studio Zohar - מספרת זוהר',
+      categoryId: (await admin.from('businesses').select('category_id').eq('id', STUDIO_ZOHAR).single()).data!
+        .category_id,
+      address: 'רחוב דיזנגוף 142, תל אביב',
+      area: 'תל אביב',
+      phone: '03-6001122',
+      photoUrl: 'not a link',
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe('VALIDATION');
+    expect(result.error.fields?.photoUrl).toBeTruthy();
   });
 
   it('refuses an employee of a different business', async () => {
@@ -229,6 +295,58 @@ describe('business details and hours — §12.1 lets any ACTIVE employee edit', 
     expect(result).toMatchObject({ ok: false, error: { code: 'FORBIDDEN' } });
     const { data } = await admin.from('businesses').select('name').eq('id', STUDIO_ZOHAR).single();
     expect(data!.name).not.toBe('Hijacked');
+  });
+
+  it('opening hours are what make a business bookable at all', async () => {
+    state.client = await signIn('zohar@demo.local');
+
+    const { data: original } = await admin
+      .from('business_hours')
+      .select('day_of_week, opens_at, closes_at')
+      .eq('business_id', STUDIO_ZOHAR);
+
+    const minute = 60_000;
+    const from = new Date(Date.now() + minute).toISOString();
+    const to = new Date(Date.now() + 14 * 24 * 60 * minute).toISOString();
+    const slotsNow = async () =>
+      (
+        await admin.rpc('get_available_slots', {
+          p_employee_id: EMPLOYEE_ZOHAR,
+          p_service_id: SERVICE_ZOHAR_HAIRCUT,
+          p_from: from,
+          p_to: to,
+        })
+      ).data ?? [];
+
+    try {
+      // No opening hours at all is the state every business opened through the wizard was in until
+      // this screen existed: `business_hours ∩ employee windows` is empty, so the staff member's
+      // shifts offer nothing on any day.
+      expect(await setOperatingHours({ businessId: STUDIO_ZOHAR, rows: [] })).toMatchObject({ ok: true });
+      expect(await slotsNow()).toHaveLength(0);
+
+      // Open every day wide, and the same shifts start producing slots — nothing else changed.
+      const openWeek = await setOperatingHours({
+        businessId: STUDIO_ZOHAR,
+        rows: [0, 1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({
+          dayOfWeek,
+          opensAt: '08:00',
+          closesAt: '20:00',
+        })),
+      });
+      expect(openWeek).toMatchObject({ ok: true, data: { rows: 7 } });
+      expect((await slotsNow()).length).toBeGreaterThan(0);
+    } finally {
+      // Replace-all, so the seed's own hours have to go back the same way.
+      await setOperatingHours({
+        businessId: STUDIO_ZOHAR,
+        rows: (original ?? []).map((row) => ({
+          dayOfWeek: row.day_of_week,
+          opensAt: row.opens_at.slice(0, 5),
+          closesAt: row.closes_at.slice(0, 5),
+        })),
+      });
+    }
   });
 
   it('rejects overlapping windows on the same day before touching the database', async () => {
@@ -405,6 +523,64 @@ describe('setDaySchedule — a day’s shifts as one saved state (§12.50)', () 
       p_to: `${DAY}T23:59:59+02`,
     });
     expect(slots ?? []).toHaveLength(0);
+  });
+
+  it('refuses a working day with no shifts — a day with no windows offers nothing', async () => {
+    state.client = await signIn('zohar@demo.local');
+
+    const refused = await setDaySchedule({
+      employeeId: EMPLOYEE_ZOHAR,
+      scope: 'DATE',
+      dateISO: DAY,
+      isDayOff: false,
+      shifts: [],
+    });
+
+    expect(refused.ok).toBe(false);
+    if (refused.ok) throw new Error('unreachable');
+    expect(refused.error.code).toBe('VALIDATION');
+    expect(refused.error.fields?.shifts).toMatch(/at least one shift/);
+  });
+
+  it('clears a weekday by saving it as a day off, and puts the hours back', async () => {
+    state.client = await signIn('zohar@demo.local');
+    const WEEKDAY = 3;
+
+    const before = (await rulesFor(EMPLOYEE_ZOHAR)).filter(
+      (rule) => rule.kind === 'WEEKLY_WINDOW' && rule.day_of_week === WEEKDAY,
+    );
+
+    // A weekly day off is stored as no rows at all, so this is also the "remove my hours" path —
+    // and it has to actually delete, or the screen shows the deleted hours again next visit.
+    const cleared = await setDaySchedule({
+      employeeId: EMPLOYEE_ZOHAR,
+      scope: 'WEEKLY',
+      dayOfWeek: WEEKDAY,
+      isDayOff: true,
+      shifts: [],
+    });
+    expect(cleared).toMatchObject({ ok: true, data: { written: 0 } });
+    expect(
+      (await rulesFor(EMPLOYEE_ZOHAR)).filter(
+        (rule) => rule.kind === 'WEEKLY_WINDOW' && rule.day_of_week === WEEKDAY,
+      ),
+    ).toHaveLength(0);
+
+    // ...and adding hours to a weekday that now has none works the same way round.
+    const restored = await setDaySchedule({
+      employeeId: EMPLOYEE_ZOHAR,
+      scope: 'WEEKLY',
+      dayOfWeek: WEEKDAY,
+      isDayOff: false,
+      shifts:
+        before.length > 0
+          ? before.map((rule) => ({
+              startsAt: (rule.starts_at as string).slice(0, 5),
+              endsAt: (rule.ends_at as string).slice(0, 5),
+            }))
+          : [{ startsAt: '09:00', endsAt: '17:00' }],
+    });
+    expect(restored).toMatchObject({ ok: true, data: { written: before.length || 1 } });
   });
 
   it('refuses overlapping shifts, and a colleague’s schedule', async () => {

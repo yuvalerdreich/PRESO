@@ -45,23 +45,23 @@ export function DashboardHeader({
 
   const sections: { href: string; label: string; icon: LucideIcon; count?: number }[] = [
     {
-      href: '/dashboard/appointments',
+      href: '/businesses/manage/appointments',
       label: copy.dashboard.nav.appointments,
       icon: CalendarDays,
       count: counts.appointmentsToday,
     },
-    { href: '/dashboard/staff', label: copy.dashboard.nav.staff, icon: Users, count: counts.activeStaff },
+    { href: '/businesses/manage/staff', label: copy.dashboard.nav.staff, icon: Users, count: counts.activeStaff },
     {
-      href: '/dashboard/services',
+      href: '/businesses/manage/services',
       label: copy.dashboard.nav.services,
       icon: Scissors,
       count: counts.activeServices,
     },
     // No badge, like the settings link: opening hours and shift windows are a *configuration*, so
     // a number here would not answer "how much is waiting for me" the way the other four do.
-    { href: '/dashboard/hours', label: copy.dashboard.nav.hours, icon: CalendarClock },
-    { href: '/dashboard/waitlist', label: copy.dashboard.nav.waitlist, icon: Bell, count: counts.openWaitlist },
-    { href: '/dashboard/details', label: copy.dashboard.nav.settings, icon: Settings },
+    { href: '/businesses/manage/hours', label: copy.dashboard.nav.hours, icon: CalendarClock },
+    { href: '/businesses/manage/waitlist', label: copy.dashboard.nav.waitlist, icon: Bell, count: counts.openWaitlist },
+    { href: '/businesses/manage/details', label: copy.dashboard.nav.settings, icon: Settings },
   ];
 
   return (
@@ -89,7 +89,7 @@ export function DashboardHeader({
     >
       <nav aria-label={copy.dashboard.nav.label} className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
         {sections.map((section) => {
-          // Exact match only: `/dashboard` itself is the overview, and a prefix test would light up
+          // Exact match only: `/businesses/manage` itself is the overview, and a prefix test would light up
           // every section at once from there.
           const isActive = pathname === section.href;
 

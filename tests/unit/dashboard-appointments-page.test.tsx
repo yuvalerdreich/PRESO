@@ -94,7 +94,7 @@ describe('business appointment diary', () => {
 
     fireEvent.change(screen.getByLabelText(/Display date/), { target: { value: '2026-08-20' } });
 
-    expect(push).toHaveBeenCalledWith('/dashboard/appointments?date=2026-08-20', { scroll: false });
+    expect(push).toHaveBeenCalledWith('/businesses/manage/appointments?date=2026-08-20', { scroll: false });
   });
 
   it('cuts the day down to one staff member in place', () => {

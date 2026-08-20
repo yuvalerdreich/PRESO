@@ -97,6 +97,10 @@ export const dayScheduleInput = z
     dayOfWeek: dayOfWeek.optional(),
     /** A day off clears the day's windows; for a date it also writes the whole-day BLOCK. */
     isDayOff: z.boolean().default(false),
+    /**
+     * Empty is only valid together with `isDayOff` (below): a day with no windows offers nothing,
+     * so "working" over an empty list is a claim the availability engine would contradict.
+     */
     shifts: z.array(shift).max(6, 'Up to 6 shifts a day'),
   })
   .refine((value) => value.scope !== 'DATE' || Boolean(value.dateISO), {
@@ -107,8 +111,11 @@ export const dayScheduleInput = z
     message: 'Choose a day of the week',
     path: ['dayOfWeek'],
   })
+  // Removing every shift is a legitimate save — it is how a day's hours come off — but it has to be
+  // saved as what it is. A day with no windows is a day off to `get_available_slots()` whatever the
+  // form calls it, so the payload has to agree rather than storing a working day that offers nothing.
   .refine((value) => value.isDayOff || value.shifts.length > 0, {
-    message: 'Add at least one shift, or mark the day as a day off',
+    message: 'A working day needs at least one shift — add one, or mark the day as a day off',
     path: ['shifts'],
   })
   // Overlapping shifts are not rejected by any CHECK — the engine would just union them — but they

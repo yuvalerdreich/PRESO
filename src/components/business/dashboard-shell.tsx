@@ -4,8 +4,8 @@ import { DashboardHeader } from '@/components/business/dashboard-header';
 import type { DashboardBusiness, DashboardNavCounts } from '@/types/domain';
 
 /**
- * The chrome every `/dashboard/**` screen renders inside: the business header and section nav,
- * then the screen itself. Rendered from `(business)/dashboard/layout.tsx`, so the header survives
+ * The chrome every `/businesses/manage/**` screen renders inside: the business header and section nav,
+ * then the screen itself. Rendered from `(business)/businesses/manage/layout.tsx`, so the header survives
  * navigation between sections instead of each page re-declaring it.
  *
  * The page width matches `/businesses` — the screen a business user arrives from — so "ניהול העסק"

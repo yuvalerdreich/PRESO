@@ -28,7 +28,7 @@ import type {
  *
  * Everything here hangs off `getCurrentEmployment()`: the dashboard has no `businessId` in its
  * URL, so "which business am I managing" is answered by the caller's own ACTIVE `employees` row —
- * the same question `(business)/dashboard/layout.tsx` already asks to decide whether to redirect
+ * the same question `(business)/businesses/manage/layout.tsx` already asks to decide whether to redirect
  * to `/onboarding`.
  *
  * `isOwner` is threaded through rather than recomputed per screen because it gates exactly one
@@ -78,8 +78,9 @@ export async function getCurrentBusinessDashboard(): Promise<DashboardBusiness |
   const { data, error } = await supabase
     .from('businesses')
     .select(
-      `id, name, address, area, phone, photo_paths, timezone, approval_policy,
-       cancellation_window_hours, status, categories(name)`,
+      `id, name, description, address, area, phone, photo_paths, timezone, approval_policy,
+       cancellation_window_hours, payment_notes, booking_notes, status, category_id,
+       categories(name)`,
     )
     .eq('id', employment.businessId)
     .maybeSingle();
@@ -89,14 +90,19 @@ export async function getCurrentBusinessDashboard(): Promise<DashboardBusiness |
   return {
     id: data.id,
     name: data.name,
+    categoryId: data.category_id,
     categoryName: (data.categories as { name: string } | null)?.name ?? '',
+    description: data.description ?? '',
     address: data.address,
     area: data.area,
     phone: data.phone,
     photoUrl: resolvePhotoUrl(supabase, data.photo_paths),
+    photoRef: data.photo_paths?.[0] ?? '',
     timezone: data.timezone,
     approvalPolicy: data.approval_policy,
     cancellationWindowHours: data.cancellation_window_hours,
+    paymentNotes: data.payment_notes ?? '',
+    bookingNotes: data.booking_notes ?? '',
     status: data.status,
     isOwner: employment.isOwner,
   };
@@ -372,7 +378,7 @@ async function loadClientContacts(
 }
 
 /**
- * `/dashboard/waitlist` — who is waiting for a slot to free up, and what they asked for.
+ * `/businesses/manage/waitlist` — who is waiting for a slot to free up, and what they asked for.
  *
  * Scoped by `business_id` directly rather than through `employees`, because an entry may name no
  * employee and no service at all (§3.10 — "any employee, any service"); the optional targets come
@@ -507,7 +513,7 @@ export async function listDashboardKpis(businessId: string): Promise<DashboardKp
 }
 
 /**
- * The join queue, shown on `/dashboard/staff`. Visible to all staff; only the founder may decide
+ * The join queue, shown on `/businesses/manage/staff`. Visible to all staff; only the founder may decide
  * them (§6.8 rule 6).
  *
  * The applicant's name comes from `business_join_request_contacts` (0021), not from an embedded

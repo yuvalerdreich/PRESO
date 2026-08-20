@@ -5,7 +5,7 @@ import { AppError } from '@/lib/errors';
 import { requireSession } from '@/server/guards';
 import { getCurrentBusinessDashboard, getDashboardNavCounts } from '@/server/queries/dashboard';
 
-export default async function DashboardLayout({ children }: LayoutProps<'/dashboard'>) {
+export default async function DashboardLayout({ children }: LayoutProps<'/businesses/manage'>) {
   try {
     await requireSession();
   } catch (error) {

@@ -108,7 +108,7 @@ describe('my businesses page', () => {
     expect(screen.getAllByRole('link', { name: /^Manage business —/ })).toHaveLength(2);
     expect(screen.getByRole('link', { name: 'Manage business — Studio Zohar' })).toHaveAttribute(
       'href',
-      '/dashboard',
+      '/businesses/manage',
     );
   });
 

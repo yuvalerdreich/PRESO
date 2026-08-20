@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { CalendarClock, Moon, Plus, RefreshCw, Save, Sun, Trash2, UserRound, Users, Zap } from 'lucide-react';
 
+import { BusinessHoursEditor } from '@/components/business/business-hours-editor';
 import { DashboardSectionHeader } from '@/components/business/dashboard-section-header';
 import {
   actionButton,
@@ -14,12 +15,23 @@ import {
 import { surfaceCard } from '@/components/common/card-styles';
 import { fieldPadding, surfaceField } from '@/components/common/field-styles';
 import { useLanguage } from '@/lib/i18n/language-provider';
-import { addCalendarDays, toDateISO } from '@/lib/time';
+import { toDateISO } from '@/lib/time';
 import { setDaySchedule } from '@/server/actions/availability';
 import type { AvailabilityRule, BusinessHourRow, DashboardEmployee } from '@/types/domain';
 
 type Shift = { startsAt: string; endsAt: string };
 type Mode = 'DATE' | 'WEEKLY';
+
+/**
+ * A day with no windows behind it is a **day off** — not a working day that happens to be empty.
+ *
+ * That is not a UI choice, it is what `get_available_slots()` makes of it: no windows means nothing
+ * is offered, whatever the screen calls it. Saying "working" over an empty list would be the screen
+ * disagreeing with the engine, so the two states are one, in the read-back here and in the save
+ * guard below. It is also what makes a cleared day round-trip: clear the shifts, save, come back,
+ * and the day still reads exactly as it was left.
+ */
+const EMPTY_DAY: { isDayOff: boolean; shifts: Shift[] } = { isDayOff: true, shifts: [] };
 
 const PRESETS: { id: string; shifts: Shift[] }[] = [
   { id: 'full', shifts: [{ startsAt: '09:00', endsAt: '19:00' }] },
@@ -35,7 +47,7 @@ const PRESETS: { id: string; shifts: Shift[] }[] = [
 ];
 
 /**
- * `/dashboard/hours` — one staff member's working windows, edited a day at a time.
+ * `/businesses/manage/hours` — one staff member's working windows, edited a day at a time.
  *
  * The screen has two scopes and the difference is the whole point of `employee_availability_rules`:
  *
@@ -60,6 +72,7 @@ const PRESETS: { id: string; shifts: Shift[] }[] = [
  * offering controls that would be rejected.
  */
 export function DashboardHoursPage({
+  businessId,
   employees,
   selectedEmployee,
   rules,
@@ -67,6 +80,7 @@ export function DashboardHoursPage({
   timezone,
   currentEmployeeId,
 }: {
+  businessId: string;
   employees: DashboardEmployee[];
   selectedEmployee: DashboardEmployee | null;
   /** Every rule of the selected employee — a date change filters these, never refetches. */
@@ -122,6 +136,14 @@ export function DashboardHoursPage({
     if (!selectedEmployee || !isEditable) return;
     setError(null);
 
+    // The server refuses this too; catching it here is what makes the reason readable, in the
+    // reader's language, instead of a round trip that comes back "correct the highlighted fields"
+    // over a form with no highlighted field.
+    if (!draft.isDayOff && draft.shifts.length === 0) {
+      setError(copy.dashboard.hoursScreen.noShiftsError);
+      return;
+    }
+
     startTransition(async () => {
       const result = await setDaySchedule({
         employeeId: selectedEmployee.id,
@@ -132,7 +154,10 @@ export function DashboardHoursPage({
       });
 
       if (!result.ok) {
-        setError(result.error.message || copy.dashboard.hoursScreen.saveError);
+        // A VALIDATION failure carries the useful sentence on the field, not on `message`, which is
+        // the generic "correct the highlighted fields" — and this form highlights nothing.
+        const fieldError = result.error.fields ? Object.values(result.error.fields)[0] : undefined;
+        setError(fieldError || result.error.message || copy.dashboard.hoursScreen.saveError);
         return;
       }
 
@@ -143,6 +168,10 @@ export function DashboardHoursPage({
 
   return (
     <div className="flex flex-col gap-5">
+      {/* The boundary first, then the shifts inside it — a shift outside opening hours is flagged
+          below, and this is the control that answers the flag. */}
+      <BusinessHoursEditor businessId={businessId} businessHours={businessHours} />
+
       <div className={`${surfaceCard} gap-4 p-4 sm:p-5`}>
         <DashboardSectionHeader
           icon={CalendarClock}
@@ -161,7 +190,7 @@ export function DashboardHoursPage({
                   // Which employee is being edited lives in the URL: it decides which rules are
                   // fetched, so it is a server question — unlike the date, which only filters rules
                   // already in hand.
-                  onClick={() => router.push(`/dashboard/hours?employee=${employee.id}`, { scroll: false })}
+                  onClick={() => router.push(`/businesses/manage/hours?employee=${employee.id}`, { scroll: false })}
                   aria-pressed={employee.id === selectedEmployee?.id}
                   className={`${actionButton} ${actionButtonChip} ${
                     employee.id === selectedEmployee?.id ? actionButtonSelectedOnLight : ''
@@ -221,28 +250,6 @@ export function DashboardHoursPage({
                   aria-label={copy.dashboard.hoursScreen.switchToDate}
                   className={`${surfaceField} ${fieldPadding} w-auto cursor-pointer py-2 font-semibold`}
                 />
-                <span className={`${actionButton} ${actionButtonChip} pointer-events-none opacity-90`}>
-                  {weekdayLabel}
-                </span>
-                <DateChip label={copy.dashboard.hoursScreen.today} target={todayISO} current={dateISO} onPick={setDateISO} />
-                <DateChip
-                  label={copy.dashboard.hoursScreen.tomorrow}
-                  target={addCalendarDays(todayISO, 1)}
-                  current={dateISO}
-                  onPick={setDateISO}
-                />
-                <DateChip
-                  label={copy.dashboard.hoursScreen.inTwoDays}
-                  target={addCalendarDays(todayISO, 2)}
-                  current={dateISO}
-                  onPick={setDateISO}
-                />
-                <DateChip
-                  label={copy.dashboard.hoursScreen.nextWeek}
-                  target={addCalendarDays(dateISO, 7)}
-                  current=""
-                  onPick={setDateISO}
-                />
               </div>
 
               <div className="flex gap-2">
@@ -281,14 +288,14 @@ export function DashboardHoursPage({
               {mode === 'DATE'
                 ? copy.dashboard.hoursScreen.dateNotice
                 : copy.dashboard.hoursScreen.weeklyNotice.replace('{day}', weekdayLabel)}
-              {dayHours.length === 0
-                ? ` ${copy.dashboard.hoursScreen.businessClosed.replace('{day}', weekdayLabel)}`
-                : ` ${copy.dashboard.hoursScreen.businessHoursRange
+              {dayHours.length > 0
+                ? ` ${copy.dashboard.hoursScreen.businessHoursRange
                     .replace('{day}', weekdayLabel)
                     .replace(
                       '{range}',
                       dayHours.map((row) => `${row.opensAt} - ${row.closesAt}`).join(', '),
-                    )}`}
+                    )}`
+                : null}
             </p>
 
             {isEditable ? null : (
@@ -385,10 +392,13 @@ export function DashboardHoursPage({
                             type="button"
                             aria-label={`${copy.dashboard.hoursScreen.removeShift} ${index + 1}`}
                             onClick={() =>
-                              setDraft((current) => ({
-                                ...current,
-                                shifts: current.shifts.filter((_, position) => position !== index),
-                              }))
+                              setDraft((current) => {
+                                const shifts = current.shifts.filter((_, position) => position !== index);
+                                // Removing the last shift leaves a day with no hours, which is a day
+                                // off — so the screen says so instead of sitting in a state it would
+                                // then refuse to save.
+                                return { isDayOff: shifts.length === 0, shifts };
+                              })
                             }
                             className="ms-auto cursor-pointer rounded-full p-2 text-rose-500 transition-colors hover:bg-rose-50"
                           >
@@ -462,7 +472,7 @@ function readDay({
     .map(toShift);
 
   if (mode === 'WEEKLY') {
-    return { isDayOff: weekly.length === 0, shifts: sortShifts(weekly) };
+    return weekly.length > 0 ? { isDayOff: false, shifts: sortShifts(weekly) } : EMPTY_DAY;
   }
 
   const covers = (rule: AvailabilityRule) => coversDate(rule, dateISO, timezone);
@@ -471,7 +481,8 @@ function readDay({
 
   if (blocked) return { isDayOff: true, shifts: [] };
   if (exceptions.length > 0) return { isDayOff: false, shifts: sortShifts(exceptions) };
-  return { isDayOff: weekly.length === 0, shifts: sortShifts(weekly) };
+  if (weekly.length > 0) return { isDayOff: false, shifts: sortShifts(weekly) };
+  return EMPTY_DAY;
 }
 
 /** Whether a rule's effective range covers the given local date in the business's zone. */
@@ -539,32 +550,6 @@ function presetLabel(
   if (preset.id === 'evening') return `${copy.presetEvening} (${range})`;
   if (preset.id === 'split') return copy.presetSplit;
   return range;
-}
-
-function DateChip({
-  label,
-  target,
-  current,
-  onPick,
-}: {
-  label: string;
-  target: string;
-  /** The date this chip stands for, so "today" can show as selected; '' for a relative jump. */
-  current: string;
-  onPick: (dateISO: string) => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={() => onPick(target)}
-      aria-pressed={current !== '' && current === target}
-      className={`${actionButton} ${actionButtonChip} ${
-        current !== '' && current === target ? actionButtonSelectedOnLight : ''
-      }`}
-    >
-      {label}
-    </button>
-  );
 }
 
 function StaffAvatar({ employee }: { employee: DashboardEmployee }) {

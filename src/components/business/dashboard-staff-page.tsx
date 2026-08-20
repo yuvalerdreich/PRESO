@@ -26,11 +26,11 @@ import { decideJoinRequest } from '@/server/actions/employee';
 import type { DashboardEmployee, JoinRequestSummary } from '@/types/domain';
 
 /**
- * `/dashboard/staff` — the roster and the join queue, one screen, in that order.
+ * `/businesses/manage/staff` — the roster and the join queue, one screen, in that order.
  *
  * They are two views of one thing: §6.8 rule 5 says approval is what *creates* staff, so a request
  * in the second section becomes a card in the first. Splitting them across two routes (the target
- * tree's `/dashboard/staff` + `/dashboard/staff/requests`) would hide that, and would bury the one
+ * tree's `/businesses/manage/staff` + `/businesses/manage/staff/requests`) would hide that, and would bury the one
  * section that is actually waiting on someone behind a second click.
  *
  * Deciding is the founder's alone (§12.1 — it is the only power an employee lacks). A non-founder
@@ -73,7 +73,7 @@ export function DashboardStaffPage({
       }
 
       setTarget(null);
-      // The action revalidates `/dashboard/staff`; this re-runs the server component holding both
+      // The action revalidates `/businesses/manage/staff`; this re-runs the server component holding both
       // lists, so an approved request leaves the queue and arrives on the roster in one step.
       router.refresh();
     });

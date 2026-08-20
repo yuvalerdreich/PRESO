@@ -29,6 +29,10 @@ export function AccountSidebar({
   const pathname = usePathname();
   const upcomingCount = countUpcomingAppointments(appointments);
   const appointmentsActive = pathname === '/me/appointments';
+  // Managing a business happens *inside* "my businesses" (`/businesses/manage/**`), so the entry
+  // stays lit the whole time you are in there — a prefix, not an exact match. Leaving it dark made
+  // the portal look like a place outside the site's own navigation.
+  const businessesActive = pathname === '/businesses' || pathname.startsWith('/businesses/');
 
   // The aside is always a side column — it never stacks above the content at
   // narrow widths (devtools open, small viewport); it scrolls internally instead.
@@ -69,10 +73,10 @@ export function AccountSidebar({
           <>
             <Link
               href="/businesses"
-              aria-current={pathname === '/businesses' ? 'page' : undefined}
-              className={itemClassName(pathname === '/businesses')}
+              aria-current={businessesActive ? 'page' : undefined}
+              className={itemClassName(businessesActive)}
             >
-              <ItemIcon icon={Building2} isActive={pathname === '/businesses'} />
+              <ItemIcon icon={Building2} isActive={businessesActive} />
               <span>{copy.sidebar.myBusinesses}</span>
             </Link>
 
