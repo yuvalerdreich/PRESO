@@ -30,6 +30,7 @@ const { POST: postAppointment } = await import('@/app/api/appointments/route');
 const { PATCH: patchAppointment } = await import('@/app/api/appointments/[id]/route');
 const { POST: postWaitlist } = await import('@/app/api/waitlist/route');
 const { DELETE: deleteWaitlist } = await import('@/app/api/waitlist/[id]/route');
+const { listDashboardWaitlist } = await import('@/server/queries/dashboard');
 
 const URL_ = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -114,9 +115,25 @@ async function firstFreeSlot(employeeId: string, serviceId: string, minHoursAhea
     p_to: to.toISOString(),
   });
   if (error) throw error;
-  if (!data?.length) throw new Error('the seed produced no bookable slots');
 
-  return data[0].starts_at;
+  /**
+   * The first slot that is *comfortably* in the future, not simply the first one returned.
+   *
+   * `get_available_slots()` clips each open window to the caller's `[p_from, p_to)` and packs from
+   * that boundary, so asking "from now" legitimately offers a slot starting at **now** — guarded
+   * by `v_t >= now()` against the database's clock. By the time that instant has crossed the wire
+   * and reached `futureIsoDateTime`, measured on the *host's* clock, it is a moment in the past, and
+   * the booking is refused with a 400 that says nothing about the behaviour under test. A Docker
+   * Postgres running a few hundred milliseconds behind the host makes it happen every run.
+   *
+   * That refusal is correct in production — a slot starting this second is genuinely no longer
+   * bookable — so the fix belongs here: take the next slot instead. Nothing in this file cares
+   * *which* slot is booked, only how booking it behaves.
+   */
+  const usable = (data ?? []).find((slot) => Date.parse(slot.starts_at) > Date.now() + 60_000);
+  if (!usable) throw new Error('the seed produced no bookable slots');
+
+  return usable.starts_at;
 }
 
 /**
@@ -557,6 +574,92 @@ describe('POST /api/appointments — §5.4, the critical contract', () => {
   });
 });
 
+describe('cancelling notifies the whole waiting list at once — §6.7, §12.15', () => {
+  /**
+   * The promise the business dashboard's waitlist screen makes, asserted from the caller's side:
+   * one `PATCH … {action:'cancel'}` and **every** waiting client whose window covers the freed
+   * time is notified in the same transaction. Nobody is picked, nobody is first in a queue — the
+   * slot is then won by whoever claims it, through the same exclusion constraint as any other race.
+   */
+  it('writes one WAITLIST_MATCHED notification per eligible client, all in one commit', async () => {
+    const booker = await createClientUser();
+    const waiterA = await createClientUser();
+    const waiterB = await createClientUser();
+    const waiterC = await createClientUser();
+
+    state.client = await signIn(booker.email);
+    const startsAt = await firstFreeSlot(EMPLOYEE_ZOHAR, SERVICE_ZOHAR_HAIRCUT, 48);
+    const created = await postAppointment(
+      jsonReq('/api/appointments', {
+        employeeId: EMPLOYEE_ZOHAR,
+        serviceId: SERVICE_ZOHAR_HAIRCUT,
+        startsAt,
+      }),
+      undefined,
+    );
+    const { id } = await created.json();
+    createdAppointmentIds.push(id);
+
+    const from = new Date(new Date(startsAt).getTime() - 60 * 60_000).toISOString();
+    const to = new Date(new Date(startsAt).getTime() + 60 * 60_000).toISOString();
+    // C asks for a window a day later — eligible in every way except the one that matters.
+    const missFrom = new Date(new Date(startsAt).getTime() + 24 * 3_600_000).toISOString();
+    const missTo = new Date(new Date(startsAt).getTime() + 26 * 3_600_000).toISOString();
+
+    for (const [waiter, window] of [
+      [waiterA, [from, to]],
+      [waiterB, [from, to]],
+      [waiterC, [missFrom, missTo]],
+    ] as const) {
+      state.client = await signIn(waiter.email);
+      const joined = await postWaitlist(
+        jsonReq('/api/waitlist', {
+          businessId: STUDIO_ZOHAR,
+          serviceId: SERVICE_ZOHAR_HAIRCUT,
+          fromTs: window[0],
+          toTs: window[1],
+        }),
+        undefined,
+      );
+      expect(joined.status).toBe(201);
+    }
+
+    state.client = await signIn(booker.email);
+    const cancelled = await patchAppointment(
+      jsonReq(`/api/appointments/${id}`, { action: 'cancel' }, 'PATCH'),
+      params({ id }),
+    );
+    expect(cancelled.status).toBe(200);
+
+    const { data: notified } = await admin
+      .from('notifications')
+      .select('profile_id, created_at, payload')
+      .eq('type', 'WAITLIST_MATCHED')
+      .in('profile_id', [waiterA.id, waiterB.id, waiterC.id]);
+
+    const recipients = (notified ?? []).map((row) => row.profile_id).sort();
+    expect(recipients).toEqual([waiterA.id, waiterB.id].sort());
+
+    // "At the same time" is a transactional claim, not a scheduling one: both rows are written
+    // inside the cancelling transaction, so they share one now() — there is no queue and no order.
+    expect(new Set((notified ?? []).map((row) => row.created_at)).size).toBe(1);
+
+    // The payload is what the email is rendered from (`lib/email/templates.ts`), so it has to carry
+    // the freed instant and the zone to render it in.
+    const payload = (notified ?? [])[0].payload as Record<string, unknown>;
+    expect(payload).toMatchObject({ serviceId: SERVICE_ZOHAR_HAIRCUT, timezone: 'Asia/Jerusalem' });
+    expect(new Date(String(payload.startsAt)).toISOString()).toBe(new Date(startsAt).toISOString());
+
+    // And the business can see who is waiting, by name — 0023 is what makes that true for someone
+    // who has no appointment.
+    state.client = await signIn('zohar@demo.local');
+    const waiting = await listDashboardWaitlist(STUDIO_ZOHAR);
+    const matched = waiting.filter((entry) => entry.status === 'MATCHED');
+    expect(matched).toHaveLength(2);
+    expect(matched.every((entry) => entry.clientName !== '')).toBe(true);
+  });
+});
+
 describe('PATCH /api/appointments/[id] — §5.4', () => {
   it('cancels, and the freed slot becomes bookable again', async () => {
     const user = await createClientUser();
@@ -598,13 +701,15 @@ describe('PATCH /api/appointments/[id] — §5.4', () => {
   it('refuses a client cancelling inside the window, but lets staff do it', async () => {
     const user = await createClientUser();
 
-    // One hour from now, against Studio Zohar's 24-hour window. Seeded directly because the
-    // availability engine would never offer a slot this close on a predictable schedule.
+    // Twenty hours from now: inside Studio Zohar's 24-hour cancellation window, which is the point,
+    // and far enough ahead that the slots the booking tests above take — always the *soonest*
+    // available — cannot overlap it and trip the exclusion constraint on the way in. Seeded
+    // directly because the availability engine would never offer a slot inside the window.
     const id = await seedAppointment(
       user.id,
       EMPLOYEE_ZOHAR,
       SERVICE_ZOHAR_HAIRCUT,
-      new Date(Date.now() + 3_600_000),
+      new Date(Date.now() + 20 * 3_600_000),
       30,
     );
 
@@ -702,7 +807,19 @@ describe('PATCH /api/appointments/[id] — §5.4', () => {
     // §5.4 — a reschedule returns the **new** row, so its id differs from the one requested.
     expect(body.id).not.toBe(id);
     expect(new Date(body.startsAt).toISOString()).toBe(new Date(target).toISOString());
-    expect(await firstFreeSlot(EMPLOYEE_ZOHAR, SERVICE_ZOHAR_HAIRCUT)).toBe(original);
+
+    // The freed slot is offered again. Asserted as *membership* rather than "is the first slot":
+    // the engine packs from the caller's own `from` instant, so "the first slot" moves with the
+    // clock between two calls and was never a stable identity for the released time.
+    const { data: offered } = await admin.rpc('get_available_slots', {
+      p_employee_id: EMPLOYEE_ZOHAR,
+      p_service_id: SERVICE_ZOHAR_HAIRCUT,
+      p_from: original,
+      p_to: new Date(Date.parse(original) + 3_600_000).toISOString(),
+    });
+    expect((offered ?? []).map((slot) => new Date(slot.starts_at).toISOString())).toContain(
+      new Date(original).toISOString(),
+    );
   });
 
   it('rejects a reschedule with no startsAt at the schema boundary', async () => {
