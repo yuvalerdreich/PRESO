@@ -67,6 +67,7 @@ export function DashboardDetailsPage({
   // policy is a pair of cards rather than a control `FormData` can read, and the cancellation
   // window is echoed back inside its own hint as a sentence.
   const [photoUrl, setPhotoUrl] = useState(business.photoRef || business.photoUrl);
+  const [photoFailed, setPhotoFailed] = useState(false);
   const [approvalPolicy, setApprovalPolicy] = useState<ApprovalPolicy>(business.approvalPolicy);
   const [cancellationWindowHours, setCancellationWindowHours] = useState(
     String(business.cancellationWindowHours),
@@ -173,14 +174,34 @@ export function DashboardDetailsPage({
               <input
                 name="photoUrl"
                 value={photoUrl}
-                onChange={(event) => setPhotoUrl(event.target.value)}
+                onChange={(event) => {
+                  setPhotoUrl(event.target.value);
+                  setPhotoFailed(false);
+                }}
                 placeholder={settings.photoUrlPlaceholder}
                 className={fieldClassName}
                 dir="ltr"
               />
             </Field>
+
+            {/* A share link is the common mistake and it can be named before it is even tried; a
+                link that simply fails to load can only be reported after. Either way the field
+                cannot silently look empty, which is what "אין תמונה" alone said. */}
+            {isPageLink(photoUrl) || photoFailed ? (
+              <p className="mt-2 rounded-2xl bg-amber-50 px-4 py-3 text-xs font-semibold leading-5 text-amber-800">
+                {isPageLink(photoUrl) ? settings.photoIsPageLink : settings.photoFailed}
+                <span className="mt-1 block font-medium">{settings.photoDirectHint}</span>
+              </p>
+            ) : null}
           </div>
-          <PhotoPreview url={photoUrl} alt={settings.photoAlt} emptyLabel={settings.photoEmpty} />
+          <PhotoPreview
+            url={photoUrl}
+            alt={settings.photoAlt}
+            emptyLabel={settings.photoEmpty}
+            failedLabel={settings.photoFailedShort}
+            failed={photoFailed}
+            onFailedChange={setPhotoFailed}
+          />
         </div>
       </Section>
 
@@ -313,32 +334,96 @@ function Field({
 }
 
 /**
+ * Hosts that hand back a *page*, never image bytes.
+ *
+ * `https://share.google/…` is the one people actually paste — Google's share link resolves to a
+ * result page, so `<img src>` gets HTML and renders nothing. Others in the same family: Google
+ * Photos and Drive share links, Pinterest's `pin.it`, and a plain Google search URL. Knowing the
+ * host means the screen can name the mistake *before* the load fails, which is the difference
+ * between "that didn't work" and "that kind of link never works".
+ *
+ * Deliberately a warning and not a validation rule: this list can only ever be incomplete, and a
+ * link that is wrong in some other way is caught by the load failure instead.
+ */
+const PAGE_LINK_HOSTS = [
+  'share.google',
+  'goo.gl',
+  'g.co',
+  'photos.app.goo.gl',
+  'drive.google.com',
+  'docs.google.com',
+  'pin.it',
+  'www.pinterest.com',
+];
+
+function isPageLink(url: string): boolean {
+  const trimmed = url.trim();
+  if (!/^https?:\/\//i.test(trimmed)) return false;
+
+  try {
+    const { hostname, pathname } = new URL(trimmed);
+    if (hostname === 'www.google.com' || hostname === 'google.com') return true;
+    return PAGE_LINK_HOSTS.includes(hostname) && pathname !== '/';
+  } catch {
+    return false;
+  }
+}
+
+/**
  * What the saved link actually renders.
  *
  * A photo field is the one input whose mistake is invisible on the screen that owns it — the image
  * appears on the discovery grid and the booking page — so this preview is the only place a broken
- * link gets caught before a client sees it.
+ * link gets caught before a client sees it. Which is why "failed" is its own state rather than
+ * falling back to the empty one: an empty field and a link that will not load are the same picture
+ * but completely different problems, and saying "אין תמונה" for both is what sent someone looking
+ * for a bug in the app.
+ *
+ * `failed` is lifted to the form so the message beside the field can say the same thing in words.
  */
-function PhotoPreview({ url, alt, emptyLabel }: { url: string; alt: string; emptyLabel: string }) {
-  const [failed, setFailed] = useState(false);
+function PhotoPreview({
+  url,
+  alt,
+  emptyLabel,
+  failedLabel,
+  failed,
+  onFailedChange,
+}: {
+  url: string;
+  alt: string;
+  emptyLabel: string;
+  failedLabel: string;
+  failed: boolean;
+  onFailedChange: (failed: boolean) => void;
+}) {
   const trimmed = url.trim();
+  const showsImage = trimmed.length > 0 && !failed;
 
   return (
-    <div className="h-24 w-32 shrink-0 overflow-hidden rounded-2xl border border-[var(--line)] bg-slate-50">
-      {trimmed.length > 0 && !failed ? (
+    <div
+      className={`flex h-24 w-32 shrink-0 items-center justify-center overflow-hidden rounded-2xl border ${
+        failed && trimmed.length > 0 ? 'border-amber-300 bg-amber-50' : 'border-[var(--line)] bg-slate-50'
+      }`}
+    >
+      {showsImage ? (
         // An arbitrary host: next/image's remotePatterns cannot cover "whatever address the
         // business pasted".
         // eslint-disable-next-line @next/next/no-img-element
         <img
+          key={trimmed}
           src={trimmed}
           alt={alt}
-          onError={() => setFailed(true)}
-          onLoad={() => setFailed(false)}
+          onError={() => onFailedChange(true)}
+          onLoad={() => onFailedChange(false)}
           className="h-full w-full object-cover"
         />
       ) : (
-        <span className="flex h-full w-full items-center justify-center px-2 text-center text-xs font-semibold text-[var(--muted)]">
-          {emptyLabel}
+        <span
+          className={`px-2 text-center text-xs font-semibold ${
+            trimmed.length > 0 ? 'text-amber-800' : 'text-[var(--muted)]'
+          }`}
+        >
+          {trimmed.length > 0 ? failedLabel : emptyLabel}
         </span>
       )}
     </div>

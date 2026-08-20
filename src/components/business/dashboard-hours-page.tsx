@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { CalendarClock, Moon, Plus, RefreshCw, Save, Sun, Trash2, UserRound, Users, Zap } from 'lucide-react';
 
+import { BusinessHoursEditor } from '@/components/business/business-hours-editor';
 import { DashboardSectionHeader } from '@/components/business/dashboard-section-header';
 import {
   actionButton,
@@ -71,6 +72,7 @@ const PRESETS: { id: string; shifts: Shift[] }[] = [
  * offering controls that would be rejected.
  */
 export function DashboardHoursPage({
+  businessId,
   employees,
   selectedEmployee,
   rules,
@@ -78,6 +80,7 @@ export function DashboardHoursPage({
   timezone,
   currentEmployeeId,
 }: {
+  businessId: string;
   employees: DashboardEmployee[];
   selectedEmployee: DashboardEmployee | null;
   /** Every rule of the selected employee — a date change filters these, never refetches. */
@@ -165,6 +168,10 @@ export function DashboardHoursPage({
 
   return (
     <div className="flex flex-col gap-5">
+      {/* The boundary first, then the shifts inside it — a shift outside opening hours is flagged
+          below, and this is the control that answers the flag. */}
+      <BusinessHoursEditor businessId={businessId} businessHours={businessHours} />
+
       <div className={`${surfaceCard} gap-4 p-4 sm:p-5`}>
         <DashboardSectionHeader
           icon={CalendarClock}

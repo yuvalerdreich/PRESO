@@ -123,6 +123,35 @@ describe('business settings screen', () => {
     expect(refresh).not.toHaveBeenCalled();
   });
 
+  it('names a share link for what it is, rather than showing an empty frame', () => {
+    renderSettings();
+
+    fireEvent.change(screen.getByDisplayValue('https://images.example.com/a.jpg'), {
+      target: { value: 'https://share.google/ft2Zhxfupzcms665m' },
+    });
+
+    // The mistake is knowable from the host alone, so it is named before the load even fails.
+    expect(screen.getByText(/not to an image file/i)).toBeInTheDocument();
+    expect(screen.getByText(/Copy image address/i)).toBeInTheDocument();
+  });
+
+  it('tells a broken link apart from an empty field', () => {
+    renderSettings({ photoRef: '', photoUrl: '' });
+
+    // Empty is empty…
+    expect(screen.getByText('No photo')).toBeInTheDocument();
+    expect(screen.queryByText(/No image could be loaded/i)).not.toBeInTheDocument();
+
+    // …and a link that will not load says so instead, in both the frame and in words.
+    fireEvent.change(screen.getByPlaceholderText('https://…'), {
+      target: { value: 'https://images.example.com/missing.jpg' },
+    });
+    fireEvent.error(screen.getByAltText('Business photo'));
+
+    expect(screen.getByText('Link did not load')).toBeInTheDocument();
+    expect(screen.getByText(/No image could be loaded/i)).toBeInTheDocument();
+  });
+
   it('says a suspended business is suspended, without locking the form', () => {
     renderSettings({ status: 'SUSPENDED' });
 

@@ -297,6 +297,58 @@ describe('business details and hours — §12.1 lets any ACTIVE employee edit', 
     expect(data!.name).not.toBe('Hijacked');
   });
 
+  it('opening hours are what make a business bookable at all', async () => {
+    state.client = await signIn('zohar@demo.local');
+
+    const { data: original } = await admin
+      .from('business_hours')
+      .select('day_of_week, opens_at, closes_at')
+      .eq('business_id', STUDIO_ZOHAR);
+
+    const minute = 60_000;
+    const from = new Date(Date.now() + minute).toISOString();
+    const to = new Date(Date.now() + 14 * 24 * 60 * minute).toISOString();
+    const slotsNow = async () =>
+      (
+        await admin.rpc('get_available_slots', {
+          p_employee_id: EMPLOYEE_ZOHAR,
+          p_service_id: SERVICE_ZOHAR_HAIRCUT,
+          p_from: from,
+          p_to: to,
+        })
+      ).data ?? [];
+
+    try {
+      // No opening hours at all is the state every business opened through the wizard was in until
+      // this screen existed: `business_hours ∩ employee windows` is empty, so the staff member's
+      // shifts offer nothing on any day.
+      expect(await setOperatingHours({ businessId: STUDIO_ZOHAR, rows: [] })).toMatchObject({ ok: true });
+      expect(await slotsNow()).toHaveLength(0);
+
+      // Open every day wide, and the same shifts start producing slots — nothing else changed.
+      const openWeek = await setOperatingHours({
+        businessId: STUDIO_ZOHAR,
+        rows: [0, 1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({
+          dayOfWeek,
+          opensAt: '08:00',
+          closesAt: '20:00',
+        })),
+      });
+      expect(openWeek).toMatchObject({ ok: true, data: { rows: 7 } });
+      expect((await slotsNow()).length).toBeGreaterThan(0);
+    } finally {
+      // Replace-all, so the seed's own hours have to go back the same way.
+      await setOperatingHours({
+        businessId: STUDIO_ZOHAR,
+        rows: (original ?? []).map((row) => ({
+          dayOfWeek: row.day_of_week,
+          opensAt: row.opens_at.slice(0, 5),
+          closesAt: row.closes_at.slice(0, 5),
+        })),
+      });
+    }
+  });
+
   it('rejects overlapping windows on the same day before touching the database', async () => {
     state.client = await signIn('zohar@demo.local');
 
