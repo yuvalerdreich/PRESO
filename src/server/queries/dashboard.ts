@@ -18,6 +18,7 @@ import type {
   DashboardKpi,
   DashboardNavCounts,
   DashboardService,
+  DashboardWaitlistEntry,
   JoinRequestSummary,
 } from '@/types/domain';
 
@@ -368,6 +369,74 @@ async function loadClientContacts(
     if (row.profile_id) contacts.set(row.profile_id, { fullName: row.full_name ?? '', phone: row.phone });
   }
   return contacts;
+}
+
+/**
+ * `/dashboard/waitlist` — who is waiting for a slot to free up, and what they asked for.
+ *
+ * Scoped by `business_id` directly rather than through `employees`, because an entry may name no
+ * employee and no service at all (§3.10 — "any employee, any service"); the optional targets come
+ * back as an embed and are flattened to names here.
+ *
+ * EXPIRED entries are excluded: the sweep marks an entry expired once its own requested window has
+ * passed (§6.9), so it is a closed request, not someone still waiting. MATCHED entries stay — the
+ * business's answer to "who is waiting" includes the people who have just been offered something
+ * and have not claimed it yet.
+ *
+ * The client's name and phone come from `business_client_contacts`, which 0023 widened to cover
+ * waitlist clients: a person waiting for a slot has, by definition, no appointment yet, so the
+ * view's original appointment-only population returned a list of blank names.
+ */
+export async function listDashboardWaitlist(businessId: string): Promise<DashboardWaitlistEntry[]> {
+  const supabase = await createClient();
+
+  const [{ data, error }, { data: business }] = await Promise.all([
+    supabase
+      .from('waitlist_entries')
+      .select(
+        `id, client_profile_id, from_ts, to_ts, status, created_at, matched_at,
+         services(name),
+         waitlist_employee_targets(employee_public_profiles(full_name))`,
+      )
+      .eq('business_id', businessId)
+      .neq('status', 'EXPIRED')
+      .order('created_at', { ascending: false }),
+    supabase.from('businesses').select('timezone').eq('id', businessId).maybeSingle(),
+  ]);
+  if (error) throw error;
+
+  const rows = data ?? [];
+  const timezone = business?.timezone ?? DEFAULT_TIME_ZONE;
+  const contacts = await loadClientContacts(
+    businessId,
+    rows.map((row) => row.client_profile_id),
+  );
+
+  return rows.map((row) => {
+    const from = new Date(row.from_ts);
+    const to = new Date(row.to_ts);
+    const client = contacts.get(row.client_profile_id);
+    const targets = (row.waitlist_employee_targets ?? []) as unknown as {
+      employee_public_profiles: { full_name: string | null } | null;
+    }[];
+
+    return {
+      id: row.id,
+      clientName: client?.fullName ?? '',
+      clientPhone: client?.phone ?? null,
+      employeeNames: targets
+        .map((target) => target.employee_public_profiles?.full_name ?? '')
+        .filter(Boolean),
+      serviceName: (row.services as { name: string } | null)?.name ?? '',
+      fromDateISO: toDateISO(from, timezone),
+      fromTime: toTimeHHmm(from, timezone),
+      toDateISO: toDateISO(to, timezone),
+      toTime: toTimeHHmm(to, timezone),
+      status: row.status,
+      createdAt: row.created_at,
+      matchedAt: row.matched_at,
+    };
+  });
 }
 
 /**

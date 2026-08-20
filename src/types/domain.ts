@@ -338,6 +338,30 @@ export type DashboardAppointment = {
   status: AppointmentStatus;
 };
 
+/**
+ * One row of `/dashboard/waitlist` — a client waiting to be told when a slot frees up.
+ *
+ * `employeeName`/`serviceName` are empty when the entry names none: §3.10 lets an entry mean "any
+ * employee, any service", which is a real choice the client made rather than missing data, so the
+ * screen labels it rather than rendering a blank.
+ */
+export type DashboardWaitlistEntry = {
+  id: string;
+  clientName: string;
+  clientPhone: string | null;
+  employeeNames: string[];
+  serviceName: string;
+  /** The requested window, rendered in the business's timezone. */
+  fromDateISO: string;
+  fromTime: string;
+  toDateISO: string;
+  toTime: string;
+  status: WaitlistStatus;
+  createdAt: string;
+  /** When the matcher offered this client a freed slot — `null` until then (§6.7). */
+  matchedAt: string | null;
+};
+
 export type DashboardKpi = {
   id: 'appointments-today' | 'active-staff' | 'pending-approval' | 'revenue';
   value: number;

@@ -2,7 +2,7 @@
 -- (TECHNICAL_DESIGN.md §6.7, §12.31) — the same scenarios verified by hand while building
 -- 0008_fn_waitlist.sql.
 begin;
-select plan(13);
+select plan(17);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-0000000000e1', 'owner-wl@test.local', '{"account_type":"BUSINESS","full_name":"Owner E"}'::jsonb),
@@ -125,6 +125,68 @@ select throws_like(
 select is(
   (select status::text from waitlist_entries where id = '00000000-0000-0000-0000-0000000000f2'),
   'MATCHED', 'a losing claim leaves the entry MATCHED — release is sweep_waitlist_expiry''s job, not a synchronous revert'
+);
+
+-- ---------------------------------------------------------------------------
+-- The rule the business dashboard promises: ONE cancellation notifies EVERY
+-- eligible waiting client, simultaneously (§6.7, §12.15)
+-- ---------------------------------------------------------------------------
+--
+-- Everything above calls match_waitlist_for_slot() directly. This block cancels through
+-- cancel_appointment() instead, so the AFTER UPDATE trigger in 0009 is what fires the matcher —
+-- the path a real cancellation actually takes, and the one the promise depends on.
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('00000000-0000-0000-0000-0000000000f5', 'wait-a@test.local', '{"account_type":"CLIENT","full_name":"Waiter A"}'::jsonb),
+  ('00000000-0000-0000-0000-0000000000f6', 'wait-b@test.local', '{"account_type":"CLIENT","full_name":"Waiter B"}'::jsonb),
+  ('00000000-0000-0000-0000-0000000000f7', 'wait-c@test.local', '{"account_type":"CLIENT","full_name":"Waiter C"}'::jsonb);
+
+-- 2026-09-08 is the next Tuesday, so it is open and nothing above has touched it.
+select id into temp t_tuesday from book_appointment(
+  '00000000-0000-0000-0000-0000000000e2', '00000000-0000-0000-0000-0000000000e8',
+  '00000000-0000-0000-0000-0000000000ea', '2026-09-08T11:00:00+03', '00000000-0000-0000-0000-0000000000e2'
+);
+
+-- A and B asked for a window covering 11:00; C asked for the afternoon only.
+insert into waitlist_entries (id, client_profile_id, business_id, service_id, from_ts, to_ts) values
+  ('00000000-0000-0000-0000-0000000000f8', '00000000-0000-0000-0000-0000000000f5', '00000000-0000-0000-0000-0000000000e7', null,
+   '2026-09-08T09:00:00+03', '2026-09-08T13:00:00+03'),
+  ('00000000-0000-0000-0000-0000000000f9', '00000000-0000-0000-0000-0000000000f6', '00000000-0000-0000-0000-0000000000e7',
+   '00000000-0000-0000-0000-0000000000ea', '2026-09-08T10:00:00+03', '2026-09-08T12:00:00+03'),
+  ('00000000-0000-0000-0000-0000000000fa', '00000000-0000-0000-0000-0000000000f7', '00000000-0000-0000-0000-0000000000e7', null,
+   '2026-09-08T14:00:00+03', '2026-09-08T17:00:00+03');
+
+select cancel_appointment((select id from t_tuesday), '00000000-0000-0000-0000-0000000000e1');
+
+select is(
+  (select count(*)::int from waitlist_entries
+    where id in ('00000000-0000-0000-0000-0000000000f8','00000000-0000-0000-0000-0000000000f9')
+      and status = 'MATCHED'),
+  2,
+  'cancel_appointment() alone matches every eligible waiting client — the trigger, not a direct call'
+);
+
+select is(
+  (select count(*)::int from notifications
+    where type = 'WAITLIST_MATCHED'
+      and profile_id in ('00000000-0000-0000-0000-0000000000f5','00000000-0000-0000-0000-0000000000f6')),
+  2,
+  'each of them gets their own WAITLIST_MATCHED notification — the row the email is sent from'
+);
+
+-- "At the same time" is not a scheduling promise, it is a transactional one: the notifications are
+-- written inside the cancelling transaction, so they share one now() and become visible together.
+select is(
+  (select count(distinct created_at)::int from notifications
+    where type = 'WAITLIST_MATCHED'
+      and profile_id in ('00000000-0000-0000-0000-0000000000f5','00000000-0000-0000-0000-0000000000f6')),
+  1,
+  'both notifications carry the same created_at — one transaction, no queue, nobody notified first'
+);
+
+select is(
+  (select status::text from waitlist_entries where id = '00000000-0000-0000-0000-0000000000fa'),
+  'ACTIVE',
+  'a client whose requested window does not cover the freed time is left alone'
 );
 
 select * from finish();
