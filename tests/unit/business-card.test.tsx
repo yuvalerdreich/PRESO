@@ -59,6 +59,19 @@ describe('discovery business card', () => {
     expect(screen.queryByText(/staff members/i)).not.toBeInTheDocument();
   });
 
+  // §12.59 — the chip row deliberately overlaps the photo (`-mt-7`), and a non-positioned row loses
+  // that overlap: a replaced element's content paints in a later phase than a following sibling's
+  // background, so the photo covered the top half of both chips. `relative` is the fix and `z-10`
+  // is the wrong fix — it would lift the chips above the stretched booking link and punch dead
+  // spots in the card's hit area. JSDOM computes no paint order, so the class is what can be pinned.
+  it('keeps the chips painted above the photo they overlap (§12.59)', () => {
+    renderCard({ viewerRelation: 'OWNER' });
+
+    const chipRow = screen.getByText('Your business').parentElement!;
+    expect(chipRow).toHaveClass('relative', '-mt-7');
+    expect(chipRow.className).not.toMatch(/\bz-\d+\b/);
+  });
+
   it('badges a business the viewer owns or works at (§12.55)', () => {
     const { unmount } = renderCard();
     expect(screen.queryByText('Your business')).not.toBeInTheDocument();
