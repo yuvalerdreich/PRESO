@@ -50,3 +50,48 @@ export function notFound(what: string): AppError {
 export function isMissingRow(error: { code?: string | null } | null): boolean {
   return error?.code === 'PGRST116';
 }
+
+/**
+ * How the signed-in viewer relates to each of a set of businesses: their own, or someone else's.
+ *
+ * Discovery is anonymous-safe and stays that way — no session means an empty map and every
+ * business reads as somebody else's, which is correct. For a signed-in viewer this answers the one
+ * question the public surfaces need but cannot ask per-card without N queries: a business you own
+ * or work at is badged "העסק שלך" on the grid and refuses to open its booking flow (§12.55).
+ *
+ * `OWNER` wins over `STAFF` when both are true, which they almost always are — §6.8 rule 3 makes
+ * the founder employee #1 of their own business, so the two are the same person by construction.
+ *
+ * Both reads are RLS-bound and own-row-scoped by their own policies (`employees` is readable by
+ * the business's staff; `businesses.owner_profile_id` is public), so this adds no exposure.
+ */
+export type ViewerBusinessRelation = 'OWNER' | 'STAFF';
+
+export async function loadViewerBusinessRelations(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  businessIds: string[],
+): Promise<Map<string, ViewerBusinessRelation>> {
+  const relations = new Map<string, ViewerBusinessRelation>();
+  if (businessIds.length === 0) return relations;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return relations;
+
+  const [{ data: employments }, { data: owned }] = await Promise.all([
+    supabase
+      .from('employees')
+      .select('business_id')
+      .eq('profile_id', user.id)
+      .eq('status', 'ACTIVE')
+      .in('business_id', businessIds),
+    supabase.from('businesses').select('id').eq('owner_profile_id', user.id).in('id', businessIds),
+  ]);
+
+  for (const row of employments ?? []) relations.set(row.business_id, 'STAFF');
+  // Second, so it overwrites: owning is the stronger statement of the two.
+  for (const row of owned ?? []) relations.set(row.id, 'OWNER');
+
+  return relations;
+}

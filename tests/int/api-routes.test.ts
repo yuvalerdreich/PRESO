@@ -371,6 +371,42 @@ describe('POST /api/appointments — §5.4, the critical contract', () => {
     expect(new Date(body.endsAt).getTime() - new Date(body.startsAt).getTime()).toBe(30 * 60_000);
   });
 
+  it('refuses a staff member booking themselves at their own business with 403 (§12.55)', async () => {
+    // The screen for this business renders a refusal rather than the booking flow, but that is
+    // presentation — this is the check a hand-made POST has to get past.
+    state.client = await signIn('zohar@demo.local');
+
+    const response = await postAppointment(
+      jsonReq('/api/appointments', {
+        employeeId: EMPLOYEE_ZOHAR,
+        serviceId: SERVICE_ZOHAR_HAIRCUT,
+        startsAt: await firstFreeSlot(EMPLOYEE_ZOHAR, SERVICE_ZOHAR_HAIRCUT),
+      }),
+      undefined,
+    );
+
+    expect(response.status).toBe(403);
+    expect((await response.json()).error.code).toBe('FORBIDDEN');
+  });
+
+  it('still lets staff book on behalf of an ordinary client (§12.55 tests the client, not the actor)', async () => {
+    const user = await createClientUser();
+    state.client = await signIn('zohar@demo.local');
+
+    const response = await postAppointment(
+      jsonReq('/api/appointments', {
+        employeeId: EMPLOYEE_ZOHAR,
+        serviceId: SERVICE_ZOHAR_HAIRCUT,
+        startsAt: await firstFreeSlot(EMPLOYEE_ZOHAR, SERVICE_ZOHAR_HAIRCUT),
+        clientProfileId: user.id,
+      }),
+      undefined,
+    );
+
+    expect(response.status).toBe(201);
+    createdAppointmentIds.push((await response.json()).id);
+  });
+
   it('creates a PENDING appointment at a MANUAL-approval business', async () => {
     const user = await createClientUser();
     state.client = await signIn(user.email);

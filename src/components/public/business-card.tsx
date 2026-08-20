@@ -1,11 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, MapPin } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Building2, MapPin } from 'lucide-react';
 
 import { actionButton } from '@/components/common/button-styles';
+import { ErrorDialog } from '@/components/common/error-dialog';
 import {
   cardAction,
+  cardChip,
   cardChipBrand,
   cardMetaIcon,
   cardMetaRow,
@@ -28,6 +31,12 @@ import type { BusinessSummary, Category } from '@/types/domain';
 export function BusinessCard({ business, category }: { business: BusinessSummary; category?: Category }) {
   const { copy, locale, direction } = useLanguage();
   const ForwardArrow = direction === 'rtl' ? ArrowLeft : ArrowRight;
+  const notice = copy.businessProfile.ownBusiness;
+
+  // §12.55/§12.56 — your own business answers on *this* screen. The card still carries its usual
+  // action, because a card that silently behaves differently teaches nothing; pressing it explains
+  // why, next to the business it is talking about, rather than on a page that has left the grid.
+  const [blocked, setBlocked] = useState(false);
 
   return (
     <article className={surfaceCardInteractive}>
@@ -46,7 +55,14 @@ export function BusinessCard({ business, category }: { business: BusinessSummary
       </div>
 
       <div className="flex flex-1 flex-col gap-2 p-4">
-        {category ? <span className={`${cardChipBrand} -mt-7`}>{category.name[locale]}</span> : null}
+        <div className="-mt-7 flex flex-wrap items-center gap-2">
+          {category ? <span className={cardChipBrand}>{category.name[locale]}</span> : null}
+          {/* §12.55 — a business you own or work at is marked before you open it, so the refusal
+              on the other side is expected rather than a surprise. */}
+          {business.viewerRelation ? (
+            <span className={`${cardChip} bg-emerald-500 text-white shadow-sm`}>{copy.discovery.yourBusiness}</span>
+          ) : null}
+        </div>
 
         <h3 className={cardTitle}>{business.name}</h3>
         <p className="line-clamp-2 text-sm leading-5 text-[var(--muted)]">{business.description}</p>
@@ -59,18 +75,48 @@ export function BusinessCard({ business, category }: { business: BusinessSummary
         {/* Staff count and avatars used to sit opposite the action here. Removed by request: the
             grid is a list of *businesses*, and who works there is the business page's answer. */}
         <div className="mt-auto flex border-t border-[var(--line)] pt-3">
-          <Link
-            href={`/b/${business.id}`}
-            // The card carries no other link, so the accessible name has to say *which* business
-            // this books — "Book appointment" repeated down the grid names nothing.
-            aria-label={`${copy.discovery.bookAction} — ${business.name}`}
-            className={`${actionButton} ${cardAction} ${cardStretchedLink}`}
-          >
-            {copy.discovery.bookAction}
-            <ForwardArrow className="h-4 w-4" aria-hidden="true" />
-          </Link>
+          {business.viewerRelation ? (
+            <button
+              type="button"
+              onClick={() => setBlocked(true)}
+              // Same accessible name as the link it replaces: what it *offers* is unchanged, and
+              // the difference is the answer, not the affordance.
+              aria-label={`${copy.discovery.bookAction} — ${business.name}`}
+              className={`${actionButton} ${cardAction} ${cardStretchedLink} cursor-pointer`}
+            >
+              {copy.discovery.bookAction}
+              <ForwardArrow className="h-4 w-4" aria-hidden="true" />
+            </button>
+          ) : (
+            <Link
+              href={`/b/${business.id}`}
+              // The card carries no other link, so the accessible name has to say *which* business
+              // this books — "Book appointment" repeated down the grid names nothing.
+              aria-label={`${copy.discovery.bookAction} — ${business.name}`}
+              className={`${actionButton} ${cardAction} ${cardStretchedLink}`}
+            >
+              {copy.discovery.bookAction}
+              <ForwardArrow className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          )}
         </div>
       </div>
+
+      {blocked && business.viewerRelation ? (
+        <ErrorDialog
+          title={notice.title}
+          description={(business.viewerRelation === 'OWNER'
+            ? notice.descriptionOwner
+            : notice.descriptionStaff
+          ).replace('{business}', business.name)}
+          action={{
+            href: '/businesses',
+            label: notice.goToMyBusinesses,
+            icon: <Building2 className="h-4 w-4" aria-hidden="true" />,
+          }}
+          onClose={() => setBlocked(false)}
+        />
+      ) : null}
     </article>
   );
 }

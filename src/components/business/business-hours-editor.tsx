@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertTriangle, CheckCircle2, CopyPlus, Plus, Save, Store, Trash2, Zap } from 'lucide-react';
 
+import { ErrorNotice } from '@/components/common/error-dialog';
 import { DashboardSectionHeader } from '@/components/business/dashboard-section-header';
 import { actionButton, actionButtonLarge } from '@/components/common/button-styles';
 import { surfaceCard } from '@/components/common/card-styles';
@@ -226,11 +227,7 @@ export function BusinessHoursEditor({
           {isPending ? hours.businessSaving : hours.businessSave}
         </button>
 
-        {error ? (
-          <p role="alert" className="rounded-2xl bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700">
-            {error}
-          </p>
-        ) : null}
+        {error ? <ErrorNotice description={error} /> : null}
         {savedAt && !error ? (
           <p
             role="status"

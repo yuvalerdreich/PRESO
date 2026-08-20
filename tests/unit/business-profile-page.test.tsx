@@ -31,6 +31,7 @@ const business: BusinessProfile = {
   employeeAvatarUrls: [],
   employeeNames: [],
   approvalPolicy: 'AUTO',
+  viewerRelation: null,
   phone: '03-6001122',
   timezone: 'Asia/Jerusalem',
   cancellationWindowHours: 24,

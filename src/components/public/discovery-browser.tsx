@@ -3,6 +3,9 @@
 import { useMemo, useState } from 'react';
 import { CalendarSearch } from 'lucide-react';
 
+import { Building2 } from 'lucide-react';
+
+import { ErrorDialog } from '@/components/common/error-dialog';
 import { PanelHero } from '@/components/common/panel-hero';
 import { BusinessResults } from '@/components/public/business-results';
 import { SearchForm } from '@/components/public/search-form';
@@ -25,16 +28,27 @@ export function DiscoveryBrowser({
   areas,
   initialQuery = '',
   initialArea = '',
+  blockedBusinessId,
 }: {
   businesses: BusinessSummary[];
   categories: Category[];
   areas: string[];
   initialQuery?: string;
   initialArea?: string;
+  /**
+   * §12.55/§12.56 — a business you own, arrived at by typing its URL. The booking route sends you
+   * here rather than rendering a page of its own, and the refusal opens over the grid.
+   */
+  blockedBusinessId?: string;
 }) {
   const { copy, locale } = useLanguage();
   const [query, setQuery] = useState(initialQuery);
   const [area, setArea] = useState(initialArea);
+  const [blockedDismissed, setBlockedDismissed] = useState(false);
+
+  const blockedBusiness = blockedBusinessId
+    ? businesses.find((business) => business.id === blockedBusinessId && business.viewerRelation)
+    : undefined;
 
   const filtered = useMemo(
     () => filterBusinesses(businesses, { query, area, categories, locale }),
@@ -56,6 +70,22 @@ export function DiscoveryBrowser({
       </PanelHero>
 
       <BusinessResults businesses={filtered} categories={categories} searchApplied={searchApplied} />
+
+      {blockedBusiness?.viewerRelation && !blockedDismissed ? (
+        <ErrorDialog
+          title={copy.businessProfile.ownBusiness.title}
+          description={(blockedBusiness.viewerRelation === 'OWNER'
+            ? copy.businessProfile.ownBusiness.descriptionOwner
+            : copy.businessProfile.ownBusiness.descriptionStaff
+          ).replace('{business}', blockedBusiness.name)}
+          action={{
+            href: '/businesses',
+            label: copy.businessProfile.ownBusiness.goToMyBusinesses,
+            icon: <Building2 className="h-4 w-4" aria-hidden="true" />,
+          }}
+          onClose={() => setBlockedDismissed(true)}
+        />
+      ) : null}
     </div>
   );
 }

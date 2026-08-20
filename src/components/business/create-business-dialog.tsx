@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Building2, CheckCircle2, Plus, Scissors, UserPlus, X } from 'lucide-react';
 
+import { ErrorNotice } from '@/components/common/error-dialog';
 import { actionButton, actionIconButton, actionTextButton } from '@/components/common/button-styles';
 import { fieldPadding, surfaceFieldSubtle } from '@/components/common/field-styles';
 import { categoryPresentation } from '@/lib/i18n/categories';
@@ -304,9 +305,7 @@ export function CreateBusinessDialog({
             </FormSection>
 
             {formError ? (
-              <p role="alert" className="mt-5 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-                {formError}
-              </p>
+              <ErrorNotice className="mt-5" description={formError} />
             ) : null}
 
             <div className="mt-7 flex flex-wrap gap-3 border-t border-[var(--line)] pt-5">

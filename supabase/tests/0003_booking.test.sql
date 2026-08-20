@@ -2,7 +2,7 @@
 -- reject_appointment (TECHNICAL_DESIGN.md §6.2–§6.4, §12.30) plus the exclusion constraint
 -- itself — the same scenarios verified by hand while building 0007_fn_booking.sql.
 begin;
-select plan(19);
+select plan(22);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-0000000000b1', 'owner1-book@test.local', '{"account_type":"BUSINESS","full_name":"Owner One"}'::jsonb),
@@ -198,6 +198,33 @@ select throws_like(
 select is(
   (select status::text from cancel_appointment('00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-0000000000b1')),
   'CANCELLED', 'staff/owner always bypass the cancellation window'
+);
+
+-- 18. §12.55 — nobody books themselves where they work. The owner is employee #1 of their own
+--     business (§6.8 rule 3), so this is the case that matters most; the second assertion covers a
+--     colleague, who is not the owner and would otherwise slip through an owner-only check.
+select throws_like(
+  $$ select book_appointment('00000000-0000-0000-0000-0000000000b1','00000000-0000-0000-0000-0000000000b4','00000000-0000-0000-0000-0000000000b5','2026-09-01T15:00:00+03','00000000-0000-0000-0000-0000000000b1') $$,
+  '%insufficient_privilege%',
+  'the owner cannot book an appointment at their own business'
+);
+select throws_like(
+  $$ select book_appointment('00000000-0000-0000-0000-0000000000b7','00000000-0000-0000-0000-0000000000b4','00000000-0000-0000-0000-0000000000b5','2026-09-01T15:00:00+03','00000000-0000-0000-0000-0000000000b7') $$,
+  '%insufficient_privilege%',
+  'an ACTIVE employee cannot book an appointment at the business they work at'
+);
+
+-- 19. ...and the rule tests the *client*, never the actor (16:00, since 15:00 is taken by the
+--     reschedule in 15 — which is also why the two refusals above throw on the new guard rather
+--     than on availability: it runs first): staff booking on behalf of a real
+--     client is the entire point of p_client_profile_id and has to keep working.
+select is(
+  (select client_profile_id from book_appointment(
+    '00000000-0000-0000-0000-0000000000b9', '00000000-0000-0000-0000-0000000000b4',
+    '00000000-0000-0000-0000-0000000000b5', '2026-09-01T16:00:00+03', '00000000-0000-0000-0000-0000000000b7'
+  )),
+  '00000000-0000-0000-0000-0000000000b9'::uuid,
+  'staff booking for an ordinary client is unaffected by the self-booking rule'
 );
 
 select * from finish();
