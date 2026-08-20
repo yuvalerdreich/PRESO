@@ -1,5 +1,5 @@
 import { AppError } from '@/lib/errors';
-import { noContent, withErrorHandling } from '@/lib/http';
+import { methodNotAllowed, noContent, withErrorHandling } from '@/lib/http';
 import { createClient } from '@/lib/supabase/route';
 import { uuid } from '@/lib/validation/common';
 
@@ -50,3 +50,7 @@ export const DELETE = withErrorHandling(
     return noContent();
   },
 );
+
+/** §12.58 — every other verb answers the envelope with an `Allow`, not Next's empty 405. */
+const notAllowed = methodNotAllowed('DELETE');
+export { notAllowed as GET, notAllowed as POST, notAllowed as PUT, notAllowed as PATCH };

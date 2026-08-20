@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { BusinessCard } from '@/components/public/business-card';
@@ -17,6 +17,7 @@ const business: BusinessSummary = {
   employeeAvatarUrls: [],
   employeeNames: ['Zohar Levi'],
   approvalPolicy: 'AUTO',
+  viewerRelation: null,
 };
 
 const category: Category = {
@@ -26,10 +27,10 @@ const category: Category = {
   name: { he: 'מספרות', en: 'Hair and beauty' },
 };
 
-function renderCard() {
+function renderCard(overrides: Partial<BusinessSummary> = {}) {
   return render(
     <LanguageProvider initialLocale="en">
-      <BusinessCard business={business} category={category} />
+      <BusinessCard business={{ ...business, ...overrides }} category={category} />
     </LanguageProvider>,
   );
 }
@@ -56,5 +57,28 @@ describe('discovery business card', () => {
     expect(screen.getByText('142 Dizengoff Street')).toBeInTheDocument();
     // Staff count and avatars were removed by request — the business page answers who works there.
     expect(screen.queryByText(/staff members/i)).not.toBeInTheDocument();
+  });
+
+  it('badges a business the viewer owns or works at (§12.55)', () => {
+    const { unmount } = renderCard();
+    expect(screen.queryByText('Your business')).not.toBeInTheDocument();
+    unmount();
+
+    renderCard({ viewerRelation: 'OWNER' });
+    expect(screen.getByText('Your business')).toBeInTheDocument();
+  });
+
+  it('answers on this screen instead of navigating to a page of refusal (§12.56)', () => {
+    renderCard({ viewerRelation: 'OWNER' });
+
+    // Same accessible name as the link it replaces — what it offers is unchanged, the answer is.
+    const action = screen.getByRole('button', { name: 'Book appointment — Studio Zohar' });
+    expect(screen.queryByRole('link', { name: 'Book appointment — Studio Zohar' })).not.toBeInTheDocument();
+
+    fireEvent.click(action);
+
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveTextContent('You cannot book an appointment at your own business');
+    expect(screen.getByRole('link', { name: /Go to My businesses/ })).toHaveAttribute('href', '/businesses');
   });
 });

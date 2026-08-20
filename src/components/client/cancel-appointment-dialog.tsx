@@ -1,5 +1,6 @@
 'use client';
 
+import { ErrorNotice } from '@/components/common/error-dialog';
 import { actionButton } from '@/components/common/button-styles';
 import { Modal } from '@/components/common/modal';
 import { useLanguage } from '@/lib/i18n/language-provider';
@@ -40,11 +41,7 @@ export function CancelAppointmentDialog({
         </p>
       </div>
 
-      {error ? (
-        <p role="alert" className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-          {error}
-        </p>
-      ) : null}
+      {error ? <ErrorNotice description={error} /> : null}
 
       <div className="flex items-center gap-3">
         <button

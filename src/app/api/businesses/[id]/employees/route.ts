@@ -1,5 +1,5 @@
 import { AppError } from '@/lib/errors';
-import { ok, withErrorHandling } from '@/lib/http';
+import { methodNotAllowed, ok, withErrorHandling } from '@/lib/http';
 import { uuid } from '@/lib/validation/common';
 import { getBusinessProfile, listBusinessEmployeeItems } from '@/server/queries/discovery';
 
@@ -26,3 +26,7 @@ export const GET = withErrorHandling(
     return ok({ items: await listBusinessEmployeeItems(parsed.data) });
   },
 );
+
+/** §12.58 — every other verb answers the envelope with an `Allow`, not Next's empty 405. */
+const notAllowed = methodNotAllowed('GET');
+export { notAllowed as POST, notAllowed as PUT, notAllowed as PATCH, notAllowed as DELETE };

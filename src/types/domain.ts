@@ -93,7 +93,20 @@ export type BusinessSummary = {
   employeeNames: string[];
   /** `AUTO` confirms a booking immediately; `MANUAL` leaves it `PENDING` until the business approves it (TECHNICAL_DESIGN.md §6.2 step 5). */
   approvalPolicy: ApprovalPolicy;
+  /**
+   * How the signed-in viewer relates to this business — `null` for anonymous visitors and for
+   * everyone else's businesses (§12.55).
+   *
+   * It exists on the *summary* rather than only on the profile because the discovery grid badges
+   * "העסק שלך" before anyone opens anything, and because the same value decides whether the
+   * business page renders its booking flow at all. `book_appointment()` refuses the booking
+   * regardless; this is what stops the UI offering it.
+   */
+  viewerRelation: ViewerBusinessRelation | null;
 };
+
+/** Own it, or work at it. `OWNER` wins when both are true, which §6.8 rule 3 makes the usual case. */
+export type ViewerBusinessRelation = 'OWNER' | 'STAFF';
 
 export type BusinessProfile = BusinessSummary & {
   phone: string;

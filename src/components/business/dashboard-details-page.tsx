@@ -13,6 +13,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 
+import { ErrorNotice } from '@/components/common/error-dialog';
 import { DashboardSectionHeader } from '@/components/business/dashboard-section-header';
 import { actionButton, actionButtonLarge } from '@/components/common/button-styles';
 import { surfaceCard } from '@/components/common/card-styles';
@@ -263,11 +264,7 @@ export function DashboardDetailsPage({
           {isPending ? settings.saving : settings.save}
         </button>
 
-        {error ? (
-          <p role="alert" className="rounded-2xl bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700">
-            {error}
-          </p>
-        ) : null}
+        {error ? <ErrorNotice description={error} /> : null}
         {savedAt && !error ? (
           <p
             role="status"

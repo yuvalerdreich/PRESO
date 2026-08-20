@@ -1,5 +1,5 @@
 import { AppError } from '@/lib/errors';
-import { ok, withErrorHandling } from '@/lib/http';
+import { methodNotAllowed, ok, withErrorHandling } from '@/lib/http';
 import { createClient } from '@/lib/supabase/route';
 import { parseTstzRange } from '@/lib/time';
 import { createAppointmentInput } from '@/lib/validation/booking';
@@ -88,3 +88,7 @@ export const POST = withErrorHandling('POST /api/appointments', async (request: 
     201,
   );
 });
+
+/** §12.58 — every other verb answers the envelope with an `Allow`, not Next's empty 405. */
+const notAllowed = methodNotAllowed('POST');
+export { notAllowed as GET, notAllowed as PUT, notAllowed as PATCH, notAllowed as DELETE };

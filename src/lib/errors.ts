@@ -14,11 +14,13 @@ export type AppErrorCode =
   | 'UNAUTHENTICATED' // 401 — no session
   | 'FORBIDDEN' // 403 — authenticated but not permitted (incl. suspended)
   | 'NOT_FOUND' // 404 — missing, or hidden by RLS (deliberately indistinguishable)
+  | 'METHOD_NOT_ALLOWED' // 405 — the route exists, this verb doesn't (§12.58)
   | 'CONFLICT' // 409 — slot taken, duplicate join request, lost claim
   | 'GONE' // 410 — waitlist match expired
   | 'UNPROCESSABLE' // 422 — well-formed but not a legal state transition
   | 'RATE_LIMITED' // 429
   | 'UPSTREAM' // 502 — Resend, Storage
+  | 'UNAVAILABLE' // 503 — a dependency this endpoint needs is unconfigured (§12.58)
   | 'INTERNAL'; // 500
 
 export class AppError extends Error {
@@ -48,11 +50,13 @@ const STATUS_BY_CODE: Record<AppErrorCode, number> = {
   UNAUTHENTICATED: 401,
   FORBIDDEN: 403,
   NOT_FOUND: 404,
+  METHOD_NOT_ALLOWED: 405,
   CONFLICT: 409,
   GONE: 410,
   UNPROCESSABLE: 422,
   RATE_LIMITED: 429,
   UPSTREAM: 502,
+  UNAVAILABLE: 503,
   INTERNAL: 500,
 };
 

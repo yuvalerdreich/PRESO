@@ -26,11 +26,13 @@ describe('statusFor — §8.1 code → status', () => {
     UNAUTHENTICATED: 401,
     FORBIDDEN: 403,
     NOT_FOUND: 404,
+    METHOD_NOT_ALLOWED: 405,
     CONFLICT: 409,
     GONE: 410,
     UNPROCESSABLE: 422,
     RATE_LIMITED: 429,
     UPSTREAM: 502,
+    UNAVAILABLE: 503,
     INTERNAL: 500,
   };
 

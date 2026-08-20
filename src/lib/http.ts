@@ -69,3 +69,29 @@ export function ok<T>(data: T, status = 200): NextResponse {
 export function noContent(): NextResponse {
   return new NextResponse(null, { status: 204 });
 }
+
+/**
+ * The `405` every route's unsupported verbs are bound to (§12.58).
+ *
+ * Without this, a verb a route doesn't export is answered by Next itself: `405` with an **empty
+ * body and no `content-type`**, which is the one response in the whole API that tells the caller
+ * nothing. It is also the response you get from typing a POST-only URL into the address bar, so
+ * it is the one a person is most likely to meet by accident.
+ *
+ * `Allow` is not decoration here — RFC 9110 §15.5.6 requires a `405` to name the verbs that *are*
+ * supported, and it is what turns "no" into "no, but try POST".
+ */
+export function methodNotAllowed(...allow: string[]): () => NextResponse {
+  const allowHeader = allow.join(', ');
+
+  return () =>
+    NextResponse.json(
+      {
+        error: {
+          code: 'METHOD_NOT_ALLOWED',
+          message: `This endpoint only accepts ${allowHeader}.`,
+        },
+      },
+      { status: 405, headers: { allow: allowHeader } },
+    );
+}

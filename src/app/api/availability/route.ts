@@ -1,6 +1,6 @@
 import type { NextRequest } from 'next/server';
 
-import { ok, withErrorHandling } from '@/lib/http';
+import { methodNotAllowed, ok, withErrorHandling } from '@/lib/http';
 import { availabilityQuery, parseSearchParams } from '@/lib/validation/search';
 import { assertBookablePair, getAvailableSlots } from '@/server/queries/availability';
 
@@ -30,3 +30,7 @@ export const GET = withErrorHandling('GET /api/availability', async (request: Re
     await getAvailableSlots(query.employeeId, query.serviceId, new Date(query.from), new Date(query.to)),
   );
 });
+
+/** §12.58 — every other verb answers the envelope with an `Allow`, not Next's empty 405. */
+const notAllowed = methodNotAllowed('GET');
+export { notAllowed as POST, notAllowed as PUT, notAllowed as PATCH, notAllowed as DELETE };

@@ -3,6 +3,8 @@ import type { Locale } from '@/lib/i18n/types';
 export const translations = {
   he: {
     brand: { name: 'Preso', version: 'MVP V1.0' },
+    /** §12.56 — the shared error surface (`components/common/error-dialog.tsx`). */
+    common: { close: 'סגירה', errorTitle: 'אירעה שגיאה' },
     header: {
       tagline: 'Your spot. Secured.',
       subtitle: 'מערכת חכמה לתיאום תורים, ניהול צוותים ורשימות המתנה',
@@ -45,11 +47,20 @@ export const translations = {
       staffCount: 'אנשי צוות / עמדות',
       viewBusiness: 'לפרטי העסק',
       bookAction: 'קביעת תור',
+      /** §12.55 — the badge on a business the viewer owns or works at. */
+      yourBusiness: 'העסק שלך',
       mockNotice: 'הנתונים בדף זה הם נתוני הדגמה מקומיים בלבד.',
     },
     businessProfile: {
       backToSearch: 'חזרה לחיפוש',
       backToList: 'חזרה לרשימת העסקים',
+      // §12.55 — what the booking screen becomes for a business the viewer owns or works at.
+      ownBusiness: {
+        title: 'לא ניתן להזמין תורים לעסק ששייך לך',
+        descriptionOwner: 'העסק "{business}" רשום על שמך, ולכן לא ניתן לקבוע בו תור כלקוח/ה. אם ברצונך לצפות בפרטי העסק או לנהל אותו, אפשר לגשת למסך "העסקים שלי".',
+        descriptionStaff: 'את/ה נמנה/ית על צוות העסק "{business}", ולכן לא ניתן לקבוע בו תור כלקוח/ה. אם ברצונך לצפות בפרטי העסק או לנהל אותו, אפשר לגשת למסך "העסקים שלי".',
+        goToMyBusinesses: 'מעבר למסך העסקים שלי',
+      },
       businessDetails: 'פרטי העסק',
       contact: 'יצירת קשר',
       phone: 'טלפון',
@@ -578,6 +589,7 @@ export const translations = {
   },
   en: {
     brand: { name: 'Preso', version: 'MVP V1.0' },
+    common: { close: 'Close', errorTitle: 'Something went wrong' },
     header: {
       tagline: 'Your spot. Secured.',
       subtitle: 'Smart scheduling, team management, and waitlists',
@@ -619,11 +631,18 @@ export const translations = {
       staffCount: 'staff members / positions',
       viewBusiness: 'View business',
       bookAction: 'Book appointment',
+      yourBusiness: 'Your business',
       mockNotice: 'This page uses local demonstration data only.',
     },
     businessProfile: {
       backToSearch: 'Back to search',
       backToList: 'Back to businesses list',
+      ownBusiness: {
+        title: 'You cannot book an appointment at your own business',
+        descriptionOwner: '“{business}” is registered to you, so you cannot book it as a client. To view or manage it, go to “My businesses”.',
+        descriptionStaff: 'You are on the staff of “{business}”, so you cannot book it as a client. To view or manage it, go to “My businesses”.',
+        goToMyBusinesses: 'Go to My businesses',
+      },
       businessDetails: 'Business details',
       contact: 'Contact',
       phone: 'Phone',

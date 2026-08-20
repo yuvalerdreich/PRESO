@@ -1,5 +1,5 @@
 import { AppError } from '@/lib/errors';
-import { ok, withErrorHandling } from '@/lib/http';
+import { methodNotAllowed, ok, withErrorHandling } from '@/lib/http';
 import { createClient } from '@/lib/supabase/route';
 import { parseTstzRange } from '@/lib/time';
 import { patchAppointmentInput } from '@/lib/validation/booking';
@@ -107,3 +107,7 @@ function toResponse(row: AppointmentRow) {
     serviceId: row.service_id,
   };
 }
+
+/** §12.58 — every other verb answers the envelope with an `Allow`, not Next's empty 405. */
+const notAllowed = methodNotAllowed('PATCH');
+export { notAllowed as GET, notAllowed as POST, notAllowed as PUT, notAllowed as DELETE };

@@ -19,7 +19,9 @@ export default async function DashboardStaffRoute() {
   if (!business) redirect('/businesses');
 
   const [employees, requests] = await Promise.all([
-    listDashboardEmployees(business.id),
+    // The one screen that renders a colleague's phone and email, and so the one that asks for them
+    // (§12.58) — the diary, hours and services screens take the default and get names only.
+    listDashboardEmployees(business.id, { withContacts: true }),
     listJoinRequests(business.id),
   ]);
 

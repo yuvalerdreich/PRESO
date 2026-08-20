@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Building2, CheckCircle2, MapPin, Search, UserPlus, Users, X } from 'lucide-react';
 
+import { ErrorNotice } from '@/components/common/error-dialog';
 import { actionButton, actionIconButton } from '@/components/common/button-styles';
 import { fieldPaddingStartIcon, surfaceFieldSubtle } from '@/components/common/field-styles';
 import { useLanguage } from '@/lib/i18n/language-provider';
@@ -211,9 +212,7 @@ export function JoinBusinessDialog({
             </section>
 
             {formError ? (
-              <p role="alert" className="mt-5 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-                {formError}
-              </p>
+              <ErrorNotice className="mt-5" description={formError} />
             ) : null}
 
             <div className="mt-7 flex flex-wrap gap-3">

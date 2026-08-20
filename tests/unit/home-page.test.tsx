@@ -26,7 +26,7 @@ describe('component test harness', () => {
   it('renders the landing page heading', async () => {
     render(
       <LanguageProvider initialLocale="en">
-        {await HomePage()}
+        {await HomePage({ searchParams: Promise.resolve({}), params: Promise.resolve({}) })}
       </LanguageProvider>,
     );
 

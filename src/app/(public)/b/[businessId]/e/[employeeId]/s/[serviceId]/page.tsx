@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 import { BusinessProfile } from '@/components/public/business-profile';
 import { getDaySlots, getMonthAvailability } from '@/server/queries/availability';
@@ -53,6 +53,9 @@ export default async function ServiceAvailabilityPage({
   ]);
 
   if (!business || !selectedEmployee) notFound();
+
+  // §12.55 — same refusal as the employee page above; this URL is reachable directly too.
+  if (business.viewerRelation) redirect(`/?blocked=${businessId}`);
 
   // Looked up in *this employee's* list, so a service belonging to a colleague 404s rather than
   // rendering a calendar for a pair the engine will never return slots for (PDF §8 rule 8).

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Scissors } from 'lucide-react';
 
+import { ErrorNotice } from '@/components/common/error-dialog';
 import { actionButton } from '@/components/common/button-styles';
 import { fieldPadding, surfaceFieldSubtle } from '@/components/common/field-styles';
 import { Modal } from '@/components/common/modal';
@@ -183,11 +184,7 @@ export function ServiceFormModal({
           </select>
         </label>
 
-        {formError ? (
-          <p role="alert" className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-            {formError}
-          </p>
-        ) : null}
+        {formError ? <ErrorNotice description={formError} /> : null}
         {notice ? (
           <p role="status" className="rounded-2xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
             {notice}

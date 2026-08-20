@@ -30,6 +30,10 @@ const { POST: postAppointment } = await import('@/app/api/appointments/route');
 const { PATCH: patchAppointment } = await import('@/app/api/appointments/[id]/route');
 const { POST: postWaitlist } = await import('@/app/api/waitlist/route');
 const { DELETE: deleteWaitlist } = await import('@/app/api/waitlist/[id]/route');
+// §12.58 — the same `methodNotAllowed` handler each route binds its unsupported verbs to.
+const { GET: appointmentsNotAllowed } = await import('@/app/api/appointments/route');
+const { GET: waitlistNotAllowed } = await import('@/app/api/waitlist/route');
+const { DELETE: businessesNotAllowed } = await import('@/app/api/businesses/route');
 const { listDashboardWaitlist } = await import('@/server/queries/dashboard');
 
 const URL_ = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -369,6 +373,42 @@ describe('POST /api/appointments — §5.4, the critical contract', () => {
     expect(new Date(body.startsAt).toISOString()).toBe(new Date(startsAt).toISOString());
     // endsAt comes from the stored tstzrange, so it reflects the service's real duration.
     expect(new Date(body.endsAt).getTime() - new Date(body.startsAt).getTime()).toBe(30 * 60_000);
+  });
+
+  it('refuses a staff member booking themselves at their own business with 403 (§12.55)', async () => {
+    // The screen for this business renders a refusal rather than the booking flow, but that is
+    // presentation — this is the check a hand-made POST has to get past.
+    state.client = await signIn('zohar@demo.local');
+
+    const response = await postAppointment(
+      jsonReq('/api/appointments', {
+        employeeId: EMPLOYEE_ZOHAR,
+        serviceId: SERVICE_ZOHAR_HAIRCUT,
+        startsAt: await firstFreeSlot(EMPLOYEE_ZOHAR, SERVICE_ZOHAR_HAIRCUT),
+      }),
+      undefined,
+    );
+
+    expect(response.status).toBe(403);
+    expect((await response.json()).error.code).toBe('FORBIDDEN');
+  });
+
+  it('still lets staff book on behalf of an ordinary client (§12.55 tests the client, not the actor)', async () => {
+    const user = await createClientUser();
+    state.client = await signIn('zohar@demo.local');
+
+    const response = await postAppointment(
+      jsonReq('/api/appointments', {
+        employeeId: EMPLOYEE_ZOHAR,
+        serviceId: SERVICE_ZOHAR_HAIRCUT,
+        startsAt: await firstFreeSlot(EMPLOYEE_ZOHAR, SERVICE_ZOHAR_HAIRCUT),
+        clientProfileId: user.id,
+      }),
+      undefined,
+    );
+
+    expect(response.status).toBe(201);
+    createdAppointmentIds.push((await response.json()).id);
   });
 
   it('creates a PENDING appointment at a MANUAL-approval business', async () => {
@@ -939,4 +979,35 @@ describe('waitlist routes — §5.4', () => {
       .eq('id', id);
     expect(count).toBe(1);
   });
+});
+
+/**
+ * §12.58 — the verbs a route does *not* export.
+ *
+ * Without an explicit handler these were answered by Next itself: `405` with an empty body and no
+ * `content-type`, the one response in the API that told a caller nothing — and the one a person
+ * meets by accident, since it is what a POST-only URL returns when typed into the address bar.
+ *
+ * `Allow` is asserted alongside the body because it is required of a 405 (RFC 9110 §15.5.6) and is
+ * the half that says what to do instead.
+ */
+describe('unsupported verbs answer the §8.4 envelope', () => {
+  const cases: [string, (request: Request) => Promise<Response> | Response, string][] = [
+    ['GET /api/appointments', appointmentsNotAllowed, 'POST'],
+    ['GET /api/waitlist', waitlistNotAllowed, 'POST'],
+    ['DELETE /api/businesses', businessesNotAllowed, 'GET'],
+  ];
+
+  for (const [name, handler, allow] of cases) {
+    it(`${name} → 405 naming ${allow}`, async () => {
+      const response = await handler(req('/x'));
+
+      expect(response.status).toBe(405);
+      expect(response.headers.get('allow')).toBe(allow);
+      expect(response.headers.get('content-type')).toContain('application/json');
+      expect(await response.json()).toEqual({
+        error: { code: 'METHOD_NOT_ALLOWED', message: `This endpoint only accepts ${allow}.` },
+      });
+    });
+  }
 });

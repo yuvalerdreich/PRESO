@@ -2,7 +2,7 @@ import { categoryPresentation } from '@/lib/i18n/categories';
 import { createClient } from '@/lib/supabase/server';
 import type { BusinessSearchQuery } from '@/lib/validation/search';
 import { getNextAvailable } from '@/server/queries/availability';
-import { resolvePhotoUrl } from '@/server/queries/shared';
+import { loadViewerBusinessRelations, resolvePhotoUrl } from '@/server/queries/shared';
 import type {
   BusinessProfile,
   BusinessSearchFilters,
@@ -102,7 +102,10 @@ export async function searchBusinesses(filters: BusinessSearchFilters = {}): Pro
   if (error) throw error;
 
   const rows = data ?? [];
-  const staffByBusiness = await loadStaffAvatars(rows.map((row) => row.id));
+  const [staffByBusiness, relations] = await Promise.all([
+    loadStaffAvatars(rows.map((row) => row.id)),
+    loadViewerBusinessRelations(supabase, rows.map((row) => row.id)),
+  ]);
 
   return rows.map((row) => ({
     id: row.id,
@@ -116,6 +119,7 @@ export async function searchBusinesses(filters: BusinessSearchFilters = {}): Pro
     employeeAvatarUrls: (staffByBusiness.get(row.id) ?? []).flatMap((s) => (s.avatarUrl ? [s.avatarUrl] : [])),
     employeeNames: (staffByBusiness.get(row.id) ?? []).map((s) => s.fullName).filter(Boolean),
     approvalPolicy: row.approval_policy,
+    viewerRelation: relations.get(row.id) ?? null,
   }));
 }
 
@@ -210,9 +214,10 @@ export async function searchBusinessesPaged(query: BusinessSearchQuery): Promise
   if (error) throw error;
 
   const rows = data ?? [];
-  const [staffByBusiness, priceRanges] = await Promise.all([
+  const [staffByBusiness, priceRanges, relations] = await Promise.all([
     loadStaffAvatars(rows.map((row) => row.id)),
     loadPriceRanges(rows.map((row) => row.id)),
+    loadViewerBusinessRelations(supabase, rows.map((row) => row.id)),
   ]);
 
   const availabilityWindow = query.date
@@ -239,6 +244,7 @@ export async function searchBusinessesPaged(query: BusinessSearchQuery): Promise
         employeeAvatarUrls: staff.flatMap((s) => (s.avatarUrl ? [s.avatarUrl] : [])),
         employeeNames: staff.map((s) => s.fullName).filter(Boolean),
         approvalPolicy: row.approval_policy,
+        viewerRelation: relations.get(row.id) ?? null,
         category: { id: category.id, slug: category.slug, name: category.name },
         priceRange: priceRanges.get(row.id) ?? null,
         nextAvailableAt: wantsAvailability
@@ -325,7 +331,11 @@ export async function getBusinessProfile(businessId: string): Promise<BusinessPr
   if (error) throw error;
   if (!data) return null;
 
-  const staff = (await loadStaffAvatars([businessId])).get(businessId) ?? [];
+  const [staffByBusiness, relations] = await Promise.all([
+    loadStaffAvatars([businessId]),
+    loadViewerBusinessRelations(supabase, [businessId]),
+  ]);
+  const staff = staffByBusiness.get(businessId) ?? [];
 
   return {
     id: data.id,
@@ -343,6 +353,7 @@ export async function getBusinessProfile(businessId: string): Promise<BusinessPr
     timezone: data.timezone,
     cancellationWindowHours: data.cancellation_window_hours,
     ownerProfileId: data.owner_profile_id,
+    viewerRelation: relations.get(businessId) ?? null,
   };
 }
 

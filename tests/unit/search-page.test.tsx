@@ -22,6 +22,7 @@ const businesses: BusinessSummary[] = [
     employeeAvatarUrls: [],
     employeeNames: ['Zohar Levi'],
     approvalPolicy: 'AUTO',
+  viewerRelation: null,
   },
   {
     id: 'b-2',
@@ -35,6 +36,7 @@ const businesses: BusinessSummary[] = [
     employeeAvatarUrls: [],
     employeeNames: ['Dana Cohen'],
     approvalPolicy: 'MANUAL',
+  viewerRelation: null,
   },
 ];
 
@@ -62,7 +64,7 @@ async function renderPage(node: Promise<React.ReactElement>) {
 
 describe('discovery search', () => {
   it('filters the grid in place as you type, without navigating', async () => {
-    await renderPage(HomePage() as Promise<React.ReactElement>);
+    await renderPage(HomePage({ searchParams: Promise.resolve({}), params: Promise.resolve({}) }) as Promise<React.ReactElement>);
 
     expect(screen.getByText('Studio Zohar')).toBeInTheDocument();
     expect(screen.getByText('Glow Clinic')).toBeInTheDocument();
@@ -74,7 +76,7 @@ describe('discovery search', () => {
   });
 
   it('matches a business by the name of someone who works there (§12.22)', async () => {
-    await renderPage(HomePage() as Promise<React.ReactElement>);
+    await renderPage(HomePage({ searchParams: Promise.resolve({}), params: Promise.resolve({}) }) as Promise<React.ReactElement>);
 
     fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'zohar levi' } });
 
@@ -83,7 +85,7 @@ describe('discovery search', () => {
   });
 
   it('shows the "no match" wording only once a search excluded everything', async () => {
-    await renderPage(HomePage() as Promise<React.ReactElement>);
+    await renderPage(HomePage({ searchParams: Promise.resolve({}), params: Promise.resolve({}) }) as Promise<React.ReactElement>);
 
     expect(screen.queryByText(copy.emptyState.noMatchesTitle)).not.toBeInTheDocument();
 

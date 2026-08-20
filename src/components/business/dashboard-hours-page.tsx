@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { CalendarClock, Moon, Plus, RefreshCw, Save, Sun, Trash2, UserRound, Users, Zap } from 'lucide-react';
 
+import { ErrorNotice } from '@/components/common/error-dialog';
 import { BusinessHoursEditor } from '@/components/business/business-hours-editor';
 import { DashboardSectionHeader } from '@/components/business/dashboard-section-header';
 import {
@@ -430,11 +431,7 @@ export function DashboardHoursPage({
               </>
             )}
 
-            {error ? (
-              <p role="alert" className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-                {error}
-              </p>
-            ) : null}
+            {error ? <ErrorNotice description={error} /> : null}
             {savedAt && !error ? (
               <p role="status" className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
                 {copy.dashboard.hoursScreen.saved}

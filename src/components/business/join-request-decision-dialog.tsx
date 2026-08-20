@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { ErrorNotice } from '@/components/common/error-dialog';
 import { actionButton } from '@/components/common/button-styles';
 import { fieldPadding, surfaceFieldSubtle } from '@/components/common/field-styles';
 import { Modal } from '@/components/common/modal';
@@ -75,9 +76,7 @@ export function JoinRequestDecisionDialog({
       ) : null}
 
       {error ? (
-        <p role="alert" className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-          {error}
-        </p>
+        <ErrorNotice description={error} />
       ) : null}
 
       <div className="flex items-center gap-3">
