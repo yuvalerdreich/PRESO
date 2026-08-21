@@ -10,14 +10,14 @@ import { surfaceCard } from '@/components/common/card-styles';
 import { fieldPadding, surfaceField } from '@/components/common/field-styles';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import { setWeeklyAvailability } from '@/server/actions/availability';
-import type { AvailabilityRule } from '@/types/domain';
+import type { AvailabilityRule, DashboardService } from '@/types/domain';
 
-type Window = { opensAt: string; closesAt: string };
+type Window = { opensAt: string; closesAt: string; serviceId: string | null };
 /** Index 0 = Sunday, matching `employee_availability_rules.day_of_week`. Empty = no shift that day. */
 type Week = Window[][];
 
 const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6];
-const DEFAULT_WINDOW: Window = { opensAt: '09:00', closesAt: '17:00' };
+const DEFAULT_WINDOW: Window = { opensAt: '09:00', closesAt: '17:00', serviceId: null };
 
 /**
  * An employee's recurring weekly pattern (§12.67) — replace-all across the whole week in one save,
@@ -37,10 +37,13 @@ export function EmployeeWeeklyHoursEditor({
   employeeId,
   isEditable,
   rules,
+  services,
 }: {
   employeeId: string;
   isEditable: boolean;
   rules: AvailabilityRule[];
+  /** The employee's own ACTIVE services — what a window can optionally be restricted to (§12.68). */
+  services: DashboardService[];
 }) {
   const { copy } = useLanguage();
   const hours = copy.dashboard.hoursScreen;
@@ -77,7 +80,12 @@ export function EmployeeWeeklyHoursEditor({
         // Replace-all, so a day removed here is a day deleted there — closing a day is simply
         // sending no window for it.
         rows: week.flatMap((windows, dayOfWeek) =>
-          windows.map((window) => ({ dayOfWeek, startsAt: window.opensAt, endsAt: window.closesAt })),
+          windows.map((window) => ({
+            dayOfWeek,
+            startsAt: window.opensAt,
+            endsAt: window.closesAt,
+            serviceId: window.serviceId,
+          })),
         ),
       });
 
@@ -177,6 +185,29 @@ export function EmployeeWeeklyHoursEditor({
                         }
                         className={`${surfaceField} ${fieldPadding} w-auto py-1.5 font-bold`}
                       />
+                      {services.length > 0 ? (
+                        <select
+                          value={window.serviceId ?? ''}
+                          disabled={!isEditable}
+                          aria-label={`${weekdayLabel(hours, day)} — ${hours.serviceLabel} ${index + 1}`}
+                          onChange={(event) =>
+                            updateDay(
+                              day,
+                              windows.map((w, i) =>
+                                i === index ? { ...w, serviceId: event.target.value || null } : w,
+                              ),
+                            )
+                          }
+                          className={`picker-select ${surfaceField} ${fieldPadding} w-auto cursor-pointer py-1.5 font-semibold`}
+                        >
+                          <option value="">{hours.anyService}</option>
+                          {services.map((service) => (
+                            <option key={service.id} value={service.id}>
+                              {service.name}
+                            </option>
+                          ))}
+                        </select>
+                      ) : null}
                       {isEditable && windows.length > 1 ? (
                         <button
                           type="button"
@@ -240,7 +271,11 @@ function toWeek(rules: AvailabilityRule[]): Week {
   return WEEKDAYS.map((day) =>
     rules
       .filter((rule) => rule.kind === 'WEEKLY_WINDOW' && rule.dayOfWeek === day)
-      .map((rule) => ({ opensAt: rule.startsAt ?? '09:00', closesAt: rule.endsAt ?? '17:00' }))
+      .map((rule) => ({
+        opensAt: rule.startsAt ?? '09:00',
+        closesAt: rule.endsAt ?? '17:00',
+        serviceId: rule.serviceId,
+      }))
       .sort((a, b) => a.opensAt.localeCompare(b.opensAt)),
   );
 }
@@ -254,7 +289,7 @@ function nextWindow(windows: Window[]): Window {
   if (!last) return { ...DEFAULT_WINDOW };
 
   const opens = Math.min(toMinutes(last.closesAt) + 60, 22 * 60);
-  return { opensAt: toHHmm(opens), closesAt: toHHmm(Math.min(opens + 240, 23 * 60 + 59)) };
+  return { opensAt: toHHmm(opens), closesAt: toHHmm(Math.min(opens + 240, 23 * 60 + 59)), serviceId: null };
 }
 
 function hasOverlap(windows: Window[]): boolean {

@@ -86,8 +86,16 @@ export async function getCurrentEmployment(): Promise<CurrentEmployment | null> 
 
   // Try the cookie-selected business first. A stale cookie (removed from that business since, or
   // naming one the caller was never staff at) falls through to the default below rather than
-  // reporting "no business to manage" — the caller may well have another one.
-  const selectedBusinessId = (await cookies()).get(CURRENT_BUSINESS_COOKIE)?.value;
+  // reporting "no business to manage" — the caller may well have another one. `cookies()` itself
+  // throws outside a real request scope — a Server Action called directly from `tests/int/`, for
+  // instance, which is exactly how this function gets exercised there — so that's caught too and
+  // treated the same as "no cookie set" rather than failing the whole call.
+  let selectedBusinessId: string | undefined;
+  try {
+    selectedBusinessId = (await cookies()).get(CURRENT_BUSINESS_COOKIE)?.value;
+  } catch {
+    selectedBusinessId = undefined;
+  }
   if (selectedBusinessId) {
     const { data, error } = await baseQuery().eq('business_id', selectedBusinessId).maybeSingle();
     if (error) throw error;
@@ -631,7 +639,7 @@ export async function listAvailabilityRules(employeeId: string): Promise<Availab
 
   const { data, error } = await supabase
     .from('employee_availability_rules')
-    .select('id, employee_id, kind, day_of_week, starts_at, ends_at, effective_range')
+    .select('id, employee_id, kind, day_of_week, starts_at, ends_at, effective_range, service_id')
     .eq('employee_id', employeeId)
     .order('kind')
     .order('day_of_week', { nullsFirst: false });
@@ -648,6 +656,7 @@ export async function listAvailabilityRules(employeeId: string): Promise<Availab
       endsAt: row.ends_at ? row.ends_at.slice(0, 5) : null,
       effectiveFrom: range?.startsAt.toISOString() ?? null,
       effectiveTo: range?.endsAt.toISOString() ?? null,
+      serviceId: row.service_id,
     };
   });
 }

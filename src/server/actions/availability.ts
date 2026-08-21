@@ -45,6 +45,7 @@ function toRuleColumns(
         starts_at: input.startsAt,
         ends_at: input.endsAt,
         effective_range: null,
+        service_id: input.serviceId ?? null,
       };
     case 'EXCEPTION':
       return {
@@ -53,6 +54,7 @@ function toRuleColumns(
         starts_at: input.startsAt,
         ends_at: input.endsAt,
         effective_range: toTstzRange(new Date(input.effectiveFrom), new Date(input.effectiveTo)),
+        service_id: input.serviceId ?? null,
       };
     case 'VACATION':
     case 'BLOCK':
@@ -63,6 +65,27 @@ function toRuleColumns(
         ends_at: null,
         effective_range: toTstzRange(new Date(input.effectiveFrom), new Date(input.effectiveTo)),
       };
+  }
+}
+
+/**
+ * §12.68 — a shift or window's optional `serviceId` must name one of the *acting employee's own*
+ * services, never a colleague's or another business's. RLS re-checks the row itself, but a bad id
+ * here would otherwise surface as a silent foreign-key failure with no field attached — this puts
+ * the message where the form can show it.
+ */
+async function assertOwnServices(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  employeeId: string,
+  serviceIds: (string | null | undefined)[],
+): Promise<void> {
+  const ids = [...new Set(serviceIds.filter((id): id is string => Boolean(id)))];
+  if (ids.length === 0) return;
+
+  const { data, error } = await supabase.from('services').select('id').eq('employee_id', employeeId).in('id', ids);
+  if (error) throw error;
+  if ((data ?? []).length !== ids.length) {
+    throw new AppError('VALIDATION', 'Choose one of your own services, or leave it unrestricted to every service.');
   }
 }
 
@@ -78,6 +101,9 @@ export const upsertAvailabilityRule = action(
     }
 
     const supabase = await createClient();
+    if (input.kind === 'WEEKLY_WINDOW' || input.kind === 'EXCEPTION') {
+      await assertOwnServices(supabase, employment.employeeId, [input.serviceId]);
+    }
     const row = toRuleColumns(input);
 
     const { data, error } = input.id
@@ -144,6 +170,7 @@ export const setWeeklyAvailability = action(
     }
 
     const supabase = await createClient();
+    await assertOwnServices(supabase, input.employeeId, input.rows.map((row) => row.serviceId));
 
     const { error: deleteError } = await supabase
       .from('employee_availability_rules')
@@ -161,6 +188,7 @@ export const setWeeklyAvailability = action(
           starts_at: row.startsAt,
           ends_at: row.endsAt,
           effective_range: null,
+          service_id: row.serviceId ?? null,
         })),
       );
       if (insertError) throw insertError;
@@ -203,6 +231,7 @@ export const setDaySchedule = action('setDaySchedule', dayScheduleInput, async (
   }
 
   const supabase = await createClient();
+  await assertOwnServices(supabase, employment.employeeId, input.shifts.map((shift) => shift.serviceId));
 
   const { data: business, error: businessError } = await supabase
     .from('businesses')
@@ -255,6 +284,7 @@ export const setDaySchedule = action('setDaySchedule', dayScheduleInput, async (
         starts_at: shift.startsAt,
         ends_at: shift.endsAt,
         effective_range: input.scope === 'DATE' ? dayRange : null,
+        service_id: shift.serviceId ?? null,
       }));
 
   if (rows.length > 0) {

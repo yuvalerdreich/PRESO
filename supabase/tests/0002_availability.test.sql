@@ -2,7 +2,7 @@
 -- scenarios verified by hand while building 0006_fn_availability.sql, now committed so a
 -- future change to the packing/subtraction logic can't regress silently.
 begin;
-select plan(13);
+select plan(16);
 
 -- profiles are auto-created by handle_new_user() (0009_triggers.sql) from this metadata —
 -- no separate insert into profiles needed, or wanted (it would conflict with the trigger).
@@ -179,6 +179,40 @@ select is(
      '2026-09-01T00:00:00+03', '2026-09-01T23:59:59+03')),
   0,
   'a service not owned by the given employee returns zero rows'
+);
+
+-- test 6 (§12.68): a window tagged to one specific service offers only that service — everyone
+-- else sees nothing there, as if the row didn't exist for them. An untagged window is unaffected
+-- and keeps applying to every service, including one that didn't exist when it was created.
+insert into services (id, employee_id, name, price, duration_minutes, buffer_minutes) values
+  ('00000000-0000-0000-0000-0000000000a9', '00000000-0000-0000-0000-0000000000a4', 'Massage', 80.00, 45, 15);
+
+-- Wednesday 2026-09-09: wide-open business hours, no WEEKLY_WINDOW or EXCEPTION for this weekday
+-- yet, and no exception on this specific date — a clean day to isolate the new column's effect on.
+insert into employee_availability_rules (employee_id, kind, day_of_week, starts_at, ends_at, service_id) values
+  ('00000000-0000-0000-0000-0000000000a4', 'WEEKLY_WINDOW', 3, '13:00', '14:00',
+   '00000000-0000-0000-0000-0000000000a5');
+select results_eq(
+  $$ select starts_at from get_available_slots(
+       '00000000-0000-0000-0000-0000000000a4', '00000000-0000-0000-0000-0000000000a5',
+       '2026-09-09T00:00:00+03', '2026-09-09T23:59:59+03'
+     ) order by starts_at $$,
+  $$ values ('2026-09-09T13:00:00+03'::timestamptz) $$,
+  'a window tagged to Haircut is bookable as Haircut: one 30+10min slot fits in 13:00-14:00'
+);
+select is(
+  (select count(*)::int from get_available_slots(
+     '00000000-0000-0000-0000-0000000000a4', '00000000-0000-0000-0000-0000000000a9',
+     '2026-09-09T00:00:00+03', '2026-09-09T23:59:59+03')),
+  0,
+  'the same window is invisible to Massage — tagged to a different service, not just any window'
+);
+select is(
+  (select count(*)::int from get_available_slots(
+     '00000000-0000-0000-0000-0000000000a4', '00000000-0000-0000-0000-0000000000a9',
+     '2026-09-01T00:00:00+03', '2026-09-01T23:59:59+03')) > 0,
+  true,
+  'an untagged window (Tuesday, from test 1) still applies to Massage, a service created after it'
 );
 
 select * from finish();

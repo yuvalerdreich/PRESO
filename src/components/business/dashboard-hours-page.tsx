@@ -13,9 +13,9 @@ import { fieldPadding, surfaceField } from '@/components/common/field-styles';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import { toDateISO } from '@/lib/time';
 import { setDaySchedule } from '@/server/actions/availability';
-import type { AvailabilityRule, BusinessHourRow, DashboardEmployee } from '@/types/domain';
+import type { AvailabilityRule, BusinessHourRow, DashboardEmployee, DashboardService } from '@/types/domain';
 
-type Shift = { startsAt: string; endsAt: string };
+type Shift = { startsAt: string; endsAt: string; serviceId: string | null };
 
 /**
  * A day with no windows behind it is a **day off** — not a working day that happens to be empty.
@@ -29,14 +29,14 @@ type Shift = { startsAt: string; endsAt: string };
 const EMPTY_DAY: { isDayOff: boolean; shifts: Shift[] } = { isDayOff: true, shifts: [] };
 
 const PRESETS: { id: string; shifts: Shift[] }[] = [
-  { id: 'full', shifts: [{ startsAt: '09:00', endsAt: '19:00' }] },
-  { id: 'morning', shifts: [{ startsAt: '08:30', endsAt: '14:00' }] },
-  { id: 'evening', shifts: [{ startsAt: '14:00', endsAt: '20:30' }] },
+  { id: 'full', shifts: [{ startsAt: '09:00', endsAt: '19:00', serviceId: null }] },
+  { id: 'morning', shifts: [{ startsAt: '08:30', endsAt: '14:00', serviceId: null }] },
+  { id: 'evening', shifts: [{ startsAt: '14:00', endsAt: '20:30', serviceId: null }] },
   {
     id: 'split',
     shifts: [
-      { startsAt: '08:30', endsAt: '14:00' },
-      { startsAt: '16:00', endsAt: '20:30' },
+      { startsAt: '08:30', endsAt: '14:00', serviceId: null },
+      { startsAt: '16:00', endsAt: '20:30', serviceId: null },
     ],
   },
 ];
@@ -68,6 +68,7 @@ export function DashboardHoursPage({
   selectedEmployee,
   rules,
   businessHours,
+  services,
   timezone,
   currentEmployeeId,
 }: {
@@ -76,6 +77,8 @@ export function DashboardHoursPage({
   /** Every rule of the selected employee — a date change filters these, never refetches. */
   rules: AvailabilityRule[];
   businessHours: BusinessHourRow[];
+  /** The selected employee's own ACTIVE services — what a shift can optionally be restricted to (§12.68). */
+  services: DashboardService[];
   timezone: string;
   currentEmployeeId: string | null;
 }) {
@@ -130,13 +133,19 @@ export function DashboardHoursPage({
             </p>
           )}
 
-          <EmployeeWeeklyHoursEditor employeeId={selectedEmployee.id} isEditable={isEditable} rules={rules} />
+          <EmployeeWeeklyHoursEditor
+            employeeId={selectedEmployee.id}
+            isEditable={isEditable}
+            rules={rules}
+            services={services}
+          />
 
           <DateScheduleEditor
             employeeId={selectedEmployee.id}
             isEditable={isEditable}
             rules={rules}
             businessHours={businessHours}
+            services={services}
             timezone={timezone}
             dateISO={dateISO}
             onDateChange={setDateISO}
@@ -156,6 +165,7 @@ function DateScheduleEditor({
   isEditable,
   rules,
   businessHours,
+  services,
   timezone,
   dateISO,
   onDateChange,
@@ -164,6 +174,7 @@ function DateScheduleEditor({
   isEditable: boolean;
   rules: AvailabilityRule[];
   businessHours: BusinessHourRow[];
+  services: DashboardService[];
   timezone: string;
   dateISO: string;
   onDateChange: (value: string) => void;
@@ -377,6 +388,26 @@ function DateScheduleEditor({
                     />
                   </label>
 
+                  {services.length > 0 ? (
+                    <label className="flex items-center gap-2 text-sm font-semibold text-[var(--muted)]">
+                      {copy.dashboard.hoursScreen.serviceLabel}
+                      <select
+                        value={shift.serviceId ?? ''}
+                        disabled={!isEditable}
+                        aria-label={`${copy.dashboard.hoursScreen.serviceLabel} ${index + 1}`}
+                        onChange={(event) => updateShift(index, { serviceId: event.target.value || null })}
+                        className={`picker-select ${surfaceField} ${fieldPadding} w-auto cursor-pointer py-2 font-semibold`}
+                      >
+                        <option value="">{copy.dashboard.hoursScreen.anyService}</option>
+                        {services.map((service) => (
+                          <option key={service.id} value={service.id}>
+                            {service.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
+
                   <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-[var(--muted)]">
                     {copy.dashboard.hoursScreen.shiftHours.replace(
                       '{hours}',
@@ -484,7 +515,7 @@ function coversDate(rule: AvailabilityRule, dateISO: string, timezone: string): 
 }
 
 function toShift(rule: AvailabilityRule): Shift {
-  return { startsAt: rule.startsAt ?? '09:00', endsAt: rule.endsAt ?? '17:00' };
+  return { startsAt: rule.startsAt ?? '09:00', endsAt: rule.endsAt ?? '17:00', serviceId: rule.serviceId };
 }
 
 function sortShifts(shifts: Shift[]): Shift[] {
@@ -494,10 +525,10 @@ function sortShifts(shifts: Shift[]): Shift[] {
 /** A new row starts where the last one ended, which is what "add another shift" usually means. */
 function nextShift(shifts: Shift[]): Shift {
   const last = shifts[shifts.length - 1];
-  if (!last) return { startsAt: '09:00', endsAt: '17:00' };
+  if (!last) return { startsAt: '09:00', endsAt: '17:00', serviceId: null };
 
   const start = Math.min(minutesOf(last.endsAt) + 60, 22 * 60);
-  return { startsAt: toHHmm(start), endsAt: toHHmm(Math.min(start + 240, 23 * 60 + 59)) };
+  return { startsAt: toHHmm(start), endsAt: toHHmm(Math.min(start + 240, 23 * 60 + 59)), serviceId: null };
 }
 
 function isOutsideBusinessHours(shift: Shift, dayHours: BusinessHourRow[]): boolean {

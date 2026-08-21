@@ -414,6 +414,12 @@ export type AvailabilityRule = {
   /** Set for `EXCEPTION`, `VACATION` and `BLOCK`. */
   effectiveFrom: string | null;
   effectiveTo: string | null;
+  /**
+   * §12.68 — optional, set only for `WEEKLY_WINDOW`/`EXCEPTION`. Null means the window offers
+   * every one of the employee's services, exactly as before this field existed; set, it offers
+   * only that one service.
+   */
+  serviceId: string | null;
 };
 
 export type BusinessHourRow = {

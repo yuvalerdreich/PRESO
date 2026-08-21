@@ -13,14 +13,35 @@ vi.mock('@/server/actions/availability', () => ({
 
 import { EmployeeWeeklyHoursEditor } from '@/components/business/employee-weekly-hours-editor';
 import { LanguageProvider } from '@/lib/i18n/language-provider';
-import type { AvailabilityRule } from '@/types/domain';
+import type { AvailabilityRule, DashboardService } from '@/types/domain';
 
 const EMPLOYEE_ID = 'employee-zohar';
 
-function renderEditor(rules: AvailabilityRule[] = [], isEditable = true) {
+const strengthTraining: DashboardService = {
+  id: 'service-strength',
+  employeeId: EMPLOYEE_ID,
+  employeeName: 'Zohar Levi',
+  name: 'Strength training',
+  description: '',
+  price: 150,
+  durationMinutes: 60,
+  bufferMinutes: 0,
+  status: 'ACTIVE',
+};
+
+function renderEditor(
+  rules: AvailabilityRule[] = [],
+  isEditable = true,
+  services: DashboardService[] = [],
+) {
   return render(
     <LanguageProvider initialLocale="en">
-      <EmployeeWeeklyHoursEditor employeeId={EMPLOYEE_ID} isEditable={isEditable} rules={rules} />
+      <EmployeeWeeklyHoursEditor
+        employeeId={EMPLOYEE_ID}
+        isEditable={isEditable}
+        rules={rules}
+        services={services}
+      />
     </LanguageProvider>,
   );
 }
@@ -35,6 +56,7 @@ function weeklyRule(overrides: Partial<AvailabilityRule>): AvailabilityRule {
     endsAt: '17:00',
     effectiveFrom: null,
     effectiveTo: null,
+    serviceId: null,
     ...overrides,
   };
 }
@@ -84,7 +106,7 @@ describe('employee weekly hours editor', () => {
     await waitFor(() =>
       expect(save).toHaveBeenCalledWith({
         employeeId: EMPLOYEE_ID,
-        rows: [0, 1, 2, 3, 4].map((dayOfWeek) => ({ dayOfWeek, startsAt: '09:00', endsAt: '17:00' })),
+        rows: [0, 1, 2, 3, 4].map((dayOfWeek) => ({ dayOfWeek, startsAt: '09:00', endsAt: '17:00', serviceId: null })),
       }),
     );
     await waitFor(() => expect(refresh).toHaveBeenCalled());
@@ -143,5 +165,61 @@ describe('employee weekly hours editor', () => {
     expect(screen.queryByRole('button', { name: /Quick fill/ })).not.toBeInTheDocument();
     expect(screen.getByDisplayValue('09:00')).toBeDisabled();
     expect(screen.getAllByRole('button', { name: 'Open' })[0]).toBeDisabled();
+  });
+
+  // §12.68 — a window can optionally be restricted to one specific service.
+  describe('per-window service restriction', () => {
+    it('offers no service control at all when the employee has no services', () => {
+      renderEditor([weeklyRule({})], true, []);
+
+      expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    });
+
+    it('defaults an untagged window to "All treatments"', () => {
+      renderEditor([weeklyRule({})], true, [strengthTraining]);
+
+      expect(screen.getByRole('combobox')).toHaveValue('');
+      expect(screen.getByRole('option', { name: 'All treatments' })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: 'Strength training' })).toBeInTheDocument();
+    });
+
+    it('reads a window already tagged to a service back as selected', () => {
+      renderEditor([weeklyRule({ serviceId: strengthTraining.id })], true, [strengthTraining]);
+
+      expect(screen.getByRole('combobox')).toHaveValue(strengthTraining.id);
+    });
+
+    it('saves the chosen service id, and null again after switching back to "All treatments"', async () => {
+      save.mockResolvedValue({ ok: true, data: { employeeId: EMPLOYEE_ID, rows: 1 } });
+      renderEditor([weeklyRule({})], true, [strengthTraining]);
+
+      fireEvent.change(screen.getByRole('combobox'), { target: { value: strengthTraining.id } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save recurring times' }));
+
+      await waitFor(() =>
+        expect(save).toHaveBeenCalledWith(
+          expect.objectContaining({
+            rows: [expect.objectContaining({ dayOfWeek: 0, serviceId: strengthTraining.id })],
+          }),
+        ),
+      );
+
+      fireEvent.change(screen.getByRole('combobox'), { target: { value: '' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save recurring times' }));
+
+      await waitFor(() =>
+        expect(save).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            rows: [expect.objectContaining({ dayOfWeek: 0, serviceId: null })],
+          }),
+        ),
+      );
+    });
+
+    it('disables the service control when read-only', () => {
+      renderEditor([weeklyRule({})], false, [strengthTraining]);
+
+      expect(screen.getByRole('combobox')).toBeDisabled();
+    });
   });
 });
