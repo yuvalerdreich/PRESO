@@ -4,26 +4,23 @@ import { AccountSidebar } from '@/components/common/account-sidebar';
 import { ProfileSettingsProvider } from '@/components/common/profile-settings-provider';
 import { PublicHeader } from '@/components/common/public-header';
 import { AppError } from '@/lib/errors';
-import { requireSession } from '@/server/guards';
+import { requireAdmin } from '@/server/guards';
 import { listClientAppointments } from '@/server/queries/appointments';
 
 /**
- * Shared business area chrome and authorization boundary. Every route in this
- * group requires an active BUSINESS account before it can render.
+ * Shared admin-console chrome and authorization boundary. Every route in this group requires an
+ * ADMIN account before it can render — `requireAdmin()` throws `UNAUTHENTICATED` with no session
+ * and `FORBIDDEN` for any other account type, mirroring `(business)/layout.tsx`'s two-tier redirect.
  */
-export default async function BusinessLayout({ children }: LayoutProps<'/'>) {
+export default async function AdminLayout({ children }: LayoutProps<'/'>) {
   let profile;
 
   try {
-    profile = await requireSession();
+    profile = await requireAdmin();
   } catch (error) {
-    if (error instanceof AppError) redirect('/login');
+    if (error instanceof AppError) redirect(error.code === 'UNAUTHENTICATED' ? '/login' : '/');
     throw error;
   }
-
-  // An ADMIN account carries every business-portal permission in addition to the admin console
-  // (§5) — this group is not BUSINESS-exclusive.
-  if (profile.account_type !== 'BUSINESS' && profile.account_type !== 'ADMIN') redirect('/');
 
   const appointments = await listClientAppointments();
 

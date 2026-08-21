@@ -19,7 +19,7 @@ export async function listUsers(options: { q?: string } = {}): Promise<AdminUser
   await requireAdmin();
   const supabase = await createClient();
 
-  let query = supabase.from('profiles').select('id, full_name, account_type, status, created_at');
+  let query = supabase.from('profiles').select('id, full_name, phone, account_type, status, created_at');
   if (options.q) query = query.ilike('full_name', `%${options.q}%`);
 
   const { data, error } = await query.order('created_at', { ascending: false });
@@ -28,6 +28,7 @@ export async function listUsers(options: { q?: string } = {}): Promise<AdminUser
   return (data ?? []).map((row) => ({
     id: row.id,
     fullName: row.full_name,
+    phone: row.phone,
     accountType: row.account_type,
     status: row.status,
     createdAt: row.created_at,

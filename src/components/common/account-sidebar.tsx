@@ -1,6 +1,6 @@
 'use client';
 
-import { Building2, CalendarDays, Home, type LucideIcon } from 'lucide-react';
+import { Building2, CalendarDays, Home, Users, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -33,6 +33,7 @@ export function AccountSidebar({
   // stays lit the whole time you are in there — a prefix, not an exact match. Leaving it dark made
   // the portal look like a place outside the site's own navigation.
   const businessesActive = pathname === '/businesses' || pathname.startsWith('/businesses/');
+  const manageUsersActive = pathname === '/admin' || pathname.startsWith('/admin/');
 
   // The aside is always a side column — it never stacks above the content at
   // narrow widths (devtools open, small viewport); it scrolls internally instead.
@@ -69,18 +70,26 @@ export function AccountSidebar({
           ) : null}
         </Link>
 
-        {accountType === 'BUSINESS' ? (
-          <>
-            <Link
-              href="/businesses"
-              aria-current={businessesActive ? 'page' : undefined}
-              className={itemClassName(businessesActive)}
-            >
-              <ItemIcon icon={Building2} isActive={businessesActive} />
-              <span>{copy.sidebar.myBusinesses}</span>
-            </Link>
+        {accountType === 'BUSINESS' || accountType === 'ADMIN' ? (
+          <Link
+            href="/businesses"
+            aria-current={businessesActive ? 'page' : undefined}
+            className={itemClassName(businessesActive)}
+          >
+            <ItemIcon icon={Building2} isActive={businessesActive} />
+            <span>{copy.sidebar.myBusinesses}</span>
+          </Link>
+        ) : null}
 
-          </>
+        {accountType === 'ADMIN' ? (
+          <Link
+            href="/admin/users"
+            aria-current={manageUsersActive ? 'page' : undefined}
+            className={itemClassName(manageUsersActive)}
+          >
+            <ItemIcon icon={Users} isActive={manageUsersActive} />
+            <span>{copy.sidebar.manageUsers}</span>
+          </Link>
         ) : null}
       </nav>
     </aside>

@@ -430,6 +430,7 @@ export type BusinessHourRow = {
 export type AdminUser = {
   id: string;
   fullName: string;
+  phone: string | null;
   accountType: AccountType;
   status: ProfileStatus;
   createdAt: string;
