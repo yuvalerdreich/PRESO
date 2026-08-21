@@ -42,7 +42,6 @@ export default async function DashboardHoursRoute({ searchParams }: PageProps<'/
 
   return (
     <DashboardHoursPage
-      businessId={business.id}
       employees={employees}
       selectedEmployee={selectedEmployee}
       rules={rules}

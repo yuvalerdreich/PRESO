@@ -9,6 +9,7 @@ import {
   availabilityRuleInput,
   dayScheduleInput,
   deleteAvailabilityRuleInput,
+  setWeeklyAvailabilityInput,
 } from '@/lib/validation/availability';
 import { action } from '@/server/action';
 import { getCurrentEmployment } from '@/server/queries/dashboard';
@@ -118,6 +119,57 @@ export const deleteAvailabilityRule = action(
     revalidatePath(`/b/${employment.businessId}`);
 
     return { id: input.id };
+  },
+);
+
+/**
+ * `/businesses/manage/hours` — the employee's own recurring weekly pattern, replace-all across the
+ * whole week in one save (§12.67). The same shape `setOperatingHours` uses for `business_hours`, one
+ * level down: this replaces every `WEEKLY_WINDOW` row for the acting employee, not the business.
+ *
+ * Replace-all, not a per-row edit, for the same reason `setOperatingHours` is: the delete and the
+ * insert are two statements and therefore not atomic, and the worst intermediate outcome is a
+ * moment with no recurring pattern at all — which yields no bookable slots for that gap, not
+ * corrupted data. Re-saving fixes it.
+ */
+export const setWeeklyAvailability = action(
+  'setWeeklyAvailability',
+  setWeeklyAvailabilityInput,
+  async (input) => {
+    const employment = await getCurrentEmployment();
+    if (!employment) throw new AppError('FORBIDDEN', 'You need an active staff position to set availability.');
+
+    if (input.employeeId !== employment.employeeId) {
+      throw new AppError('FORBIDDEN', 'You can only change your own working hours.');
+    }
+
+    const supabase = await createClient();
+
+    const { error: deleteError } = await supabase
+      .from('employee_availability_rules')
+      .delete()
+      .eq('employee_id', input.employeeId)
+      .eq('kind', 'WEEKLY_WINDOW');
+    if (deleteError) throw deleteError;
+
+    if (input.rows.length > 0) {
+      const { error: insertError } = await supabase.from('employee_availability_rules').insert(
+        input.rows.map((row) => ({
+          employee_id: input.employeeId,
+          kind: 'WEEKLY_WINDOW' as const,
+          day_of_week: row.dayOfWeek,
+          starts_at: row.startsAt,
+          ends_at: row.endsAt,
+          effective_range: null,
+        })),
+      );
+      if (insertError) throw insertError;
+    }
+
+    revalidatePath('/businesses/manage/hours');
+    revalidatePath(`/b/${employment.businessId}`);
+
+    return { employeeId: input.employeeId, rows: input.rows.length };
   },
 );
 

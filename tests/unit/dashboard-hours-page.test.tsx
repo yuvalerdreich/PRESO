@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const push = vi.hoisted(() => vi.fn());
@@ -10,6 +10,9 @@ vi.mock('next/navigation', () => ({
 }));
 vi.mock('@/server/actions/availability', () => ({
   setDaySchedule: save,
+  // The weekly pattern editor renders on this page too (§12.67); its own save behaviour is covered
+  // by tests/unit/employee-weekly-hours-editor.test.tsx, so this only needs to exist, not do anything.
+  setWeeklyAvailability: vi.fn(),
 }));
 
 import { DashboardHoursPage } from '@/components/business/dashboard-hours-page';
@@ -66,7 +69,6 @@ function renderHours({
   return render(
     <LanguageProvider initialLocale="en">
       <DashboardHoursPage
-        businessId="business-zohar"
         employees={[me, colleague]}
         selectedEmployee={selected}
         rules={rules}
@@ -89,10 +91,21 @@ describe('business hours & shifts screen', () => {
     renderHours();
 
     // A date with no exception of its own falls back to the weekly window — the same fallback
-    // `get_available_slots()` makes, so the form shows what would actually happen.
-    expect(screen.getByDisplayValue('09:00')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('17:00')).toBeInTheDocument();
-    expect(screen.getByText('Total: 8 hours')).toBeInTheDocument();
+    // `get_available_slots()` makes, so the form shows what would actually happen. Scoped to the
+    // date region: the weekly pattern editor renders on the same page (§12.67) and, with this
+    // fixture, shows the identical 09:00–17:00 times for every day, which would otherwise make an
+    // unscoped query ambiguous.
+    const dateRegion = within(screen.getByRole('region', { name: 'Set hours for a single date' }));
+    expect(dateRegion.getByDisplayValue('09:00')).toBeInTheDocument();
+    expect(dateRegion.getByDisplayValue('17:00')).toBeInTheDocument();
+    expect(dateRegion.getByText('Total: 8 hours')).toBeInTheDocument();
+  });
+
+  it('also renders the recurring weekly pattern editor, above the date editor', () => {
+    renderHours();
+
+    expect(screen.getByRole('region', { name: 'Set recurring times (weekly)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save recurring times' })).toBeInTheDocument();
   });
 
   it('reads a day with no windows as a day off — which is what the engine makes of it', () => {
@@ -169,26 +182,15 @@ describe('business hours & shifts screen', () => {
     await waitFor(() => expect(refresh).toHaveBeenCalled());
   });
 
-  it('switches to the recurring pattern, which saves a weekday rather than a date', async () => {
-    save.mockResolvedValueOnce({ ok: true, data: { written: 1, replaced: 1 } });
-    renderHours();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Set recurring times (weekly)' }));
-    fireEvent.click(screen.getByRole('button', { name: /Save recurring times for every/ }));
-
-    await waitFor(() => expect(save).toHaveBeenCalledWith(expect.objectContaining({ scope: 'WEEKLY' })));
-    expect(save.mock.calls[0][0]).not.toHaveProperty('dateISO');
-    expect(save.mock.calls[0][0]).toHaveProperty('dayOfWeek');
-  });
-
   it('warns that a day off frees nothing on its own', () => {
     renderHours();
+    const date = within(screen.getByRole('region', { name: 'Set hours for a single date' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Day off' }));
+    fireEvent.click(date.getByRole('button', { name: 'Day off' }));
 
     // §6.9 — the dangerous reading is "marking a day off cancels my bookings". It does not.
-    expect(screen.getByText(/Appointments already booked are not cancelled automatically/)).toBeInTheDocument();
-    expect(screen.queryByDisplayValue('09:00')).not.toBeInTheDocument();
+    expect(date.getByText(/Appointments already booked are not cancelled automatically/)).toBeInTheDocument();
+    expect(date.queryByDisplayValue('09:00')).not.toBeInTheDocument();
   });
 
   it('reads a day off back off a BLOCK rule rather than showing empty hours', () => {
@@ -219,7 +221,9 @@ describe('business hours & shifts screen', () => {
       screen.getByText('Miya Bar’s schedule is read-only here — everyone sets their own working hours.'),
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Save changes for this date' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Add a shift/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^\+ Add a/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Save recurring times' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Quick fill/ })).not.toBeInTheDocument();
   });
 
   it('keeps the selected employee in the URL, since it decides which rules are fetched', () => {

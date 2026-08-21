@@ -84,6 +84,42 @@ const shift = z
     path: ['endsAt'],
   });
 
+/**
+ * `setWeeklyAvailability` (§12.67) — a replace-all payload for one employee's `WEEKLY_WINDOW` rows,
+ * the same shape `setOperatingHoursInput` uses for `business_hours`. Overlap is server-only for the
+ * same reason: no single-row `CHECK` can express a cross-row constraint, and split shifts are legal
+ * and intended (an employee working 09:00–13:00 and 16:00–20:00 on the same weekday).
+ */
+export const weeklyRuleRow = z
+  .object({ dayOfWeek, startsAt: timeHHmm, endsAt: timeHHmm })
+  .refine((row) => row.endsAt > row.startsAt, {
+    message: 'Closing time must be after opening time',
+    path: ['endsAt'],
+  });
+export type WeeklyRuleRow = z.infer<typeof weeklyRuleRow>;
+
+export const setWeeklyAvailabilityInput = z
+  .object({
+    employeeId: uuid,
+    rows: z.array(weeklyRuleRow).max(21, 'That is more windows than a week can hold'),
+  })
+  .refine(
+    ({ rows }) => {
+      for (const day of new Set(rows.map((row) => row.dayOfWeek))) {
+        const windows = rows
+          .filter((row) => row.dayOfWeek === day)
+          .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+
+        for (let i = 1; i < windows.length; i += 1) {
+          if (windows[i].startsAt < windows[i - 1].endsAt) return false;
+        }
+      }
+      return true;
+    },
+    { message: 'Two windows on the same day overlap', path: ['rows'] },
+  );
+export type SetWeeklyAvailabilityInput = z.infer<typeof setWeeklyAvailabilityInput>;
+
 export const dayScheduleInput = z
   .object({
     employeeId: uuid,
