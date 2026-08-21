@@ -192,6 +192,63 @@ describe('business services screen', () => {
     expect(refresh).not.toHaveBeenCalled();
   });
 
+  /**
+   * §12.60 — deleting used to go through `window.confirm()`: the browser's dialog, announcing
+   * "localhost:3000 says", LTR on an RTL screen, with an OS-labelled button doing the deleting.
+   * These two pin what replaced it — that the destructive action is genuinely gated on the app's
+   * own dialog, and that backing out of it does not take the form with it.
+   */
+  it('asks in the app’s own dialog before deleting, and does nothing until confirmed', async () => {
+    remove.mockResolvedValueOnce({ ok: true, data: { softDeleted: false } });
+    renderServices();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit service and price' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete service' }));
+
+    // The app's dialog, not the browser's: it is in the document and it names the service. Scoped
+    // with `within`, because the form underneath has a "Cancel" of its own — which is the point of
+    // `aria-modal` on the top dialog, and the reason the confirmation cannot be queried globally.
+    const confirmation = screen.getByRole('dialog', { name: 'Delete “Haircut”?' });
+    expect(
+      within(confirmation).getByText(/marked inactive instead of deleted, so history survives/),
+    ).toBeInTheDocument();
+    expect(remove).not.toHaveBeenCalled();
+
+    // Backing out deletes nothing and leaves the form standing.
+    fireEvent.click(within(confirmation).getByRole('button', { name: 'Cancel' }));
+    expect(remove).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog', { name: 'Edit service' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete service' }));
+    fireEvent.click(
+      within(screen.getByRole('dialog', { name: 'Delete “Haircut”?' })).getByRole('button', {
+        name: 'Yes, delete',
+      }),
+    );
+
+    await waitFor(() => expect(remove).toHaveBeenCalledWith({ id: 'service-haircut' }));
+    await waitFor(() => expect(refresh).toHaveBeenCalled());
+  });
+
+  it('lets Escape back out of the confirmation without discarding the form behind it', () => {
+    renderServices();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit service and price' }));
+    fireEvent.change(screen.getByLabelText('Service name'), { target: { value: 'Fade' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Delete service' }));
+
+    expect(screen.getAllByRole('dialog')).toHaveLength(2);
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    // Only the top modal backs out; the edit form — and what was typed into it — survives.
+    const remaining = screen.getAllByRole('dialog');
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0]).toHaveAccessibleName('Edit service');
+    expect(screen.getByLabelText('Service name')).toHaveValue('Fade');
+    expect(remove).not.toHaveBeenCalled();
+  });
+
   it('says an empty catalogue makes the business unbookable', () => {
     renderServices({ rows: [] });
 

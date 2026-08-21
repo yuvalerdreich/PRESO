@@ -5,6 +5,7 @@ import { Scissors } from 'lucide-react';
 
 import { ErrorNotice } from '@/components/common/error-dialog';
 import { actionButton } from '@/components/common/button-styles';
+import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { fieldPadding, surfaceFieldSubtle } from '@/components/common/field-styles';
 import { Modal } from '@/components/common/modal';
 import { useLanguage } from '@/lib/i18n/language-provider';
@@ -41,6 +42,8 @@ export function ServiceFormModal({
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState<string | null>(null);
+  // §12.60 — the delete confirmation is the app's dialog, not the browser's `confirm()`.
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   const title = service ? copy.dashboard.services.formEditTitle : copy.dashboard.services.formAddTitle;
 
@@ -78,7 +81,6 @@ export function ServiceFormModal({
 
   async function remove() {
     if (!service || isSubmitting) return;
-    if (!window.confirm(copy.dashboard.services.deleteConfirm.replace('{name}', service.name))) return;
 
     setIsSubmitting(true);
     setFormError(null);
@@ -97,6 +99,7 @@ export function ServiceFormModal({
       onSaved();
     } finally {
       setIsSubmitting(false);
+      setIsConfirmingDelete(false);
     }
   }
 
@@ -210,7 +213,7 @@ export function ServiceFormModal({
           {service ? (
             <button
               type="button"
-              onClick={remove}
+              onClick={() => setIsConfirmingDelete(true)}
               disabled={isSubmitting}
               className="w-full cursor-pointer text-sm font-bold text-rose-600 transition-colors hover:text-rose-700 disabled:opacity-60"
             >
@@ -219,6 +222,20 @@ export function ServiceFormModal({
           ) : null}
         </div>
       </form>
+
+      {isConfirmingDelete && service ? (
+        <ConfirmDialog
+          title={copy.dashboard.services.deleteConfirmTitle.replace('{name}', service.name)}
+          description={copy.dashboard.services.deleteConfirm}
+          confirmLabel={copy.dashboard.services.deleteConfirmAction}
+          pendingLabel={copy.dashboard.services.deleting}
+          cancelLabel={copy.dashboard.services.cancel}
+          closeLabel={copy.dashboard.services.close}
+          pending={isSubmitting}
+          onConfirm={remove}
+          onCancel={() => setIsConfirmingDelete(false)}
+        />
+      ) : null}
     </Modal>
   );
 }

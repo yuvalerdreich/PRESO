@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useSyncExternalStore, type ReactNode } from 'react';
+import { useEffect, useRef, useSyncExternalStore, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
@@ -22,6 +22,23 @@ import { X } from 'lucide-react';
  * whole document.
  */
 
+/**
+ * Which modal Escape belongs to (§12.60).
+ *
+ * Modal-in-modal is a real pattern here — a confirmation over the form it is confirming, profile
+ * settings over the header — and every open `Modal` used to listen for Escape independently, so one
+ * keypress closed the whole stack: dismissing "delete this service?" also threw away the form
+ * behind it, with the edits in it. Escape means "back out of the thing on top", never "close
+ * everything", so only the last modal to mount acts on it.
+ *
+ * Module-level because it is genuinely global — it is the document's key event being arbitrated,
+ * and a Context would have to be threaded through call sites that have no other reason to know a
+ * modal is open. Registration is keyed on a per-instance token held in a ref rather than on the
+ * `onClose` identity, which is usually an inline arrow: re-registering on every parent render would
+ * shuffle a modal to the top of the stack without it having opened.
+ */
+const modalStack: symbol[] = [];
+
 export function Modal({
   onClose,
   closeLabel,
@@ -39,9 +56,26 @@ export function Modal({
   // (`react-hooks/set-state-in-effect`) rejects — and rightly: that pattern renders twice.
   const isClient = useSyncExternalStore(subscribeToNothing, () => true, () => false);
 
+  const tokenRef = useRef<symbol | null>(null);
+  tokenRef.current ??= Symbol('modal');
+
+  // Mount/unmount only — the stack is about opening order, not about render count.
+  useEffect(() => {
+    const token = tokenRef.current!;
+    modalStack.push(token);
+
+    return () => {
+      const index = modalStack.indexOf(token);
+      if (index !== -1) modalStack.splice(index, 1);
+    };
+  }, []);
+
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') onClose();
+      if (event.key !== 'Escape') return;
+      // Only the topmost modal backs out; see the note on `modalStack`.
+      if (modalStack[modalStack.length - 1] !== tokenRef.current) return;
+      onClose();
     }
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
