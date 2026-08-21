@@ -9,6 +9,7 @@ import {
   availabilityRuleInput,
   dayScheduleInput,
   deleteAvailabilityRuleInput,
+  setWeeklyAvailabilityInput,
 } from '@/lib/validation/availability';
 import { action } from '@/server/action';
 import { getCurrentEmployment } from '@/server/queries/dashboard';
@@ -44,6 +45,7 @@ function toRuleColumns(
         starts_at: input.startsAt,
         ends_at: input.endsAt,
         effective_range: null,
+        service_id: input.serviceId ?? null,
       };
     case 'EXCEPTION':
       return {
@@ -52,6 +54,7 @@ function toRuleColumns(
         starts_at: input.startsAt,
         ends_at: input.endsAt,
         effective_range: toTstzRange(new Date(input.effectiveFrom), new Date(input.effectiveTo)),
+        service_id: input.serviceId ?? null,
       };
     case 'VACATION':
     case 'BLOCK':
@@ -62,6 +65,27 @@ function toRuleColumns(
         ends_at: null,
         effective_range: toTstzRange(new Date(input.effectiveFrom), new Date(input.effectiveTo)),
       };
+  }
+}
+
+/**
+ * §12.68 — a shift or window's optional `serviceId` must name one of the *acting employee's own*
+ * services, never a colleague's or another business's. RLS re-checks the row itself, but a bad id
+ * here would otherwise surface as a silent foreign-key failure with no field attached — this puts
+ * the message where the form can show it.
+ */
+async function assertOwnServices(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  employeeId: string,
+  serviceIds: (string | null | undefined)[],
+): Promise<void> {
+  const ids = [...new Set(serviceIds.filter((id): id is string => Boolean(id)))];
+  if (ids.length === 0) return;
+
+  const { data, error } = await supabase.from('services').select('id').eq('employee_id', employeeId).in('id', ids);
+  if (error) throw error;
+  if ((data ?? []).length !== ids.length) {
+    throw new AppError('VALIDATION', 'Choose one of your own services, or leave it unrestricted to every service.');
   }
 }
 
@@ -77,6 +101,9 @@ export const upsertAvailabilityRule = action(
     }
 
     const supabase = await createClient();
+    if (input.kind === 'WEEKLY_WINDOW' || input.kind === 'EXCEPTION') {
+      await assertOwnServices(supabase, employment.employeeId, [input.serviceId]);
+    }
     const row = toRuleColumns(input);
 
     const { data, error } = input.id
@@ -122,6 +149,59 @@ export const deleteAvailabilityRule = action(
 );
 
 /**
+ * `/businesses/manage/hours` — the employee's own recurring weekly pattern, replace-all across the
+ * whole week in one save (§12.67). The same shape `setOperatingHours` uses for `business_hours`, one
+ * level down: this replaces every `WEEKLY_WINDOW` row for the acting employee, not the business.
+ *
+ * Replace-all, not a per-row edit, for the same reason `setOperatingHours` is: the delete and the
+ * insert are two statements and therefore not atomic, and the worst intermediate outcome is a
+ * moment with no recurring pattern at all — which yields no bookable slots for that gap, not
+ * corrupted data. Re-saving fixes it.
+ */
+export const setWeeklyAvailability = action(
+  'setWeeklyAvailability',
+  setWeeklyAvailabilityInput,
+  async (input) => {
+    const employment = await getCurrentEmployment();
+    if (!employment) throw new AppError('FORBIDDEN', 'You need an active staff position to set availability.');
+
+    if (input.employeeId !== employment.employeeId) {
+      throw new AppError('FORBIDDEN', 'You can only change your own working hours.');
+    }
+
+    const supabase = await createClient();
+    await assertOwnServices(supabase, input.employeeId, input.rows.map((row) => row.serviceId));
+
+    const { error: deleteError } = await supabase
+      .from('employee_availability_rules')
+      .delete()
+      .eq('employee_id', input.employeeId)
+      .eq('kind', 'WEEKLY_WINDOW');
+    if (deleteError) throw deleteError;
+
+    if (input.rows.length > 0) {
+      const { error: insertError } = await supabase.from('employee_availability_rules').insert(
+        input.rows.map((row) => ({
+          employee_id: input.employeeId,
+          kind: 'WEEKLY_WINDOW' as const,
+          day_of_week: row.dayOfWeek,
+          starts_at: row.startsAt,
+          ends_at: row.endsAt,
+          effective_range: null,
+          service_id: row.serviceId ?? null,
+        })),
+      );
+      if (insertError) throw insertError;
+    }
+
+    revalidatePath('/businesses/manage/hours');
+    revalidatePath(`/b/${employment.businessId}`);
+
+    return { employeeId: input.employeeId, rows: input.rows.length };
+  },
+);
+
+/**
  * `/businesses/manage/hours` — save one day's shifts as a finished state (§12.50).
  *
  * The screen edits a day, not a row, so this takes the day's shifts and works out the writes. Two
@@ -151,6 +231,7 @@ export const setDaySchedule = action('setDaySchedule', dayScheduleInput, async (
   }
 
   const supabase = await createClient();
+  await assertOwnServices(supabase, employment.employeeId, input.shifts.map((shift) => shift.serviceId));
 
   const { data: business, error: businessError } = await supabase
     .from('businesses')
@@ -203,6 +284,7 @@ export const setDaySchedule = action('setDaySchedule', dayScheduleInput, async (
         starts_at: shift.startsAt,
         ends_at: shift.endsAt,
         effective_range: input.scope === 'DATE' ? dayRange : null,
+        service_id: shift.serviceId ?? null,
       }));
 
   if (rows.length > 0) {

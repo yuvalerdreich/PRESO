@@ -362,6 +362,7 @@ export type Database = {
           ends_at: string | null
           id: string
           kind: Database["public"]["Enums"]["availability_rule_kind"]
+          service_id: string | null
           starts_at: string | null
         }
         Insert: {
@@ -372,6 +373,7 @@ export type Database = {
           ends_at?: string | null
           id?: string
           kind: Database["public"]["Enums"]["availability_rule_kind"]
+          service_id?: string | null
           starts_at?: string | null
         }
         Update: {
@@ -382,6 +384,7 @@ export type Database = {
           ends_at?: string | null
           id?: string
           kind?: Database["public"]["Enums"]["availability_rule_kind"]
+          service_id?: string | null
           starts_at?: string | null
         }
         Relationships: [
@@ -404,6 +407,13 @@ export type Database = {
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_availability_rules_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
             referencedColumns: ["id"]
           },
         ]

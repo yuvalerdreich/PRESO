@@ -7,6 +7,7 @@ import {
   listAvailabilityRules,
   listBusinessHours,
   listDashboardEmployees,
+  listDashboardServices,
 } from '@/server/queries/dashboard';
 
 /**
@@ -25,10 +26,11 @@ export default async function DashboardHoursRoute({ searchParams }: PageProps<'/
   const business = await getCurrentBusinessDashboard();
   if (!business) redirect('/businesses');
 
-  const [employees, employment, businessHours] = await Promise.all([
+  const [employees, employment, businessHours, services] = await Promise.all([
     listDashboardEmployees(business.id),
     getCurrentEmployment(),
     listBusinessHours(business.id),
+    listDashboardServices(business.id),
   ]);
 
   const requestedId = typeof search.employee === 'string' ? search.employee : undefined;
@@ -39,14 +41,20 @@ export default async function DashboardHoursRoute({ searchParams }: PageProps<'/
     null;
 
   const rules = selectedEmployee ? await listAvailabilityRules(selectedEmployee.id) : [];
+  // A shift can only be restricted to one of *this* employee's own ACTIVE services (§12.68) — an
+  // inactive one couldn't be booked anyway, and offering it would suggest a restriction that does
+  // nothing.
+  const employeeServices = selectedEmployee
+    ? services.filter((service) => service.employeeId === selectedEmployee.id && service.status === 'ACTIVE')
+    : [];
 
   return (
     <DashboardHoursPage
-      businessId={business.id}
       employees={employees}
       selectedEmployee={selectedEmployee}
       rules={rules}
       businessHours={businessHours}
+      services={employeeServices}
       timezone={business.timezone}
       currentEmployeeId={employment?.employeeId ?? null}
     />

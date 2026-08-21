@@ -1,7 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import Link from 'next/link';
+import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { BriefcaseBusiness, Building2, Clock, MapPin, Plus, UserPlus, Users } from 'lucide-react';
 
@@ -28,6 +27,7 @@ import {
 import { EmptyState } from '@/components/common/empty-state';
 import { PanelHero } from '@/components/common/panel-hero';
 import { useLanguage } from '@/lib/i18n/language-provider';
+import { selectBusinessForManagement } from '@/server/actions/business';
 import type { BusinessCategory, JoinableBusiness, MyBusiness, MyBusinessRelation } from '@/types/domain';
 
 type BusinessFilter = 'all' | 'owned' | 'staff' | 'pending';
@@ -182,6 +182,20 @@ export function MyBusinessesPage({
 
 function BusinessCard({ business }: { business: MyBusiness }) {
   const { copy } = useLanguage();
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
+  // `/businesses/manage/**` has no `businessId` in its URL and its layout cannot read one from a
+  // search param either (Next.js layouts don't receive them), so this is how "which business" is
+  // decided when more than one card can open it (§12.64). `selectBusinessForManagement` sets the
+  // cookie `getCurrentEmployment()` reads; only after that resolves does navigation continue, so
+  // the dashboard never renders mid-switch with the previous business still selected.
+  function openManage() {
+    startTransition(async () => {
+      const result = await selectBusinessForManagement({ businessId: business.businessId });
+      if (result.ok) router.push('/businesses/manage');
+    });
+  }
 
   const relationLabel = {
     OWNER: copy.myBusinesses.relationOwner,
@@ -244,16 +258,18 @@ function BusinessCard({ business }: { business: MyBusiness }) {
 
       <div className="mt-auto flex flex-wrap gap-2 pt-1">
         {canManage ? (
-          <Link
-            href="/businesses/manage"
+          <button
+            type="button"
+            onClick={openManage}
+            disabled={isPending}
             // Same reasoning as the discovery card: several cards carry this identical label, so the
-            // accessible name has to name the business. The link is stretched over the card, which
-            // is what gives the pointer cursor something real underneath it.
+            // accessible name has to name the business. The stretched `::after` is what gives the
+            // pointer cursor something real underneath it over the whole card.
             aria-label={`${copy.myBusinesses.manage} — ${business.name}`}
             className={`${actionButton} ${cardAction} ${cardStretchedLink}`}
           >
             {copy.myBusinesses.manage}
-          </Link>
+          </button>
         ) : null}
       </div>
     </article>

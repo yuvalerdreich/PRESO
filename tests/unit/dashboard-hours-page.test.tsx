@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const push = vi.hoisted(() => vi.fn());
@@ -10,11 +10,14 @@ vi.mock('next/navigation', () => ({
 }));
 vi.mock('@/server/actions/availability', () => ({
   setDaySchedule: save,
+  // The weekly pattern editor renders on this page too (§12.67); its own save behaviour is covered
+  // by tests/unit/employee-weekly-hours-editor.test.tsx, so this only needs to exist, not do anything.
+  setWeeklyAvailability: vi.fn(),
 }));
 
 import { DashboardHoursPage } from '@/components/business/dashboard-hours-page';
 import { LanguageProvider } from '@/lib/i18n/language-provider';
-import type { AvailabilityRule, BusinessHourRow, DashboardEmployee } from '@/types/domain';
+import type { AvailabilityRule, BusinessHourRow, DashboardEmployee, DashboardService } from '@/types/domain';
 
 const TIMEZONE = 'Asia/Jerusalem';
 
@@ -56,21 +59,23 @@ const weeklyRules: AvailabilityRule[] = [0, 1, 2, 3, 4, 5, 6].map((dayOfWeek) =>
   endsAt: '17:00',
   effectiveFrom: null,
   effectiveTo: null,
+  serviceId: null,
 }));
 
 function renderHours({
   rules = weeklyRules,
   selected = me,
   currentEmployeeId = me.id as string | null,
+  services = [] as DashboardService[],
 } = {}) {
   return render(
     <LanguageProvider initialLocale="en">
       <DashboardHoursPage
-        businessId="business-zohar"
         employees={[me, colleague]}
         selectedEmployee={selected}
         rules={rules}
         businessHours={businessHours}
+        services={services}
         timezone={TIMEZONE}
         currentEmployeeId={currentEmployeeId}
       />
@@ -89,10 +94,45 @@ describe('business hours & shifts screen', () => {
     renderHours();
 
     // A date with no exception of its own falls back to the weekly window — the same fallback
-    // `get_available_slots()` makes, so the form shows what would actually happen.
-    expect(screen.getByDisplayValue('09:00')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('17:00')).toBeInTheDocument();
-    expect(screen.getByText('Total: 8 hours')).toBeInTheDocument();
+    // `get_available_slots()` makes, so the form shows what would actually happen. Scoped to the
+    // date region: the weekly pattern editor renders on the same page (§12.67) and, with this
+    // fixture, shows the identical 09:00–17:00 times for every day, which would otherwise make an
+    // unscoped query ambiguous.
+    const dateRegion = within(screen.getByRole('region', { name: 'Set hours for a single date' }));
+    expect(dateRegion.getByDisplayValue('09:00')).toBeInTheDocument();
+    expect(dateRegion.getByDisplayValue('17:00')).toBeInTheDocument();
+    expect(dateRegion.getByText('Total: 8 hours')).toBeInTheDocument();
+  });
+
+  it('also renders the recurring weekly pattern editor, above the date editor', () => {
+    renderHours();
+
+    expect(screen.getByRole('region', { name: 'Set recurring times (weekly)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save recurring times' })).toBeInTheDocument();
+  });
+
+  // §12.68 — both editors take the same `services` prop and offer the same optional restriction;
+  // this only checks the plumbing reaches both, since each editor's own selector behaviour is
+  // covered by its own test file.
+  it('offers the employee’s own services as an optional restriction in both editors', () => {
+    const strengthTraining: DashboardService = {
+      id: 'service-strength',
+      employeeId: me.id,
+      employeeName: me.fullName,
+      name: 'Strength training',
+      description: '',
+      price: 150,
+      durationMinutes: 60,
+      bufferMinutes: 0,
+      status: 'ACTIVE',
+    };
+
+    renderHours({ services: [strengthTraining] });
+
+    const weekly = within(screen.getByRole('region', { name: 'Set recurring times (weekly)' }));
+    const date = within(screen.getByRole('region', { name: 'Set hours for a single date' }));
+    expect(weekly.getAllByRole('option', { name: 'Strength training' }).length).toBeGreaterThan(0);
+    expect(date.getAllByRole('option', { name: 'Strength training' }).length).toBeGreaterThan(0);
   });
 
   it('reads a day with no windows as a day off — which is what the engine makes of it', () => {
@@ -162,33 +202,22 @@ describe('business hours & shifts screen', () => {
           employeeId: me.id,
           scope: 'DATE',
           isDayOff: false,
-          shifts: [{ startsAt: '08:30', endsAt: '14:00' }],
+          shifts: [{ startsAt: '08:30', endsAt: '14:00', serviceId: null }],
         }),
       ),
     );
     await waitFor(() => expect(refresh).toHaveBeenCalled());
   });
 
-  it('switches to the recurring pattern, which saves a weekday rather than a date', async () => {
-    save.mockResolvedValueOnce({ ok: true, data: { written: 1, replaced: 1 } });
-    renderHours();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Set recurring times (weekly)' }));
-    fireEvent.click(screen.getByRole('button', { name: /Save recurring times for every/ }));
-
-    await waitFor(() => expect(save).toHaveBeenCalledWith(expect.objectContaining({ scope: 'WEEKLY' })));
-    expect(save.mock.calls[0][0]).not.toHaveProperty('dateISO');
-    expect(save.mock.calls[0][0]).toHaveProperty('dayOfWeek');
-  });
-
   it('warns that a day off frees nothing on its own', () => {
     renderHours();
+    const date = within(screen.getByRole('region', { name: 'Set hours for a single date' }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Day off' }));
+    fireEvent.click(date.getByRole('button', { name: 'Day off' }));
 
     // §6.9 — the dangerous reading is "marking a day off cancels my bookings". It does not.
-    expect(screen.getByText(/Appointments already booked are not cancelled automatically/)).toBeInTheDocument();
-    expect(screen.queryByDisplayValue('09:00')).not.toBeInTheDocument();
+    expect(date.getByText(/Appointments already booked are not cancelled automatically/)).toBeInTheDocument();
+    expect(date.queryByDisplayValue('09:00')).not.toBeInTheDocument();
   });
 
   it('reads a day off back off a BLOCK rule rather than showing empty hours', () => {
@@ -204,6 +233,7 @@ describe('business hours & shifts screen', () => {
         endsAt: null,
         effectiveFrom: new Date(`${today}T00:00:00+03:00`).toISOString(),
         effectiveTo: new Date(`${today}T23:59:59+03:00`).toISOString(),
+        serviceId: null,
       },
     ];
 
@@ -219,7 +249,9 @@ describe('business hours & shifts screen', () => {
       screen.getByText('Miya Bar’s schedule is read-only here — everyone sets their own working hours.'),
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Save changes for this date' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Add a shift/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^\+ Add a/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Save recurring times' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Quick fill/ })).not.toBeInTheDocument();
   });
 
   it('keeps the selected employee in the URL, since it decides which rules are fetched', () => {
@@ -254,5 +286,57 @@ describe('business hours & shifts screen', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Shifts cannot overlap.');
     expect(refresh).not.toHaveBeenCalled();
+  });
+
+  // §12.68 — the date editor's own per-shift service restriction, the same optional control the
+  // weekly editor offers, scoped to this one date's shift instead.
+  describe('per-shift service restriction on the date editor', () => {
+    const strengthTraining: DashboardService = {
+      id: 'service-strength',
+      employeeId: me.id,
+      employeeName: me.fullName,
+      name: 'Strength training',
+      description: '',
+      price: 150,
+      durationMinutes: 60,
+      bufferMinutes: 0,
+      status: 'ACTIVE',
+    };
+
+    function dateSelect() {
+      return within(screen.getByRole('region', { name: 'Set hours for a single date' })).getByRole('combobox');
+    }
+
+    it('defaults to "All treatments" and saves null when left alone', async () => {
+      save.mockResolvedValueOnce({ ok: true, data: { written: 1, replaced: 0 } });
+      renderHours({ services: [strengthTraining] });
+
+      expect(dateSelect()).toHaveValue('');
+      fireEvent.click(screen.getByRole('button', { name: 'Save changes for this date' }));
+
+      await waitFor(() =>
+        expect(save).toHaveBeenCalledWith(
+          expect.objectContaining({
+            shifts: [expect.objectContaining({ serviceId: null })],
+          }),
+        ),
+      );
+    });
+
+    it('saves the chosen service id for that shift', async () => {
+      save.mockResolvedValueOnce({ ok: true, data: { written: 1, replaced: 0 } });
+      renderHours({ services: [strengthTraining] });
+
+      fireEvent.change(dateSelect(), { target: { value: strengthTraining.id } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save changes for this date' }));
+
+      await waitFor(() =>
+        expect(save).toHaveBeenCalledWith(
+          expect.objectContaining({
+            shifts: [expect.objectContaining({ serviceId: strengthTraining.id })],
+          }),
+        ),
+      );
+    });
   });
 });

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowLeft, ArrowRight, MapPin, Phone } from 'lucide-react';
 
 import { BookingConfirmDialog } from '@/components/booking/booking-confirm-dialog';
+import { actionButton } from '@/components/common/button-styles';
 import { AvailabilityCalendar } from '@/components/public/availability-calendar';
 import { EmployeeList } from '@/components/public/employee-list';
 import { EmployeeServiceList } from '@/components/public/employee-service-list';
@@ -38,12 +39,9 @@ export function BusinessProfile({
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
-      <Link
-        href="/"
-        className="flex w-fit items-center gap-2 self-end rounded-full border border-[var(--line)] bg-white px-4 py-2 text-sm font-medium text-[var(--foreground)] hover:border-[var(--brand)]/40"
-      >
-        {copy.businessProfile.backToList}
+      <Link href="/" className={`${actionButton} w-fit rounded-full px-4 py-2 text-sm`}>
         <BackArrow className="h-4 w-4" aria-hidden="true" />
+        {copy.businessProfile.backToList}
       </Link>
 
       <div className="relative aspect-[21/9] w-full overflow-hidden rounded-3xl bg-[var(--soft-violet)]">

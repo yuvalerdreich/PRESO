@@ -31,7 +31,7 @@ import { requireOwnerOf, requireSession } from '@/server/guards';
 export const sendJoinRequest = action('sendJoinRequest', sendJoinRequestInput, async (input) => {
   const profile = await requireSession();
 
-  if (profile.account_type !== 'BUSINESS') {
+  if (profile.account_type !== 'BUSINESS' && profile.account_type !== 'ADMIN') {
     throw new AppError('FORBIDDEN', 'Switch to a business account before joining a business.');
   }
 

@@ -10,7 +10,8 @@ import type { Database } from '@/types/database.types';
  * `middleware.ts` to `proxy.ts`; see TECHNICAL_DESIGN.md §12.32 for the deviation note.
  *
  * `/me/*` requires a session; `/businesses/manage/*`, `/businesses`, `/onboarding`, `/join` require
- * `account_type = 'BUSINESS'`; `/admin/*` requires `ADMIN`. Fine-grained membership (does
+ * `account_type = 'BUSINESS'` **or** `'ADMIN'` (an admin has every business-portal permission, plus
+ * the admin console — §5); `/admin/*` requires `ADMIN` specifically. Fine-grained membership (does
  * this specific caller have an ACTIVE `employees` row for *this* business) is the job of
  * `server/guards.ts` inside each route group's layout, re-checked again by RLS — this file
  * is a redirect convenience only, never the security boundary.
@@ -73,8 +74,8 @@ export async function proxy(request: NextRequest) {
       .eq('id', user!.id)
       .single();
 
-    const requiredType = pathname.startsWith('/admin') ? 'ADMIN' : 'BUSINESS';
-    if (profile?.account_type !== requiredType) {
+    const allowedTypes = pathname.startsWith('/admin') ? ['ADMIN'] : ['BUSINESS', 'ADMIN'];
+    if (!profile || !allowedTypes.includes(profile.account_type)) {
       return NextResponse.redirect(new URL('/', request.url));
     }
   }

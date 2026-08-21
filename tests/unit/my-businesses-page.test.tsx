@@ -1,13 +1,18 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+const pushMock = vi.fn();
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+  useRouter: () => ({ push: pushMock, refresh: vi.fn() }),
 }));
 
 // The dialogs import server actions, which cannot execute in jsdom. Only their call signatures
 // matter to this file — the actions themselves are covered by `tests/int/`.
-vi.mock('@/server/actions/business', () => ({ createBusiness: vi.fn() }));
+const selectBusinessForManagementMock = vi.fn().mockResolvedValue({ ok: true, data: { businessId: '' } });
+vi.mock('@/server/actions/business', () => ({
+  createBusiness: vi.fn(),
+  selectBusinessForManagement: (...args: unknown[]) => selectBusinessForManagementMock(...args),
+}));
 vi.mock('@/server/actions/employee', () => ({ sendJoinRequest: vi.fn() }));
 
 import { MyBusinessesPage } from '@/components/business/my-businesses-page';
@@ -102,14 +107,25 @@ describe('my businesses page', () => {
 
     // The pending row has no position yet — approval is what creates the employees row (§6.8).
     expect(screen.getByText('Waiting for the owner to decide on your request')).toBeInTheDocument();
-    // …and therefore no dashboard link, unlike the two approved ones. The link is named after its
-    // business — it is stretched over the whole card, and three identical "Manage business" links
-    // would name nothing.
-    expect(screen.getAllByRole('link', { name: /^Manage business —/ })).toHaveLength(2);
-    expect(screen.getByRole('link', { name: 'Manage business — Studio Zohar' })).toHaveAttribute(
-      'href',
-      '/businesses/manage',
+    // …and therefore no manage control, unlike the two approved ones. It is named after its
+    // business — it is stretched over the whole card, and three identical "Manage business"
+    // buttons would name nothing.
+    expect(screen.getAllByRole('button', { name: /^Manage business —/ })).toHaveLength(2);
+  });
+
+  // §12.64 — with more than one manageable business, "Manage business" cannot just be a link to a
+  // fixed URL: `/businesses/manage` has no businessId in it, so nothing would tell the dashboard
+  // which of the two cards was pressed. It must record the choice (via a server action, since
+  // Next.js layouts can't read search params) before navigating there.
+  it('records which business was chosen before opening the dashboard', async () => {
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Manage business — Studio Zohar' }));
+
+    await waitFor(() =>
+      expect(selectBusinessForManagementMock).toHaveBeenCalledWith({ businessId: 'business-zohar' }),
     );
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith('/businesses/manage'));
   });
 
   it('filters by relation', () => {

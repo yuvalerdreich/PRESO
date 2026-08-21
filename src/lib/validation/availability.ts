@@ -30,6 +30,8 @@ export const availabilityRuleInput = z.discriminatedUnion('kind', [
       dayOfWeek,
       startsAt: timeHHmm,
       endsAt: timeHHmm,
+      /** §12.68 — optional; null offers every service, set offers only that one. */
+      serviceId: uuid.nullish(),
     })
     .refine((rule) => rule.endsAt > rule.startsAt, {
       message: 'Choose a day and a time range',
@@ -42,6 +44,7 @@ export const availabilityRuleInput = z.discriminatedUnion('kind', [
       kind: z.literal('EXCEPTION'),
       startsAt: timeHHmm,
       endsAt: timeHHmm,
+      serviceId: uuid.nullish(),
       ...effectiveRange,
     })
     .refine((rule) => rule.endsAt > rule.startsAt, {
@@ -78,11 +81,61 @@ export type DeleteAvailabilityRuleInput = z.infer<typeof deleteAvailabilityRuleI
  * would let a forged payload write windows into the wrong day.
  */
 const shift = z
-  .object({ startsAt: timeHHmm, endsAt: timeHHmm })
+  .object({
+    startsAt: timeHHmm,
+    endsAt: timeHHmm,
+    /**
+     * §12.68 — optional. Null (the default) offers this shift for every one of the employee's
+     * services, exactly as before this field existed; set, the shift offers only that one service.
+     */
+    serviceId: uuid.nullish(),
+  })
   .refine((value) => value.endsAt > value.startsAt, {
     message: 'A shift must end after it starts',
     path: ['endsAt'],
   });
+
+/**
+ * `setWeeklyAvailability` (§12.67) — a replace-all payload for one employee's `WEEKLY_WINDOW` rows,
+ * the same shape `setOperatingHoursInput` uses for `business_hours`. Overlap is server-only for the
+ * same reason: no single-row `CHECK` can express a cross-row constraint, and split shifts are legal
+ * and intended (an employee working 09:00–13:00 and 16:00–20:00 on the same weekday).
+ */
+export const weeklyRuleRow = z
+  .object({
+    dayOfWeek,
+    startsAt: timeHHmm,
+    endsAt: timeHHmm,
+    /** §12.68 — same meaning as `shift.serviceId` below: null offers every service, set offers one. */
+    serviceId: uuid.nullish(),
+  })
+  .refine((row) => row.endsAt > row.startsAt, {
+    message: 'Closing time must be after opening time',
+    path: ['endsAt'],
+  });
+export type WeeklyRuleRow = z.infer<typeof weeklyRuleRow>;
+
+export const setWeeklyAvailabilityInput = z
+  .object({
+    employeeId: uuid,
+    rows: z.array(weeklyRuleRow).max(21, 'That is more windows than a week can hold'),
+  })
+  .refine(
+    ({ rows }) => {
+      for (const day of new Set(rows.map((row) => row.dayOfWeek))) {
+        const windows = rows
+          .filter((row) => row.dayOfWeek === day)
+          .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+
+        for (let i = 1; i < windows.length; i += 1) {
+          if (windows[i].startsAt < windows[i - 1].endsAt) return false;
+        }
+      }
+      return true;
+    },
+    { message: 'Two windows on the same day overlap', path: ['rows'] },
+  );
+export type SetWeeklyAvailabilityInput = z.infer<typeof setWeeklyAvailabilityInput>;
 
 export const dayScheduleInput = z
   .object({

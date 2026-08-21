@@ -1,3 +1,5 @@
+import { cookies } from 'next/headers';
+
 import { createClient } from '@/lib/supabase/server';
 import {
   DEFAULT_TIME_ZONE,
@@ -36,6 +38,18 @@ import type {
  * day-to-day edit is open to any ACTIVE employee.
  */
 
+/**
+ * §12.64 — which business "current" means, for a caller with more than one ACTIVE `employees`
+ * row. Set by `selectBusinessForManagement()` (`server/actions/business.ts`) when "ניהול העסק" is
+ * pressed on a specific card in `/businesses`; read here rather than from the URL because
+ * `(business)/businesses/manage/layout.tsx` — which every screen in the section renders through —
+ * cannot read search params (Next.js: layouts don't rerender on query-string-only navigation, so
+ * they never see them). A cookie is the one channel a layout, a page, *and* a server action
+ * triggered from deep inside one of `catalog.ts`/`availability.ts` can all reach without threading
+ * a parameter through every call in the section.
+ */
+export const CURRENT_BUSINESS_COOKIE = 'current_business_id';
+
 export type CurrentEmployment = {
   employeeId: string;
   businessId: string;
@@ -51,23 +65,48 @@ export async function getCurrentEmployment(): Promise<CurrentEmployment | null> 
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data, error } = await supabase
-    .from('employees')
-    .select('id, business_id, profile_id, businesses(owner_profile_id)')
-    .eq('profile_id', user.id)
-    .eq('status', 'ACTIVE')
-    .order('created_at')
-    .limit(1)
-    .maybeSingle();
+  const baseQuery = () =>
+    supabase
+      .from('employees')
+      .select('id, business_id, profile_id, businesses(owner_profile_id)')
+      .eq('profile_id', user.id)
+      .eq('status', 'ACTIVE');
+
+  const toEmployment = (row: {
+    id: string;
+    business_id: string;
+    profile_id: string;
+    businesses: { owner_profile_id: string } | null;
+  }): CurrentEmployment => ({
+    employeeId: row.id,
+    businessId: row.business_id,
+    profileId: row.profile_id,
+    isOwner: row.businesses?.owner_profile_id === user.id,
+  });
+
+  // Try the cookie-selected business first. A stale cookie (removed from that business since, or
+  // naming one the caller was never staff at) falls through to the default below rather than
+  // reporting "no business to manage" — the caller may well have another one. `cookies()` itself
+  // throws outside a real request scope — a Server Action called directly from `tests/int/`, for
+  // instance, which is exactly how this function gets exercised there — so that's caught too and
+  // treated the same as "no cookie set" rather than failing the whole call.
+  let selectedBusinessId: string | undefined;
+  try {
+    selectedBusinessId = (await cookies()).get(CURRENT_BUSINESS_COOKIE)?.value;
+  } catch {
+    selectedBusinessId = undefined;
+  }
+  if (selectedBusinessId) {
+    const { data, error } = await baseQuery().eq('business_id', selectedBusinessId).maybeSingle();
+    if (error) throw error;
+    if (data) return toEmployment(data);
+  }
+
+  const { data, error } = await baseQuery().order('created_at').limit(1).maybeSingle();
   if (error) throw error;
   if (!data) return null;
 
-  return {
-    employeeId: data.id,
-    businessId: data.business_id,
-    profileId: data.profile_id,
-    isOwner: (data.businesses as { owner_profile_id: string } | null)?.owner_profile_id === user.id,
-  };
+  return toEmployment(data);
 }
 
 export async function getCurrentBusinessDashboard(): Promise<DashboardBusiness | null> {
@@ -600,7 +639,7 @@ export async function listAvailabilityRules(employeeId: string): Promise<Availab
 
   const { data, error } = await supabase
     .from('employee_availability_rules')
-    .select('id, employee_id, kind, day_of_week, starts_at, ends_at, effective_range')
+    .select('id, employee_id, kind, day_of_week, starts_at, ends_at, effective_range, service_id')
     .eq('employee_id', employeeId)
     .order('kind')
     .order('day_of_week', { nullsFirst: false });
@@ -617,6 +656,7 @@ export async function listAvailabilityRules(employeeId: string): Promise<Availab
       endsAt: row.ends_at ? row.ends_at.slice(0, 5) : null,
       effectiveFrom: range?.startsAt.toISOString() ?? null,
       effectiveTo: range?.endsAt.toISOString() ?? null,
+      serviceId: row.service_id,
     };
   });
 }
