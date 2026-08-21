@@ -480,6 +480,11 @@ describe('POST /api/appointments — §5.4, the critical contract', () => {
    * interleaving — 409 if the constraint caught it, 422 if the winner committed early enough for
    * the re-check to notice — and pinning one of them would make this test flaky for a reason that
    * has nothing to do with correctness.
+   *
+   * There is a third interleaving, and it is why this test once failed with a 500 (§12.61): both
+   * inserts can land their index entry before either runs its exclusion check, each then waits on
+   * the other and Postgres raises `40P01` instead of `23P01`. That is the same race, so it maps to
+   * 409 too — and this assertion covers it without naming it.
    */
   it('never double-books under genuine concurrency', async () => {
     const first = await createClientUser();
@@ -731,7 +736,22 @@ describe('PATCH /api/appointments/[id] — §5.4', () => {
     expect(data).toMatchObject({ status: 'CANCELLED' });
     expect(data!.cancelled_at).not.toBeNull();
 
-    expect(await firstFreeSlot(EMPLOYEE_ZOHAR, SERVICE_ZOHAR_HAIRCUT, 48)).toBe(startsAt);
+    // The freed slot is offered again. Asserted as *membership*, not as "is the first slot":
+    // `firstFreeSlot(…, 48)` anchors the engine at `now + 48h`, and `get_available_slots()` packs
+    // from the caller's own `from` instant — so when that instant lands mid-shift the first slot
+    // *is* `now + 48h`, a wall-clock value that moves a few hundred milliseconds between two calls.
+    // Comparing the two therefore failed on any run whose `now + 48h` fell inside a working window,
+    // and passed only when it fell outside one, where packing starts at the window's own boundary.
+    // Same correction as the reschedule test below.
+    const { data: offered } = await admin.rpc('get_available_slots', {
+      p_employee_id: EMPLOYEE_ZOHAR,
+      p_service_id: SERVICE_ZOHAR_HAIRCUT,
+      p_from: startsAt,
+      p_to: new Date(Date.parse(startsAt) + 3_600_000).toISOString(),
+    });
+    expect((offered ?? []).map((slot) => new Date(slot.starts_at).toISOString())).toContain(
+      new Date(startsAt).toISOString(),
+    );
   });
 
   /**

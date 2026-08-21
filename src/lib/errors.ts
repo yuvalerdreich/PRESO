@@ -110,6 +110,11 @@ function isPostgresErrorLike(error: unknown): error is PostgresErrorLike {
  * 2. **`23P01` has no `RAISE` behind it at all.** It is the `appointments_no_overlap` exclusion
  *    constraint firing on INSERT — the mechanism, not a bug (§2, ARCHITECTURE.md §6.14). It is
  *    the reason booking is a route handler rather than a server action.
+ * 3. **`40P01` is `23P01` under a different interleaving** (§12.61). Two conflicting inserts can
+ *    each land their index entry before either checks the other's, so each waits on the other's
+ *    xid and Postgres breaks the cycle with a deadlock instead of an exclusion violation. Same
+ *    event, same thing to tell the caller — and a booking race is the one outcome §2 says must
+ *    never be a 500.
  */
 export function fromPostgresError(error: unknown): AppError {
   if (error instanceof AppError) return error;
@@ -123,6 +128,11 @@ export function fromPostgresError(error: unknown): AppError {
 
   switch (code) {
     case '23P01':
+    // `40P01` deadlock_detected and `40001` serialization_failure — see note 3. Both mean the
+    // transaction lost a race it must simply be told about; the client's recovery is identical to
+    // the exclusion violation's, so they share its message rather than inventing a second one.
+    case '40P01':
+    case '40001':
       return new AppError(
         'CONFLICT',
         'That time was just booked by someone else. Here are the updated times.',

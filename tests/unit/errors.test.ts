@@ -54,6 +54,28 @@ describe('fromPostgresError — §8.2, errors carrying an explicit SQLSTATE', ()
     expect(error.userMessage).toMatch(/just booked by someone else/i);
   });
 
+  /**
+   * §12.61 — the same race, caught by a different mechanism. Two conflicting inserts can each land
+   * their index entry before either runs the exclusion check, so they wait on each other and
+   * Postgres raises a deadlock instead. A booking race is the one outcome §2 says must never be a
+   * 500, and the caller's recovery is identical, so both share 23P01's answer.
+   */
+  it.each([
+    ['40P01', 'deadlock detected'],
+    ['40001', 'could not serialize access due to concurrent update'],
+  ])('maps %s to CONFLICT with the booking-race message', (code, message) => {
+    const error = fromPostgresError({ code, message });
+
+    expect(error.code).toBe('CONFLICT');
+    expect(toHttp(error).status).toBe(409);
+    expect(error.userMessage).toMatch(/just booked by someone else/i);
+  });
+
+  it('never leaks the deadlock SQLSTATE or its wording to the browser (§8.4)', () => {
+    const { body } = toHttp(fromPostgresError({ code: '40P01', message: 'deadlock detected' }));
+    expect(JSON.stringify(body)).not.toMatch(/40P01|deadlock/i);
+  });
+
   it('maps 23505 to CONFLICT — the one open join request per business', () => {
     expect(fromPostgresError({ code: '23505', message: 'join_requests_one_open' }).code).toBe('CONFLICT');
   });
@@ -102,7 +124,9 @@ describe('fromPostgresError — §8.2, the P0001 group matched on message text',
 
 describe('fromPostgresError — fallthrough', () => {
   it('maps an unrecognised SQLSTATE to INTERNAL', () => {
-    expect(fromPostgresError({ code: '40001', message: 'serialization failure' }).code).toBe('INTERNAL');
+    // `53200` out_of_memory: a genuine server fault with no recovery the caller could perform,
+    // which is what 500 is for. This case used `40001` until §12.61 gave that code a meaning.
+    expect(fromPostgresError({ code: '53200', message: 'out of memory' }).code).toBe('INTERNAL');
   });
 
   it('maps a non-Postgres throw to INTERNAL rather than leaking it', () => {
