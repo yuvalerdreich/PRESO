@@ -114,4 +114,16 @@ describe('account sidebar', () => {
       'aria-current',
     );
   });
+
+  it('keeps Home lit while on a business booking page', () => {
+    // `/b/**` is reached from the home grid and is still that journey, not a section of its own —
+    // going dark there made booking a business feel like leaving the site's own navigation.
+    pathname.current = '/b/business-1/e/employee-1/s/service-1';
+    renderSidebar([]);
+
+    expect(screen.getByRole('link', { name: translations.en.sidebar.home })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+  });
 });

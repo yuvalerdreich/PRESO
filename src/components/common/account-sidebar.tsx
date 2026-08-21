@@ -28,6 +28,11 @@ export function AccountSidebar({
   const { copy } = useLanguage();
   const pathname = usePathname();
   const upcomingCount = countUpcomingAppointments(appointments);
+  // The business booking screens (`/b/**`) are reached *from* the home grid, not a section of
+  // their own — a client picking a slot there is still doing the thing "מסך ראשי" is for, so the
+  // entry stays lit through the whole booking flow rather than going dark the moment a business is
+  // opened.
+  const homeActive = pathname === '/' || pathname.startsWith('/b/');
   const appointmentsActive = pathname === '/me/appointments';
   // Managing a business happens *inside* "my businesses" (`/businesses/manage/**`), so the entry
   // stays lit the whole time you are in there — a prefix, not an exact match. Leaving it dark made
@@ -42,12 +47,8 @@ export function AccountSidebar({
       <nav aria-label={copy.sidebar.title} className="flex flex-col gap-2 px-3 py-6 sm:px-4">
         <span className="px-4 pb-1 text-xs font-medium text-[var(--muted)]">{copy.sidebar.title}</span>
 
-        <Link
-          href="/"
-          aria-current={pathname === '/' ? 'page' : undefined}
-          className={itemClassName(pathname === '/')}
-        >
-          <ItemIcon icon={Home} isActive={pathname === '/'} />
+        <Link href="/" aria-current={homeActive ? 'page' : undefined} className={itemClassName(homeActive)}>
+          <ItemIcon icon={Home} isActive={homeActive} />
           <span>{copy.sidebar.home}</span>
         </Link>
 
