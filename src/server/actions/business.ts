@@ -1,15 +1,18 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
 
 import { createClient } from '@/lib/supabase/server';
 import {
   businessDetailsInput,
   createBusinessInput,
+  selectBusinessInput,
   setOperatingHoursInput,
 } from '@/lib/validation/business';
 import { action } from '@/server/action';
 import { requireEmployeeOf, requireSession } from '@/server/guards';
+import { CURRENT_BUSINESS_COOKIE } from '@/server/queries/dashboard';
 
 /**
  * Business module (TECHNICAL_DESIGN.md §5.5, §4.1).
@@ -90,6 +93,30 @@ export const createBusiness = action('createBusiness', createBusinessInput, asyn
 
   return { businessId: data.id, servicesCreated };
 });
+
+/**
+ * §12.64 — records which business "ניהול העסק" was pressed for, since the whole
+ * `/businesses/manage/**` section has no `businessId` in its URL and cannot get one from a layout
+ * (Next.js layouts don't receive search params). `requireEmployeeOf` is the actual gate — a caller
+ * can only ever select a business they are genuinely ACTIVE staff of; the cookie is a UI
+ * convenience `getCurrentEmployment()` reads afterwards, never itself trusted as authorization.
+ */
+export const selectBusinessForManagement = action(
+  'selectBusinessForManagement',
+  selectBusinessInput,
+  async (input) => {
+    await requireEmployeeOf(input.businessId);
+
+    (await cookies()).set(CURRENT_BUSINESS_COOKIE, input.businessId, {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 90,
+    });
+
+    return { businessId: input.businessId };
+  },
+);
 
 export const updateBusinessDetails = action('updateBusinessDetails', businessDetailsInput, async (input) => {
   await requireEmployeeOf(input.businessId);

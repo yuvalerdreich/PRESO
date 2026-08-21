@@ -91,6 +91,10 @@ export const businessDetailsInput = z.object({
 });
 export type BusinessDetailsInput = z.infer<typeof businessDetailsInput>;
 
+/** `selectBusinessForManagement` (§12.64) — which business "ניהול העסק" was pressed for. */
+export const selectBusinessInput = z.object({ businessId: uuid });
+export type SelectBusinessInput = z.infer<typeof selectBusinessInput>;
+
 export const hourRow = z
   .object({
     dayOfWeek,
