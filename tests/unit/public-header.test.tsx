@@ -47,6 +47,19 @@ describe('public header', () => {
     expect(screen.queryByText(translations.en.header.logout)).not.toBeInTheDocument();
   });
 
+  it('keeps password recovery inside the sign-in modal', () => {
+    renderHeader();
+
+    fireEvent.click(screen.getByRole('button', { name: translations.en.header.signIn }));
+    fireEvent.click(screen.getByRole('button', { name: translations.en.auth.forgotPasswordLink }));
+
+    expect(screen.getByRole('dialog', { name: translations.en.auth.forgotTitle })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: translations.en.auth.forgotTitle })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: translations.en.auth.backToLogin }));
+    expect(screen.getByRole('dialog', { name: translations.en.auth.loginTitle })).toBeInTheDocument();
+  });
+
   it('shows a greeting and a logout button instead of sign-in when a user is logged in', () => {
     renderHeader({ fullName: 'Noa Golan' });
 

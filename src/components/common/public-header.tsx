@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { LoginForm } from '@/components/auth/login-form';
+import { ForgotPasswordForm } from '@/components/auth/forgot-password-form';
 import { Modal } from '@/components/common/modal';
 import { PresoLogo } from '@/components/common/preso-logo';
 import { useProfileSettings } from '@/components/common/profile-settings-context';
@@ -20,6 +21,12 @@ export function PublicHeader({
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [authView, setAuthView] = useState<'login' | 'forgot-password'>('login');
+
+  function closeLoginModal() {
+    setIsLoginOpen(false);
+    setAuthView('login');
+  }
 
   async function handleLogout() {
     setLoggingOut(true);
@@ -60,7 +67,10 @@ export function PublicHeader({
           ) : (
             <button
               type="button"
-              onClick={() => setIsLoginOpen(true)}
+              onClick={() => {
+                setAuthView('login');
+                setIsLoginOpen(true);
+              }}
               className="rounded-full px-4 py-2 text-sm font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--soft-violet)]"
             >
               {copy.header.signIn}
@@ -69,8 +79,16 @@ export function PublicHeader({
         </div>
       </div>
       {isLoginOpen ? (
-        <Modal onClose={() => setIsLoginOpen(false)} closeLabel={copy.common.close} ariaLabel={copy.auth.loginTitle}>
-          <LoginForm />
+        <Modal
+          onClose={closeLoginModal}
+          closeLabel={copy.common.close}
+          ariaLabel={authView === 'login' ? copy.auth.loginTitle : copy.auth.forgotTitle}
+        >
+          {authView === 'login' ? (
+            <LoginForm onForgotPassword={() => setAuthView('forgot-password')} />
+          ) : (
+            <ForgotPasswordForm onBackToLogin={() => setAuthView('login')} />
+          )}
         </Modal>
       ) : null}
     </header>
