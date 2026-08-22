@@ -29,7 +29,7 @@ export function SignupForm({ next }: { next?: string }) {
     setServerError(null);
     const supabase = createClient();
 
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email: values.email,
       password: values.password,
       options: {
@@ -43,6 +43,15 @@ export function SignupForm({ next }: { next?: string }) {
 
     if (signUpError) {
       setServerError(signUpError.message);
+      return;
+    }
+
+    // Supabase's enumeration guard: signing up with an email that already has an
+    // unconfirmed auth.users row returns a fake success (no error) with an empty
+    // `identities` array, and never touches the DB — no auth.users row is written,
+    // so `handle_new_user()` never fires and `profiles` silently gets nothing.
+    if (signUpData.user && signUpData.user.identities?.length === 0) {
+      setServerError(copy.auth.emailAlreadyRegistered);
       return;
     }
 
