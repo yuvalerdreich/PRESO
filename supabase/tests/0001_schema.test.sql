@@ -3,7 +3,7 @@
 -- accidentally renames/drops something these depend on, this fails loudly instead of the
 -- app just breaking silently at runtime.
 begin;
-select plan(36);
+select plan(37);
 
 -- §3.1 extensions
 select has_extension('public', 'btree_gist', 'btree_gist is installed (0001, required by 0005''s exclusion constraint)');
@@ -65,14 +65,18 @@ select ok(
   'row level security is enabled on all 14 tables'
 );
 
--- 0011 — the curated category seed
+-- 0011 — the curated category seed, plus 0029's re-created 'other' row
 select is(
-  (select count(*)::int from categories), 5,
-  '0011 seeded exactly 5 categories'
+  (select count(*)::int from categories), 6,
+  '0011 seeded 5 categories and 0029 re-adds the 6th (other)'
 );
 select ok(
   exists (select 1 from categories where slug = 'beauty'),
   'the beauty category slug matches the frontend mock (CLAUDE.md §8)'
+);
+select ok(
+  exists (select 1 from categories where slug = 'other'),
+  'the other category slug exists (0029_recreate_other_category.sql)'
 );
 
 select * from finish();
