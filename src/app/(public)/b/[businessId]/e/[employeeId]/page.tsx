@@ -4,15 +4,21 @@ import { BusinessProfile } from '@/components/public/business-profile';
 import {
   getBusinessEmployee,
   getBusinessProfile,
+  isCurrentUserSignedIn,
   listBusinessEmployees,
   listCategories,
   listEmployeeServices,
 } from '@/server/queries/discovery';
 
-export default async function EmployeePage({ params }: PageProps<'/b/[businessId]/e/[employeeId]'>) {
+export default async function EmployeePage({
+  params,
+  searchParams,
+}: PageProps<'/b/[businessId]/e/[employeeId]'>) {
   const { businessId, employeeId } = await params;
+  const search = await searchParams;
 
-  const [business, categories, employees, selectedEmployee, services] = await Promise.all([
+  const [isAuthenticated, business, categories, employees, selectedEmployee, services] = await Promise.all([
+    isCurrentUserSignedIn(),
     getBusinessProfile(businessId),
     listCategories(),
     listBusinessEmployees(businessId),
@@ -39,6 +45,8 @@ export default async function EmployeePage({ params }: PageProps<'/b/[businessId
       employees={employees}
       selectedEmployee={selectedEmployee}
       services={services}
+      isAuthenticated={isAuthenticated}
+      authRequired={search.authRequired === '1'}
     />
   );
 }

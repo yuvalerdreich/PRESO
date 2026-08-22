@@ -77,15 +77,16 @@ test('an unknown path renders the not-found page, not a crash', async ({ page })
   ).toBeVisible();
 });
 
-// The sidebar entry is a link to the full appointments page, not a modal trigger. The page
-// itself sits behind `/me/*`, which `proxy.ts` gates on a session, and the suite has no
-// signed-in fixture yet — so this asserts the wiring plus the gate. Assert on the rendered
-// page instead once an authenticated storageState exists.
-test('my appointments entry links to the appointments page, behind the session gate', async ({ page }) => {
+// An anonymous visitor gets only "מסך ראשי" in the sidebar — "התורים שלי" (and every other
+// entry) assumes a session, so it's hidden entirely rather than linking through to a login
+// gate. The suite has no signed-in fixture yet, so the authenticated case (the link opens
+// /me/appointments, gated by proxy.ts) stays asserted at the unit level
+// (tests/unit/account-sidebar.test.tsx) until an authenticated storageState exists here.
+test('an anonymous visitor sees no "my appointments" entry in the sidebar', async ({ page }) => {
   await page.goto('/');
 
-  await page.getByRole('link', { name: 'פתיחת התורים שלי' }).click();
-  await expect(page).toHaveURL(/\/login\?next=%2Fme%2Fappointments$/);
+  await expect(page.getByRole('navigation', { name: 'תפריט ניווט ראשי' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'פתיחת התורים שלי' })).toHaveCount(0);
 });
 
 // Skipped: /onboarding and /join only render placeholders — the demo forms aren't built yet

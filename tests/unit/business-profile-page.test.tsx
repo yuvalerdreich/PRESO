@@ -83,6 +83,7 @@ const servicesByEmployee: Record<string, ServiceSummary[]> = {
 };
 
 vi.mock('@/server/queries/discovery', () => ({
+  isCurrentUserSignedIn: async () => true,
   getBusinessProfile: async () => business,
   listCategories: async () => [
     { id: 'category-beauty', slug: 'beauty', icon: 'scissors', name: 'Salons' },
@@ -96,6 +97,7 @@ vi.mock('@/server/queries/discovery', () => ({
 
 const { default: BusinessPage } = await import('@/app/(public)/b/[businessId]/page');
 const { default: EmployeePage } = await import('@/app/(public)/b/[businessId]/e/[employeeId]/page');
+const { AuthModalProvider } = await import('@/components/common/auth-modal-provider');
 const { LanguageProvider } = await import('@/lib/i18n/language-provider');
 
 describe('public business profile page (merged staff-picker + services)', () => {
@@ -110,10 +112,12 @@ describe('public business profile page (merged staff-picker + services)', () => 
   it('renders the business hero and the selected employee’s services by default', async () => {
     render(
       <LanguageProvider initialLocale="en">
-        {await EmployeePage({
-          params: Promise.resolve({ businessId, employeeId: ZOHAR }),
-          searchParams: Promise.resolve({}),
-        })}
+        <AuthModalProvider>
+          {await EmployeePage({
+            params: Promise.resolve({ businessId, employeeId: ZOHAR }),
+            searchParams: Promise.resolve({}),
+          })}
+        </AuthModalProvider>
       </LanguageProvider>,
     );
 
@@ -126,10 +130,12 @@ describe('public business profile page (merged staff-picker + services)', () => 
   it('switches to another employee’s own services, keeping shared services visible', async () => {
     render(
       <LanguageProvider initialLocale="en">
-        {await EmployeePage({
-          params: Promise.resolve({ businessId, employeeId: MIYA }),
-          searchParams: Promise.resolve({}),
-        })}
+        <AuthModalProvider>
+          {await EmployeePage({
+            params: Promise.resolve({ businessId, employeeId: MIYA }),
+            searchParams: Promise.resolve({}),
+          })}
+        </AuthModalProvider>
       </LanguageProvider>,
     );
 

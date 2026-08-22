@@ -6,8 +6,32 @@ import { Calendar, Check, Clock } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import type { EmployeeSummary, ServiceSummary } from '@/types/domain';
 
-function ServiceCard({ service, href, selected }: { service: ServiceSummary; href: string; selected: boolean }) {
+function ServiceCard({
+  service,
+  href,
+  selected,
+  isAuthenticated,
+  onRequireLogin,
+}: {
+  service: ServiceSummary;
+  href: string;
+  selected: boolean;
+  isAuthenticated: boolean;
+  onRequireLogin: () => void;
+}) {
   const { copy } = useLanguage();
+
+  const actionClassName = `mt-1 flex items-center justify-center gap-1.5 rounded-full border pt-3 pb-2.5 text-sm font-semibold transition-colors ${
+    selected
+      ? 'border-transparent bg-[var(--brand)] text-white'
+      : 'border-t border-[var(--line)] border-x-0 border-b-0 text-[var(--brand)] hover:bg-[var(--soft-violet)]'
+  }`;
+  const actionContent = (
+    <>
+      {selected ? <Check className="h-4 w-4" aria-hidden="true" /> : <Calendar className="h-4 w-4" aria-hidden="true" />}
+      {selected ? copy.businessProfile.serviceSelectedAction : copy.businessProfile.chooseServiceAction}
+    </>
+  );
 
   return (
     <div
@@ -40,18 +64,15 @@ function ServiceCard({ service, href, selected }: { service: ServiceSummary; hre
         (+{service.bufferMinutes} {copy.businessProfile.durationUnit} {copy.businessProfile.bufferLabel})
       </p>
 
-      <Link
-        href={href}
-        scroll={false}
-        className={`mt-1 flex items-center justify-center gap-1.5 rounded-full border pt-3 pb-2.5 text-sm font-semibold transition-colors ${
-          selected
-            ? 'border-transparent bg-[var(--brand)] text-white'
-            : 'border-t border-[var(--line)] border-x-0 border-b-0 text-[var(--brand)] hover:bg-[var(--soft-violet)]'
-        }`}
-      >
-        {selected ? <Check className="h-4 w-4" aria-hidden="true" /> : <Calendar className="h-4 w-4" aria-hidden="true" />}
-        {selected ? copy.businessProfile.serviceSelectedAction : copy.businessProfile.chooseServiceAction}
-      </Link>
+      {isAuthenticated ? (
+        <Link href={href} scroll={false} className={actionClassName}>
+          {actionContent}
+        </Link>
+      ) : (
+        <button type="button" onClick={onRequireLogin} className={actionClassName}>
+          {actionContent}
+        </button>
+      )}
     </div>
   );
 }
@@ -61,11 +82,16 @@ export function EmployeeServiceList({
   employee,
   services,
   selectedServiceId,
+  isAuthenticated,
+  onRequireLogin,
 }: {
   businessId: string;
   employee: EmployeeSummary;
   services: ServiceSummary[];
   selectedServiceId?: string;
+  /** A signed-out visitor can browse treatments but not open the calendar (booking requires an account). */
+  isAuthenticated: boolean;
+  onRequireLogin: () => void;
 }) {
   const { copy } = useLanguage();
 
@@ -91,6 +117,8 @@ export function EmployeeServiceList({
             service={service}
             href={`/b/${businessId}/e/${employee.id}/s/${service.id}`}
             selected={service.id === selectedServiceId}
+            isAuthenticated={isAuthenticated}
+            onRequireLogin={onRequireLogin}
           />
         ))}
       </div>

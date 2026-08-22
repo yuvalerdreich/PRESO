@@ -1,10 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 import { ArrowLeft, ArrowRight, MapPin, Phone } from 'lucide-react';
 
 import { BookingConfirmDialog } from '@/components/booking/booking-confirm-dialog';
+import { useAuthModal } from '@/components/common/auth-modal-context';
 import { actionButton } from '@/components/common/button-styles';
+import { ErrorDialog } from '@/components/common/error-dialog';
 import { AvailabilityCalendar } from '@/components/public/availability-calendar';
 import { EmployeeList } from '@/components/public/employee-list';
 import { EmployeeServiceList } from '@/components/public/employee-service-list';
@@ -23,6 +27,8 @@ export function BusinessProfile({
   calendar,
   slots,
   waitlistOpen,
+  isAuthenticated = true,
+  authRequired = false,
   rescheduleAppointmentId,
 }: {
   business: BusinessProfileType;
@@ -34,11 +40,18 @@ export function BusinessProfile({
   calendar?: { monthISO: string; selectedDate: string; availableDates: string[] };
   slots?: { dateISO: string; selectedSlot?: string; times: string[] };
   waitlistOpen?: boolean;
+  /** A signed-out visitor can browse staff and treatments, but never the calendar/booking flow. */
+  isAuthenticated?: boolean;
+  /** Set when a direct link to the calendar bounced back here because the visitor isn't signed in. */
+  authRequired?: boolean;
   /** Keeps the booking flow in reschedule mode for this existing appointment. */
   rescheduleAppointmentId?: string;
 }) {
   const { copy, direction } = useLanguage();
+  const pathname = usePathname();
+  const { openLogin } = useAuthModal();
   const BackArrow = direction === 'rtl' ? ArrowRight : ArrowLeft;
+  const [loginRequired, setLoginRequired] = useState(authRequired);
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6">
@@ -87,11 +100,13 @@ export function BusinessProfile({
             employee={selectedEmployee}
             services={services}
             selectedServiceId={selectedServiceId}
+            isAuthenticated={isAuthenticated}
+            onRequireLogin={() => setLoginRequired(true)}
           />
         </>
       )}
 
-      {calendar && selectedServiceId ? (
+      {isAuthenticated && calendar && selectedServiceId ? (
         <AvailabilityCalendar
           basePath={`/b/${business.id}/e/${selectedEmployee.id}/s/${selectedServiceId}`}
           employeeName={selectedEmployee.fullName}
@@ -102,7 +117,7 @@ export function BusinessProfile({
         />
       ) : null}
 
-      {slots && selectedServiceId ? (
+      {isAuthenticated && slots && selectedServiceId ? (
         <SlotPicker
           basePath={`/b/${business.id}/e/${selectedEmployee.id}/s/${selectedServiceId}`}
           monthISO={calendar?.monthISO ?? ''}
@@ -114,7 +129,7 @@ export function BusinessProfile({
         />
       ) : null}
 
-      {waitlistOpen && slots && selectedServiceId
+      {isAuthenticated && waitlistOpen && slots && selectedServiceId
         ? (() => {
             const selectedService = services.find((service) => service.id === selectedServiceId);
             if (!selectedService) return null;
@@ -142,7 +157,7 @@ export function BusinessProfile({
           })()
         : null}
 
-      {!waitlistOpen && slots?.selectedSlot && selectedServiceId
+      {isAuthenticated && !waitlistOpen && slots?.selectedSlot && selectedServiceId
         ? (() => {
             const selectedService = services.find((service) => service.id === selectedServiceId);
             if (!selectedService) return null;
@@ -172,6 +187,21 @@ export function BusinessProfile({
             );
           })()
         : null}
+
+      {loginRequired ? (
+        <ErrorDialog
+          title={copy.businessProfile.guestBooking.title}
+          description={copy.businessProfile.guestBooking.description}
+          action={{
+            onClick: () => {
+              setLoginRequired(false);
+              openLogin(pathname);
+            },
+            label: copy.businessProfile.guestBooking.loginAction,
+          }}
+          onClose={() => setLoginRequired(false)}
+        />
+      ) : null}
     </div>
   );
 }

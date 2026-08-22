@@ -21,9 +21,12 @@ type AccountType = Database['public']['Enums']['account_type'];
 export function AccountSidebar({
   appointments,
   accountType = 'CLIENT',
+  isAuthenticated = true,
 }: {
   appointments: ClientAppointment[];
   accountType?: AccountType;
+  /** A signed-out visitor gets only "מסך ראשי" — every other entry assumes a session. */
+  isAuthenticated?: boolean;
 }) {
   const { copy } = useLanguage();
   const pathname = usePathname();
@@ -52,26 +55,28 @@ export function AccountSidebar({
           <span>{copy.sidebar.home}</span>
         </Link>
 
-        <Link
-          href="/me/appointments"
-          aria-current={appointmentsActive ? 'page' : undefined}
-          aria-label={copy.sidebar.openAppointments}
-          className={itemClassName(appointmentsActive)}
-        >
-          <ItemIcon icon={CalendarDays} isActive={appointmentsActive} />
-          <span>{copy.sidebar.appointments}</span>
-          {upcomingCount > 0 ? (
-            <span
-              className={`ms-auto flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
-                appointmentsActive ? 'bg-white text-[var(--brand)]' : 'bg-[var(--brand)] text-white'
-              }`}
-            >
-              {upcomingCount}
-            </span>
-          ) : null}
-        </Link>
+        {isAuthenticated ? (
+          <Link
+            href="/me/appointments"
+            aria-current={appointmentsActive ? 'page' : undefined}
+            aria-label={copy.sidebar.openAppointments}
+            className={itemClassName(appointmentsActive)}
+          >
+            <ItemIcon icon={CalendarDays} isActive={appointmentsActive} />
+            <span>{copy.sidebar.appointments}</span>
+            {upcomingCount > 0 ? (
+              <span
+                className={`ms-auto flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
+                  appointmentsActive ? 'bg-white text-[var(--brand)]' : 'bg-[var(--brand)] text-white'
+                }`}
+              >
+                {upcomingCount}
+              </span>
+            ) : null}
+          </Link>
+        ) : null}
 
-        {accountType === 'BUSINESS' || accountType === 'ADMIN' ? (
+        {isAuthenticated && (accountType === 'BUSINESS' || accountType === 'ADMIN') ? (
           <Link
             href="/businesses"
             aria-current={businessesActive ? 'page' : undefined}
@@ -82,7 +87,7 @@ export function AccountSidebar({
           </Link>
         ) : null}
 
-        {accountType === 'ADMIN' ? (
+        {isAuthenticated && accountType === 'ADMIN' ? (
           <Link
             href="/admin/users"
             aria-current={manageUsersActive ? 'page' : undefined}
