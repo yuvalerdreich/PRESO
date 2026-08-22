@@ -42,6 +42,7 @@ function ServiceCard({ service, href, selected }: { service: ServiceSummary; hre
 
       <Link
         href={href}
+        scroll={false}
         className={`mt-1 flex items-center justify-center gap-1.5 rounded-full border pt-3 pb-2.5 text-sm font-semibold transition-colors ${
           selected
             ? 'border-transparent bg-[var(--brand)] text-white'

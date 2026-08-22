@@ -17,6 +17,7 @@ export function EmployeeCard({
   return (
     <Link
       href={href}
+      scroll={false}
       aria-current={selected ? 'true' : undefined}
       className={`relative flex flex-col items-center gap-2 rounded-2xl border px-6 py-4 text-center transition-colors ${
         selected

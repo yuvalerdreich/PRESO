@@ -93,7 +93,7 @@ describe('waitlist join modal', () => {
     fireEvent.click(screen.getByRole('button', { name: /Morning/ }));
     fireEvent.click(screen.getByRole('button', { name: /Confirm & join the waitlist/ }));
 
-    await waitFor(() => expect(push).toHaveBeenCalledWith(closeHref));
+    await waitFor(() => expect(push).toHaveBeenCalledWith(closeHref, { scroll: false }));
 
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/waitlist',
@@ -145,17 +145,17 @@ describe('waitlist join modal', () => {
     renderModal();
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(push).toHaveBeenCalledWith(closeHref);
+    expect(push).toHaveBeenCalledWith(closeHref, { scroll: false });
   });
 
   it('closes via the panel close button and the Escape key', () => {
     renderModal();
 
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-    expect(push).toHaveBeenCalledWith(closeHref);
+    expect(push).toHaveBeenCalledWith(closeHref, { scroll: false });
 
     push.mockClear();
     fireEvent.keyDown(document, { key: 'Escape' });
-    expect(push).toHaveBeenCalledWith(closeHref);
+    expect(push).toHaveBeenCalledWith(closeHref, { scroll: false });
   });
 });

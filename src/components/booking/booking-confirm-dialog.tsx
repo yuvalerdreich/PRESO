@@ -56,7 +56,7 @@ export function BookingConfirmDialog({
   const BackArrow = direction === 'rtl' ? ArrowRight : ArrowLeft;
 
   function close() {
-    router.push(closeHref);
+    router.push(closeHref, { scroll: false });
   }
 
   async function handleConfirm() {

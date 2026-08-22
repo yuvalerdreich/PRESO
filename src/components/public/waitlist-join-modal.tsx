@@ -105,7 +105,7 @@ export function WaitlistJoinModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   function close() {
-    router.push(closeHref);
+    router.push(closeHref, { scroll: false });
   }
 
   /**
