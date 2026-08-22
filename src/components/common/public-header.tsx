@@ -3,11 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import { LoginForm } from '@/components/auth/login-form';
-import { ForgotPasswordForm } from '@/components/auth/forgot-password-form';
-import { SignupForm } from '@/components/auth/signup-form';
-import { Modal } from '@/components/common/modal';
 import { PresoLogo } from '@/components/common/preso-logo';
+import { useAuthModal } from '@/components/common/auth-modal-context';
 import { useProfileSettings } from '@/components/common/profile-settings-context';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import { createClient } from '@/lib/supabase/client';
@@ -19,15 +16,9 @@ export function PublicHeader({
 }) {
   const { copy } = useLanguage();
   const { open: openProfileSettings } = useProfileSettings();
+  const { openLogin } = useAuthModal();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [authView, setAuthView] = useState<'login' | 'forgot-password' | 'signup'>('login');
-
-  function closeLoginModal() {
-    setIsLoginOpen(false);
-    setAuthView('login');
-  }
 
   async function handleLogout() {
     setLoggingOut(true);
@@ -68,10 +59,7 @@ export function PublicHeader({
           ) : (
             <button
               type="button"
-              onClick={() => {
-                setAuthView('login');
-                setIsLoginOpen(true);
-              }}
+              onClick={() => openLogin()}
               className="rounded-full px-4 py-2 text-sm font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--soft-violet)]"
             >
               {copy.header.signIn}
@@ -79,27 +67,6 @@ export function PublicHeader({
           )}
         </div>
       </div>
-      {isLoginOpen ? (
-        <Modal
-          onClose={closeLoginModal}
-          closeLabel={copy.common.close}
-          ariaLabel={
-            authView === 'login'
-              ? copy.auth.loginTitle
-              : authView === 'forgot-password'
-                ? copy.auth.forgotTitle
-                : copy.auth.signupTitle
-          }
-        >
-          {authView === 'login' ? (
-            <LoginForm onForgotPassword={() => setAuthView('forgot-password')} onSignup={() => setAuthView('signup')} />
-          ) : authView === 'forgot-password' ? (
-            <ForgotPasswordForm onBackToLogin={() => setAuthView('login')} />
-          ) : (
-            <SignupForm onLogin={() => setAuthView('login')} />
-          )}
-        </Modal>
-      ) : null}
     </header>
   );
 }

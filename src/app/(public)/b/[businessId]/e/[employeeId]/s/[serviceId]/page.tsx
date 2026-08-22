@@ -5,6 +5,7 @@ import { getDaySlots, getMonthAvailability } from '@/server/queries/availability
 import {
   getBusinessEmployee,
   getBusinessProfile,
+  isCurrentUserSignedIn,
   listBusinessEmployees,
   listCategories,
   listEmployeeServices,
@@ -43,16 +44,23 @@ export default async function ServiceAvailabilityPage({
   const selectedSlot = typeof search.slot === 'string' ? search.slot : undefined;
   const waitlistOpen = search.waitlist === '1';
 
-  const [business, categories, employees, selectedEmployee, services, availableDates] = await Promise.all([
-    getBusinessProfile(businessId),
-    listCategories(),
-    listBusinessEmployees(businessId),
-    getBusinessEmployee(businessId, employeeId),
-    listEmployeeServices(businessId, employeeId),
-    getMonthAvailability(employeeId, serviceId, monthISO),
-  ]);
+  const [isAuthenticated, business, categories, employees, selectedEmployee, services, availableDates] =
+    await Promise.all([
+      isCurrentUserSignedIn(),
+      getBusinessProfile(businessId),
+      listCategories(),
+      listBusinessEmployees(businessId),
+      getBusinessEmployee(businessId, employeeId),
+      listEmployeeServices(businessId, employeeId),
+      getMonthAvailability(employeeId, serviceId, monthISO),
+    ]);
 
   if (!business || !selectedEmployee) notFound();
+
+  // The calendar/booking flow requires a session — a signed-out visitor who reaches this URL
+  // directly (typed, bookmarked, shared) bounces back to the employee page, which pops the same
+  // "sign in to book" dialog a click on "בחר טיפול ופתח יומן" would have shown in place.
+  if (!isAuthenticated) redirect(`/b/${businessId}/e/${employeeId}?authRequired=1`);
 
   // §12.55 — same refusal as the employee page above; this URL is reachable directly too.
   if (business.viewerRelation) redirect(`/?blocked=${businessId}`);

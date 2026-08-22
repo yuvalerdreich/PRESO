@@ -1,5 +1,6 @@
 import { AccountSidebar } from '@/components/common/account-sidebar';
 import { AppointmentsPanelProvider } from '@/components/common/appointments-panel-provider';
+import { AuthModalProvider } from '@/components/common/auth-modal-provider';
 import { ProfileSettingsProvider } from '@/components/common/profile-settings-provider';
 import { PublicHeader } from '@/components/common/public-header';
 import { listClientAppointments, listClientWaitlistEntries } from '@/server/queries/appointments';
@@ -21,21 +22,27 @@ export default async function PublicLayout({ children }: LayoutProps<'/'>) {
   ]);
 
   return (
-    <AppointmentsPanelProvider appointments={appointments} waitlistEntries={waitlistEntries}>
-      <ProfileSettingsProvider
-        initialLocation={currentUser?.location ?? ''}
-        initialDateOfBirth={currentUser?.dateOfBirth ?? ''}
-        accountType={currentUser?.accountType ?? 'CLIENT'}
-      >
-        <div className="flex min-h-full flex-col">
-          <PublicHeader currentUser={currentUser ? { fullName: currentUser.fullName } : null} />
-          <div className="flex flex-1">
-            <AccountSidebar appointments={appointments} accountType={currentUser?.accountType} />
-            <main className="min-w-0 flex-1">{children}</main>
+    <AuthModalProvider>
+      <AppointmentsPanelProvider appointments={appointments} waitlistEntries={waitlistEntries}>
+        <ProfileSettingsProvider
+          initialLocation={currentUser?.location ?? ''}
+          initialDateOfBirth={currentUser?.dateOfBirth ?? ''}
+          accountType={currentUser?.accountType ?? 'CLIENT'}
+        >
+          <div className="flex min-h-full flex-col">
+            <PublicHeader currentUser={currentUser ? { fullName: currentUser.fullName } : null} />
+            <div className="flex flex-1">
+              <AccountSidebar
+                appointments={appointments}
+                accountType={currentUser?.accountType}
+                isAuthenticated={currentUser !== null}
+              />
+              <main className="min-w-0 flex-1">{children}</main>
+            </div>
           </div>
-        </div>
-      </ProfileSettingsProvider>
-    </AppointmentsPanelProvider>
+        </ProfileSettingsProvider>
+      </AppointmentsPanelProvider>
+    </AuthModalProvider>
   );
 }
 

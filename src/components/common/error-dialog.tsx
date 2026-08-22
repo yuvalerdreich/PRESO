@@ -26,6 +26,11 @@ import { useLanguage } from '@/lib/i18n/language-provider';
  * `action` is optional and is a real navigation, not a second dismiss: offer it only where the
  * user can actually do something elsewhere ("manage this business in העסקים שלי").
  */
+/** Either a real navigation, or an in-place action (e.g. opening another modal) — see the two call shapes below. */
+type ErrorDialogAction =
+  | { href: string; label: string; icon?: ReactNode; onClick?: never }
+  | { onClick: () => void; label: string; icon?: ReactNode; href?: never };
+
 export function ErrorDialog({
   title,
   description,
@@ -34,7 +39,7 @@ export function ErrorDialog({
 }: {
   title: string;
   description: ReactNode;
-  action?: { href: string; label: string; icon?: ReactNode };
+  action?: ErrorDialogAction;
   onClose: () => void;
 }) {
   const { copy } = useLanguage();
@@ -50,11 +55,20 @@ export function ErrorDialog({
 
         <p className="max-w-md text-sm leading-6 text-[var(--muted)]">{description}</p>
 
-        {action ? (
+        {action?.href ? (
           <Link href={action.href} className={`${actionButton} ${actionButtonLarge} mt-1 shadow-lg`}>
             {action.icon}
             {action.label}
           </Link>
+        ) : action?.onClick ? (
+          <button
+            type="button"
+            onClick={action.onClick}
+            className={`${actionButton} ${actionButtonLarge} mt-1 shadow-lg`}
+          >
+            {action.icon}
+            {action.label}
+          </button>
         ) : null}
       </div>
     </Modal>

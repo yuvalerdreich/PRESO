@@ -5,6 +5,7 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
 }));
 
+import { AuthModalProvider } from '@/components/common/auth-modal-provider';
 import { ProfileSettingsProvider } from '@/components/common/profile-settings-provider';
 import { PublicHeader } from '@/components/common/public-header';
 import { LanguageProvider } from '@/lib/i18n/language-provider';
@@ -13,9 +14,11 @@ import { translations } from '@/lib/i18n/translations';
 function renderHeader(currentUser?: { fullName: string } | null) {
   return render(
     <LanguageProvider initialLocale="en">
-      <ProfileSettingsProvider initialLocation="" initialDateOfBirth="" accountType="CLIENT">
-        <PublicHeader currentUser={currentUser} />
-      </ProfileSettingsProvider>
+      <AuthModalProvider>
+        <ProfileSettingsProvider initialLocation="" initialDateOfBirth="" accountType="CLIENT">
+          <PublicHeader currentUser={currentUser} />
+        </ProfileSettingsProvider>
+      </AuthModalProvider>
     </LanguageProvider>,
   );
 }

@@ -333,6 +333,18 @@ async function loadPriceRanges(
   return ranges;
 }
 
+/**
+ * Whether the current request carries a signed-in session — booking is the one thing the public
+ * business/employee/service pages refuse to a signed-out visitor (browsing stays anonymous-safe).
+ */
+export async function isCurrentUserSignedIn(): Promise<boolean> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return !!user;
+}
+
 export async function getBusinessProfile(businessId: string): Promise<BusinessProfile | null> {
   const supabase = await createClient();
 

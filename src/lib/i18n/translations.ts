@@ -61,6 +61,12 @@ export const translations = {
         descriptionStaff: 'את/ה נמנה/ית על צוות העסק "{business}", ולכן לא ניתן לקבוע בו תור כלקוח/ה. אם ברצונך לצפות בפרטי העסק או לנהל אותו, אפשר לגשת למסך "העסקים שלי".',
         goToMyBusinesses: 'מעבר למסך העסקים שלי',
       },
+      // Shown instead of navigating to the calendar when a signed-out visitor tries to book.
+      guestBooking: {
+        title: 'אין אפשרות להזמין תור למשתמש לא מחובר',
+        description: 'כדי לבחור טיפול ולפתוח את היומן יש להתחבר לחשבון קודם.',
+        loginAction: 'לחץ להתחברות',
+      },
       businessDetails: 'פרטי העסק',
       contact: 'יצירת קשר',
       phone: 'טלפון',
@@ -701,6 +707,11 @@ export const translations = {
         descriptionOwner: '“{business}” is registered to you, so you cannot book it as a client. To view or manage it, go to “My businesses”.',
         descriptionStaff: 'You are on the staff of “{business}”, so you cannot book it as a client. To view or manage it, go to “My businesses”.',
         goToMyBusinesses: 'Go to My businesses',
+      },
+      guestBooking: {
+        title: 'Guests cannot book an appointment',
+        description: 'Sign in to your account before choosing a treatment and opening the calendar.',
+        loginAction: 'Click to sign in',
       },
       businessDetails: 'Business details',
       contact: 'Contact',
