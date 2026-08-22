@@ -85,7 +85,7 @@ const servicesByEmployee: Record<string, ServiceSummary[]> = {
 vi.mock('@/server/queries/discovery', () => ({
   getBusinessProfile: async () => business,
   listCategories: async () => [
-    { id: 'category-beauty', slug: 'beauty', icon: 'scissors', name: { he: 'מספרות', en: 'Salons' } },
+    { id: 'category-beauty', slug: 'beauty', icon: 'scissors', name: 'Salons' },
   ],
   listBusinessEmployees: async () => employees,
   getBusinessEmployee: async (_businessId: string, employeeId: string) =>

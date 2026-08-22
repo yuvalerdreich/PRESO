@@ -29,7 +29,7 @@ import type { BusinessSummary, Category } from '@/types/domain';
  * card treatment as well, so a business looks like a business on either screen.
  */
 export function BusinessCard({ business, category }: { business: BusinessSummary; category?: Category }) {
-  const { copy, locale, direction } = useLanguage();
+  const { copy, direction } = useLanguage();
   const ForwardArrow = direction === 'rtl' ? ArrowLeft : ArrowRight;
   const notice = copy.businessProfile.ownBusiness;
 
@@ -65,7 +65,7 @@ export function BusinessCard({ business, category }: { business: BusinessSummary
             plain `relative` paints above the photo while staying below the ::after, which comes
             later in tree order. */}
         <div className="relative -mt-7 flex flex-wrap items-center gap-2">
-          {category ? <span className={cardChipBrand}>{category.name[locale]}</span> : null}
+          {category ? <span className={cardChipBrand}>{category.name}</span> : null}
           {/* §12.55 — a business you own or work at is marked before you open it, so the refusal
               on the other side is expected rather than a surprise. */}
           {business.viewerRelation ? (

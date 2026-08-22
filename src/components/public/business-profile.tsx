@@ -34,7 +34,7 @@ export function BusinessProfile({
   slots?: { dateISO: string; selectedSlot?: string; times: string[] };
   waitlistOpen?: boolean;
 }) {
-  const { copy, locale, direction } = useLanguage();
+  const { copy, direction } = useLanguage();
   const BackArrow = direction === 'rtl' ? ArrowRight : ArrowLeft;
 
   return (
@@ -55,7 +55,7 @@ export function BusinessProfile({
         <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 p-6">
           {category ? (
             <span className="w-fit self-end rounded-full bg-[var(--brand)] px-3 py-1 text-xs font-semibold text-white">
-              {category.name[locale]}
+              {category.name}
             </span>
           ) : null}
           <h1 className="text-2xl font-bold text-white sm:text-3xl">{business.name}</h1>

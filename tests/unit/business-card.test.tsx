@@ -24,7 +24,7 @@ const category: Category = {
   id: 'cat-1',
   slug: 'hair-beauty',
   icon: 'scissors',
-  name: { he: 'מספרות', en: 'Hair and beauty' },
+  name: 'Hair and beauty',
 };
 
 function renderCard(overrides: Partial<BusinessSummary> = {}) {

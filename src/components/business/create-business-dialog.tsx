@@ -7,7 +7,6 @@ import { Building2, CheckCircle2, Plus, Scissors, UserPlus, X } from 'lucide-rea
 import { ErrorNotice } from '@/components/common/error-dialog';
 import { actionButton, actionIconButton, actionTextButton } from '@/components/common/button-styles';
 import { fieldPadding, surfaceFieldSubtle } from '@/components/common/field-styles';
-import { categoryPresentation } from '@/lib/i18n/categories';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import { createBusiness } from '@/server/actions/business';
 import type { BusinessCategory } from '@/types/domain';
@@ -43,7 +42,7 @@ export function CreateBusinessDialog({
   /** Fired after a successful create so the parent can `router.refresh()` its own list. */
   onCreated?: () => void;
 }) {
-  const { copy, locale } = useLanguage();
+  const { copy } = useLanguage();
   const router = useRouter();
   const [services, setServices] = useState<ServiceDraft[]>([{ id: 1, name: '', price: '', duration: '45' }]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -166,7 +165,7 @@ export function CreateBusinessDialog({
                     </option>
                     {categories.map((category) => (
                       <option key={category.id} value={category.id}>
-                        {categoryPresentation(category.slug, category.name).name[locale]}
+                        {category.name}
                       </option>
                     ))}
                   </select>

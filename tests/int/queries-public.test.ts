@@ -72,14 +72,14 @@ describe('discovery queries (anonymous)', () => {
     state.client = anonClient();
   });
 
-  it('lists the seeded categories with a slug and a presentation icon', async () => {
+  it('lists the seeded categories with a slug, a Hebrew name and an icon — straight from the database', async () => {
     const categories = await listCategories();
 
     expect(categories.length).toBeGreaterThanOrEqual(5);
     const beauty = categories.find((c) => c.slug === 'beauty');
-    expect(beauty).toMatchObject({ slug: 'beauty', icon: 'scissors' });
-    // Bilingual labels come from lib/i18n/categories.ts, not from the database.
-    expect(beauty!.name.he).not.toBe(beauty!.name.en);
+    // §12.70 — name and icon are both columns on `categories` now (0028_categories_db_driven.sql),
+    // not an app-code lookup keyed by slug. What comes back is exactly what the row holds.
+    expect(beauty).toMatchObject({ slug: 'beauty', icon: 'scissors', name: 'מספרות ומכוני יופי' });
   });
 
   it('returns the seeded businesses with photo, staff count and avatars resolved', async () => {

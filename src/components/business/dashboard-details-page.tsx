@@ -18,7 +18,6 @@ import { DashboardSectionHeader } from '@/components/business/dashboard-section-
 import { actionButton, actionButtonLarge } from '@/components/common/button-styles';
 import { surfaceCard } from '@/components/common/card-styles';
 import { fieldPadding, surfaceField } from '@/components/common/field-styles';
-import { categoryPresentation } from '@/lib/i18n/categories';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import { updateBusinessDetails } from '@/server/actions/business';
 import type { BusinessCategory, DashboardBusiness } from '@/types/domain';
@@ -55,7 +54,7 @@ export function DashboardDetailsPage({
   business: DashboardBusiness;
   categories: BusinessCategory[];
 }) {
-  const { copy, locale } = useLanguage();
+  const { copy } = useLanguage();
   const settings = copy.dashboard.settingsScreen;
   const router = useRouter();
 
@@ -138,7 +137,7 @@ export function DashboardDetailsPage({
               </option>
               {categories.map((category) => (
                 <option key={category.id} value={category.id}>
-                  {categoryPresentation(category.slug, category.name).name[locale]}
+                  {category.name}
                 </option>
               ))}
             </select>

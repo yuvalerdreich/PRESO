@@ -50,30 +50,28 @@ export type AppointmentStatus = Enums['appointment_status'];
 // Public discovery and booking
 // ---------------------------------------------------------------------------
 
-export type LocalizedText = { he: string; en: string };
-
 export type CategoryIconId = 'graduation-cap' | 'stethoscope' | 'dumbbell' | 'sparkles' | 'scissors';
 
 export type Category = {
   id: string;
   /**
    * The stable key. `categories.id` is a per-environment `gen_random_uuid()`, so local, hosted
-   * and CI all disagree on it — `slug` is what `lib/i18n/` keys its bilingual labels off and
-   * what a `?category=` URL carries.
+   * and CI all disagree on it — `slug` is what a `?category=` URL carries.
    */
   slug: string;
+  /** `categories.icon`, validated against the finite set the UI has a component for (see the icon
+   *  catalogue in components/public/category-chips.tsx). */
   icon: CategoryIconId;
-  /** Sourced from `lib/i18n/`, not the database — see the note on `BusinessSummary.name`. */
-  name: LocalizedText;
+  /** `categories.name`, verbatim — the DB is the only source, no app-code override. */
+  name: string;
 };
 
 export type BusinessSummary = {
   id: string;
   /**
    * Real business/employee/service content is whatever single language the business owner
-   * entered — the DB schema (TECHNICAL_DESIGN.md §3) has no per-field translation columns,
-   * unlike `Category.name` above, which stays `LocalizedText` because it's sourced from the
-   * app's own `src/lib/i18n/` dictionary, not the database.
+   * entered — the DB schema (TECHNICAL_DESIGN.md §3) has no per-field translation columns.
+   * `Category.name` above is the same shape now, for the same reason.
    */
   name: string;
   categoryId: string;

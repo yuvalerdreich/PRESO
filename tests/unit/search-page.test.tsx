@@ -41,8 +41,8 @@ const businesses: BusinessSummary[] = [
 ];
 
 const categories: Category[] = [
-  { id: 'cat-hair', slug: 'hair-beauty', icon: 'scissors', name: { he: 'שיער', en: 'Hair and beauty' } },
-  { id: 'cat-health', slug: 'health-wellness', icon: 'stethoscope', name: { he: 'בריאות', en: 'Health' } },
+  { id: 'cat-hair', slug: 'hair-beauty', icon: 'scissors', name: 'Hair and beauty' },
+  { id: 'cat-health', slug: 'health-wellness', icon: 'stethoscope', name: 'Health' },
 ];
 
 vi.mock('@/server/queries/discovery', () => ({
