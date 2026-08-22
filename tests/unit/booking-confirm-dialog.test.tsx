@@ -12,7 +12,7 @@ import { LanguageProvider } from '@/lib/i18n/language-provider';
 
 const closeHref = '/b/b18f6ca9-0c44-45b8-a8d9-3e1a2c6a1002/e/e-glow-1/s/s-glow-1?month=2026-08&date=2026-08-16';
 
-function renderDialog() {
+function renderDialog(rescheduleAppointmentId?: string) {
   return render(
     <LanguageProvider initialLocale="en">
       <BookingConfirmDialog
@@ -26,6 +26,7 @@ function renderDialog() {
         durationMinutes={50}
         dateISO="2026-08-16"
         time="09:00"
+        rescheduleAppointmentId={rescheduleAppointmentId}
       />
     </LanguageProvider>,
   );
@@ -95,6 +96,27 @@ describe('booking confirm dialog', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Book another/ }));
     expect(push).toHaveBeenCalledWith(closeHref, { scroll: false });
+  });
+
+  it('replaces the old appointment only after the new slot is confirmed', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: 'appointment-new', status: 'CONFIRMED' }),
+    } as Response);
+
+    renderDialog('appointment-old');
+    fireEvent.click(screen.getByRole('button', { name: /^Confirm$/ }));
+
+    await waitFor(() => expect(fetch).toHaveBeenCalled());
+
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/appointments/appointment-old',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({ action: 'reschedule', startsAt: '2026-08-16T09:00:00' }),
+      }),
+    );
+    expect(refresh).toHaveBeenCalled();
   });
 
   it('shows an error toast and does not navigate away when the booking request fails', async () => {

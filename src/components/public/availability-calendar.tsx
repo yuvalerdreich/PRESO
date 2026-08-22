@@ -31,18 +31,30 @@ function monthLabel(monthISO: string, locale: string): string {
   return formatter.format(new Date(year, month - 1, 1));
 }
 
+function bookingHref(
+  basePath: string,
+  params: Record<string, string>,
+  rescheduleAppointmentId?: string,
+): string {
+  const query = new URLSearchParams(params);
+  if (rescheduleAppointmentId) query.set('reschedule', rescheduleAppointmentId);
+  return `${basePath}?${query.toString()}`;
+}
+
 export function AvailabilityCalendar({
   basePath,
   employeeName,
   monthISO,
   selectedDate,
   availableDates,
+  rescheduleAppointmentId,
 }: {
   basePath: string;
   employeeName: string;
   monthISO: string;
   selectedDate: string;
   availableDates: string[];
+  rescheduleAppointmentId?: string;
 }) {
   const { copy, locale } = useLanguage();
 
@@ -85,7 +97,7 @@ export function AvailabilityCalendar({
 
           <div className="flex items-center gap-2">
             <Link
-              href={`${basePath}?month=${shiftMonth(monthISO, -1)}`}
+              href={bookingHref(basePath, { month: shiftMonth(monthISO, -1) }, rescheduleAppointmentId)}
               scroll={false}
               className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
               aria-label={locale === 'he' ? 'החודש הקודם' : 'Previous month'}
@@ -93,7 +105,7 @@ export function AvailabilityCalendar({
               <ChevronRight className="h-4 w-4" aria-hidden="true" />
             </Link>
             <Link
-              href={`${basePath}?month=${shiftMonth(monthISO, 1)}`}
+              href={bookingHref(basePath, { month: shiftMonth(monthISO, 1) }, rescheduleAppointmentId)}
               scroll={false}
               className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
               aria-label={locale === 'he' ? 'החודש הבא' : 'Next month'}
@@ -132,7 +144,7 @@ export function AvailabilityCalendar({
             return (
               <Link
                 key={cell.dateISO}
-                href={`${basePath}?month=${monthISO}&date=${cell.dateISO}`}
+                href={bookingHref(basePath, { month: monthISO, date: cell.dateISO }, rescheduleAppointmentId)}
                 scroll={false}
                 className={`flex h-9 w-9 items-center justify-center justify-self-center rounded-full bg-white text-sm font-semibold text-[var(--brand-dark)] ${
                   isSelected ? 'ring-2 ring-amber-400' : ''

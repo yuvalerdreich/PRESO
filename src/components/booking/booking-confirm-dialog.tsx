@@ -35,6 +35,7 @@ export function BookingConfirmDialog({
   durationMinutes,
   dateISO,
   time,
+  rescheduleAppointmentId,
 }: {
   closeHref: string;
   employeeId: string;
@@ -47,6 +48,8 @@ export function BookingConfirmDialog({
   durationMinutes: number;
   dateISO: string;
   time: string;
+  /** When supplied, confirming atomically replaces this appointment instead of creating a second one. */
+  rescheduleAppointmentId?: string;
 }) {
   const { copy, direction } = useLanguage();
   const router = useRouter();
@@ -64,10 +67,15 @@ export function BookingConfirmDialog({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/appointments', {
-        method: 'POST',
+      const startsAt = `${dateISO}T${time}:00`;
+      const response = await fetch(rescheduleAppointmentId ? `/api/appointments/${rescheduleAppointmentId}` : '/api/appointments', {
+        method: rescheduleAppointmentId ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ employeeId, serviceId, startsAt: `${dateISO}T${time}:00` }),
+        body: JSON.stringify(
+          rescheduleAppointmentId
+            ? { action: 'reschedule', startsAt }
+            : { employeeId, serviceId, startsAt },
+        ),
       });
 
       if (!response.ok) {

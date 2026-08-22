@@ -90,6 +90,12 @@ export function AppointmentsPanel({
     setCancelError(null);
   }
 
+  function startReschedule(appointment: ClientAppointment) {
+    if (!appointment.businessId || !appointment.employeeId || !appointment.serviceId) return;
+    const query = new URLSearchParams({ reschedule: appointment.id });
+    router.push(`/b/${appointment.businessId}/e/${appointment.employeeId}/s/${appointment.serviceId}?${query.toString()}`);
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-7 px-4 py-7 sm:px-6 lg:px-10 lg:py-10">
       {backHref ? (
@@ -117,7 +123,15 @@ export function AppointmentsPanel({
             <div dir="rtl" className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {upcoming.map((appointment) => (
                 <div key={appointment.id} dir={direction}>
-                  <AppointmentCard appointment={appointment} onCancel={() => setCancelTarget(appointment)} />
+                  <AppointmentCard
+                    appointment={appointment}
+                    onCancel={() => setCancelTarget(appointment)}
+                    onReschedule={
+                      appointment.businessId && appointment.employeeId && appointment.serviceId
+                        ? () => startReschedule(appointment)
+                        : undefined
+                    }
+                  />
                 </div>
               ))}
             </div>

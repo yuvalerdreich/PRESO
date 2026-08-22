@@ -195,6 +195,10 @@ export type SlotList = {
 
 export type ClientAppointment = {
   id: string;
+  /** Present on appointment rows read from the database; legacy/demo callers may omit them. */
+  businessId?: string;
+  employeeId?: string;
+  serviceId?: string;
   /** Real business/employee/service names are single-language — see `BusinessSummary.name`. */
   businessName: string;
   employeeName: string;

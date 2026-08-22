@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 
 import { BusinessProfile } from '@/components/public/business-profile';
 import { getDaySlots, getMonthAvailability } from '@/server/queries/availability';
+import { getAppointment } from '@/server/queries/appointments';
 import {
   getBusinessEmployee,
   getBusinessProfile,
@@ -42,14 +43,16 @@ export default async function ServiceAvailabilityPage({
   const monthISO = typeof search.month === 'string' ? search.month : currentMonthISO();
   const selectedSlot = typeof search.slot === 'string' ? search.slot : undefined;
   const waitlistOpen = search.waitlist === '1';
+  const rescheduleAppointmentId = typeof search.reschedule === 'string' ? search.reschedule : undefined;
 
-  const [business, categories, employees, selectedEmployee, services, availableDates] = await Promise.all([
+  const [business, categories, employees, selectedEmployee, services, availableDates, rescheduleAppointment] = await Promise.all([
     getBusinessProfile(businessId),
     listCategories(),
     listBusinessEmployees(businessId),
     getBusinessEmployee(businessId, employeeId),
     listEmployeeServices(businessId, employeeId),
     getMonthAvailability(employeeId, serviceId, monthISO),
+    rescheduleAppointmentId ? getAppointment(rescheduleAppointmentId) : Promise.resolve(null),
   ]);
 
   if (!business || !selectedEmployee) notFound();
@@ -61,6 +64,18 @@ export default async function ServiceAvailabilityPage({
   // rendering a calendar for a pair the engine will never return slots for (PDF §8 rule 8).
   const selectedService = services.find((service) => service.id === serviceId);
   if (!selectedService) notFound();
+
+  // The reschedule RPC keeps the employee and service by design. Reject a hand-edited URL that
+  // tries to pair an old appointment with another employee/service's availability calendar.
+  if (
+    rescheduleAppointmentId &&
+    (!rescheduleAppointment ||
+      rescheduleAppointment.businessId !== businessId ||
+      rescheduleAppointment.employeeId !== employeeId ||
+      rescheduleAppointment.serviceId !== serviceId)
+  ) {
+    notFound();
+  }
 
   const dateISO = typeof search.date === 'string' ? search.date : defaultDate(availableDates, monthISO);
   const daySlots = await getDaySlots(employeeId, serviceId, dateISO);
@@ -78,6 +93,7 @@ export default async function ServiceAvailabilityPage({
       calendar={{ monthISO, selectedDate: dateISO, availableDates }}
       slots={{ dateISO, selectedSlot, times: daySlots }}
       waitlistOpen={waitlistOpen}
+      rescheduleAppointmentId={rescheduleAppointmentId}
     />
   );
 }
