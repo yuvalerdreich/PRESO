@@ -31,19 +31,23 @@ import type { ClientAppointment, ClientWaitlistEntry } from '@/types/domain';
  */
 const APPOINTMENT_SELECT = `
   id,
+  employee_id,
+  service_id,
   slot,
   status,
   services(name),
-  employees(businesses(name, address, timezone)),
+  employees(businesses(id, name, address, timezone)),
   employee_public_profiles(full_name)
 ` as const;
 
 type AppointmentRow = {
   id: string;
+  employee_id: string;
+  service_id: string;
   slot: unknown;
   status: ClientAppointment['status'];
   services: { name: string } | null;
-  employees: { businesses: { name: string; address: string; timezone: string } | null } | null;
+  employees: { businesses: { id: string; name: string; address: string; timezone: string } | null } | null;
   employee_public_profiles: { full_name: string | null } | null;
 };
 
@@ -137,6 +141,9 @@ function toClientAppointment(row: AppointmentRow): ClientAppointment {
 
   return {
     id: row.id,
+    businessId: business?.id ?? '',
+    employeeId: row.employee_id,
+    serviceId: row.service_id,
     businessName: business?.name ?? '',
     employeeName: row.employee_public_profiles?.full_name ?? '',
     serviceName: row.services?.name ?? '',

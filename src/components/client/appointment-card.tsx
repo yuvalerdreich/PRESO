@@ -1,6 +1,6 @@
 'use client';
 
-import { Calendar, Clock, MapPin, XCircle } from 'lucide-react';
+import { Calendar, CalendarClock, Clock, MapPin, XCircle } from 'lucide-react';
 
 import { AppointmentStatusBadge } from '@/components/common/appointment-status-badge';
 import { actionButton } from '@/components/common/button-styles';
@@ -10,9 +10,11 @@ import type { ClientAppointment } from '@/types/domain';
 export function AppointmentCard({
   appointment,
   onCancel,
+  onReschedule,
 }: {
   appointment: ClientAppointment;
   onCancel?: () => void;
+  onReschedule?: () => void;
 }) {
   const { copy } = useLanguage();
 
@@ -46,8 +48,19 @@ export function AppointmentCard({
         </div>
       </div>
 
-      {onCancel ? (
-        <div className="flex justify-end border-t border-[var(--line)] px-5 py-4 sm:px-6">
+      {onCancel || onReschedule ? (
+        <div className="flex flex-wrap justify-end gap-3 border-t border-[var(--line)] px-5 py-4 sm:px-6">
+          {onReschedule ? (
+            <button
+              type="button"
+              onClick={onReschedule}
+              className={`${actionButton} rounded-full px-4 py-2 text-sm`}
+            >
+              <CalendarClock className="h-4 w-4" aria-hidden="true" />
+              {copy.appointments.reschedule}
+            </button>
+          ) : null}
+          {onCancel ? (
           <button
             type="button"
             onClick={onCancel}
@@ -56,6 +69,7 @@ export function AppointmentCard({
             <XCircle className="h-4 w-4" aria-hidden="true" />
             {copy.appointments.cancel}
           </button>
+          ) : null}
         </div>
       ) : null}
     </article>
