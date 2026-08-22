@@ -59,6 +59,7 @@ export function SlotPicker({
           <p className="max-w-sm text-sm text-[var(--muted)]">{copy.businessProfile.noSlotsDescription}</p>
           <Link
             href={waitlistHref}
+            scroll={false}
             className="flex items-center gap-2 rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600"
           >
             <Bell className="h-4 w-4" aria-hidden="true" />
@@ -72,6 +73,7 @@ export function SlotPicker({
               <Link
                 key={slot}
                 href={`${basePath}?month=${monthISO}&date=${dateISO}&slot=${slot}`}
+                scroll={false}
                 className={`rounded-xl border px-4 py-2 text-sm font-semibold ${
                   slot === selectedSlot
                     ? 'border-[var(--brand)] bg-[var(--soft-violet)] text-[var(--brand-deep)]'
@@ -86,6 +88,7 @@ export function SlotPicker({
           <div className="flex justify-center border-t border-[var(--line)] pt-3">
             <Link
               href={waitlistHref}
+              scroll={false}
               className="flex items-center gap-2 rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600"
             >
               <Bell className="h-4 w-4" aria-hidden="true" />

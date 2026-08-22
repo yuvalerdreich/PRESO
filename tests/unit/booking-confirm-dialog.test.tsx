@@ -94,7 +94,7 @@ describe('booking confirm dialog', () => {
     expect(screen.getByText('Pending approval')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Book another/ }));
-    expect(push).toHaveBeenCalledWith(closeHref);
+    expect(push).toHaveBeenCalledWith(closeHref, { scroll: false });
   });
 
   it('shows an error toast and does not navigate away when the booking request fails', async () => {
@@ -112,7 +112,7 @@ describe('booking confirm dialog', () => {
     renderDialog();
     fireEvent.click(screen.getByRole('button', { name: "Don't confirm" }));
 
-    expect(push).toHaveBeenCalledWith(closeHref);
+    expect(push).toHaveBeenCalledWith(closeHref, { scroll: false });
     expect(fetch).not.toHaveBeenCalled();
   });
 
@@ -120,10 +120,10 @@ describe('booking confirm dialog', () => {
     renderDialog();
 
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-    expect(push).toHaveBeenCalledWith(closeHref);
+    expect(push).toHaveBeenCalledWith(closeHref, { scroll: false });
 
     push.mockClear();
     fireEvent.keyDown(document, { key: 'Escape' });
-    expect(push).toHaveBeenCalledWith(closeHref);
+    expect(push).toHaveBeenCalledWith(closeHref, { scroll: false });
   });
 });

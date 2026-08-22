@@ -86,6 +86,7 @@ export function AvailabilityCalendar({
           <div className="flex items-center gap-2">
             <Link
               href={`${basePath}?month=${shiftMonth(monthISO, -1)}`}
+              scroll={false}
               className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
               aria-label={locale === 'he' ? 'החודש הקודם' : 'Previous month'}
             >
@@ -93,6 +94,7 @@ export function AvailabilityCalendar({
             </Link>
             <Link
               href={`${basePath}?month=${shiftMonth(monthISO, 1)}`}
+              scroll={false}
               className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
               aria-label={locale === 'he' ? 'החודש הבא' : 'Next month'}
             >
@@ -131,6 +133,7 @@ export function AvailabilityCalendar({
               <Link
                 key={cell.dateISO}
                 href={`${basePath}?month=${monthISO}&date=${cell.dateISO}`}
+                scroll={false}
                 className={`flex h-9 w-9 items-center justify-center justify-self-center rounded-full bg-white text-sm font-semibold text-[var(--brand-dark)] ${
                   isSelected ? 'ring-2 ring-amber-400' : ''
                 }`}
