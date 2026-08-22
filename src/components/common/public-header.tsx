@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { LoginForm } from '@/components/auth/login-form';
 import { ForgotPasswordForm } from '@/components/auth/forgot-password-form';
+import { SignupForm } from '@/components/auth/signup-form';
 import { Modal } from '@/components/common/modal';
 import { PresoLogo } from '@/components/common/preso-logo';
 import { useProfileSettings } from '@/components/common/profile-settings-context';
@@ -21,7 +22,7 @@ export function PublicHeader({
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [authView, setAuthView] = useState<'login' | 'forgot-password'>('login');
+  const [authView, setAuthView] = useState<'login' | 'forgot-password' | 'signup'>('login');
 
   function closeLoginModal() {
     setIsLoginOpen(false);
@@ -82,12 +83,20 @@ export function PublicHeader({
         <Modal
           onClose={closeLoginModal}
           closeLabel={copy.common.close}
-          ariaLabel={authView === 'login' ? copy.auth.loginTitle : copy.auth.forgotTitle}
+          ariaLabel={
+            authView === 'login'
+              ? copy.auth.loginTitle
+              : authView === 'forgot-password'
+                ? copy.auth.forgotTitle
+                : copy.auth.signupTitle
+          }
         >
           {authView === 'login' ? (
-            <LoginForm onForgotPassword={() => setAuthView('forgot-password')} />
-          ) : (
+            <LoginForm onForgotPassword={() => setAuthView('forgot-password')} onSignup={() => setAuthView('signup')} />
+          ) : authView === 'forgot-password' ? (
             <ForgotPasswordForm onBackToLogin={() => setAuthView('login')} />
+          ) : (
+            <SignupForm onLogin={() => setAuthView('login')} />
           )}
         </Modal>
       ) : null}

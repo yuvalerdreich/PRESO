@@ -11,7 +11,7 @@ import { useLanguage } from '@/lib/i18n/language-provider';
 import { createClient } from '@/lib/supabase/client';
 import { signupInput, type SignupInput } from '@/lib/validation/identity';
 
-export function SignupForm({ next }: { next?: string }) {
+export function SignupForm({ next, onLogin }: { next?: string; onLogin?: () => void }) {
   const { copy } = useLanguage();
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -162,9 +162,15 @@ export function SignupForm({ next }: { next?: string }) {
 
       <p className="text-center text-sm text-[var(--muted)]">
         {copy.auth.haveAccount}{' '}
-        <Link href="/login" className="font-medium text-[var(--brand)] hover:underline">
-          {copy.auth.loginLink}
-        </Link>
+        {onLogin ? (
+          <button type="button" onClick={onLogin} className="font-medium text-[var(--brand)] hover:underline">
+            {copy.auth.loginLink}
+          </button>
+        ) : (
+          <Link href="/login" className="font-medium text-[var(--brand)] hover:underline">
+            {copy.auth.loginLink}
+          </Link>
+        )}
       </p>
     </div>
   );

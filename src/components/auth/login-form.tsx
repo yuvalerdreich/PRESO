@@ -16,11 +16,14 @@ export function LoginForm({
   next,
   suspended,
   onForgotPassword,
+  onSignup,
 }: {
   next?: string;
   suspended?: boolean;
   /** Used by the header modal to keep password recovery in the same dialog. */
   onForgotPassword?: () => void;
+  /** Used by the header modal to keep registration in the same dialog. */
+  onSignup?: () => void;
 }) {
   const { copy } = useLanguage();
   const router = useRouter();
@@ -136,9 +139,15 @@ export function LoginForm({
 
       <p className="text-center text-sm text-[var(--muted)]">
         {copy.auth.noAccountYet}{' '}
-        <Link href="/signup" className="font-medium text-[var(--brand)] hover:underline">
-          {copy.auth.signupLink}
-        </Link>
+        {onSignup ? (
+          <button type="button" onClick={onSignup} className="font-medium text-[var(--brand)] hover:underline">
+            {copy.auth.signupLink}
+          </button>
+        ) : (
+          <Link href="/signup" className="font-medium text-[var(--brand)] hover:underline">
+            {copy.auth.signupLink}
+          </Link>
+        )}
       </p>
     </div>
   );

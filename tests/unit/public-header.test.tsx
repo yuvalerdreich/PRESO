@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/navigation', () => ({
@@ -57,6 +57,23 @@ describe('public header', () => {
     expect(screen.getByRole('heading', { name: translations.en.auth.forgotTitle })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: translations.en.auth.backToLogin }));
+    expect(screen.getByRole('dialog', { name: translations.en.auth.loginTitle })).toBeInTheDocument();
+  });
+
+  it('keeps registration inside the sign-in modal', () => {
+    renderHeader();
+
+    fireEvent.click(screen.getByRole('button', { name: translations.en.header.signIn }));
+    fireEvent.click(screen.getByRole('button', { name: translations.en.auth.signupLink }));
+
+    expect(screen.getByRole('dialog', { name: translations.en.auth.signupTitle })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: translations.en.auth.signupTitle })).toBeInTheDocument();
+
+    fireEvent.click(
+      within(screen.getByRole('dialog', { name: translations.en.auth.signupTitle })).getByRole('button', {
+        name: translations.en.auth.loginLink,
+      }),
+    );
     expect(screen.getByRole('dialog', { name: translations.en.auth.loginTitle })).toBeInTheDocument();
   });
 
