@@ -36,10 +36,14 @@ describe('public header', () => {
     expect(screen.queryByText(translations.en.sidebar.appointments)).not.toBeInTheDocument();
   });
 
-  it('shows a sign-in link when no one is logged in', () => {
+  it('opens the sign-in modal when no one is logged in', () => {
     renderHeader();
 
-    expect(screen.getByRole('link', { name: translations.en.header.signIn })).toHaveAttribute('href', '/login');
+    fireEvent.click(screen.getByRole('button', { name: translations.en.header.signIn }));
+
+    expect(screen.getByRole('dialog', { name: translations.en.auth.loginTitle })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: translations.en.common.close }));
+    expect(screen.queryByRole('dialog', { name: translations.en.auth.loginTitle })).not.toBeInTheDocument();
     expect(screen.queryByText(translations.en.header.logout)).not.toBeInTheDocument();
   });
 
