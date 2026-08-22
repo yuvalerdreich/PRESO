@@ -29,6 +29,7 @@ export function BusinessProfile({
   waitlistOpen,
   isAuthenticated = true,
   authRequired = false,
+  rescheduleAppointmentId,
 }: {
   business: BusinessProfileType;
   category?: Category;
@@ -43,6 +44,8 @@ export function BusinessProfile({
   isAuthenticated?: boolean;
   /** Set when a direct link to the calendar bounced back here because the visitor isn't signed in. */
   authRequired?: boolean;
+  /** Keeps the booking flow in reschedule mode for this existing appointment. */
+  rescheduleAppointmentId?: string;
 }) {
   const { copy, direction } = useLanguage();
   const pathname = usePathname();
@@ -85,15 +88,23 @@ export function BusinessProfile({
         </div>
       </div>
 
-      <EmployeeList businessId={business.id} employees={employees} selectedEmployeeId={selectedEmployee.id} />
-      <EmployeeServiceList
-        businessId={business.id}
-        employee={selectedEmployee}
-        services={services}
-        selectedServiceId={selectedServiceId}
-        isAuthenticated={isAuthenticated}
-        onRequireLogin={() => setLoginRequired(true)}
-      />
+      {rescheduleAppointmentId ? (
+        <section className="rounded-2xl border border-[var(--line)] bg-white px-5 py-4 text-sm text-[var(--muted)]">
+          {copy.businessProfile.reschedulingFor}: <span className="font-semibold text-[var(--foreground)]">{selectedEmployee.fullName} · {services.find((service) => service.id === selectedServiceId)?.name}</span>
+        </section>
+      ) : (
+        <>
+          <EmployeeList businessId={business.id} employees={employees} selectedEmployeeId={selectedEmployee.id} />
+          <EmployeeServiceList
+            businessId={business.id}
+            employee={selectedEmployee}
+            services={services}
+            selectedServiceId={selectedServiceId}
+            isAuthenticated={isAuthenticated}
+            onRequireLogin={() => setLoginRequired(true)}
+          />
+        </>
+      )}
 
       {isAuthenticated && calendar && selectedServiceId ? (
         <AvailabilityCalendar
@@ -102,6 +113,7 @@ export function BusinessProfile({
           monthISO={calendar.monthISO}
           selectedDate={calendar.selectedDate}
           availableDates={calendar.availableDates}
+          rescheduleAppointmentId={rescheduleAppointmentId}
         />
       ) : null}
 
@@ -113,6 +125,7 @@ export function BusinessProfile({
           employeeName={selectedEmployee.fullName}
           slots={slots.times}
           selectedSlot={slots.selectedSlot}
+          rescheduleAppointmentId={rescheduleAppointmentId}
         />
       ) : null}
 
@@ -126,6 +139,7 @@ export function BusinessProfile({
             if (calendar?.monthISO) closeParams.set('month', calendar.monthISO);
             closeParams.set('date', slots.dateISO);
             if (slots.selectedSlot) closeParams.set('slot', slots.selectedSlot);
+            if (rescheduleAppointmentId) closeParams.set('reschedule', rescheduleAppointmentId);
 
             return (
               <WaitlistJoinModal
@@ -152,6 +166,7 @@ export function BusinessProfile({
             const closeParams = new URLSearchParams();
             if (calendar?.monthISO) closeParams.set('month', calendar.monthISO);
             closeParams.set('date', slots.dateISO);
+            if (rescheduleAppointmentId) closeParams.set('reschedule', rescheduleAppointmentId);
             const closeQuery = closeParams.toString();
 
             return (
@@ -167,6 +182,7 @@ export function BusinessProfile({
                 durationMinutes={selectedService.durationMinutes}
                 dateISO={slots.dateISO}
                 time={slots.selectedSlot}
+                rescheduleAppointmentId={rescheduleAppointmentId}
               />
             );
           })()

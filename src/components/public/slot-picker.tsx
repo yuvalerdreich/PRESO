@@ -10,6 +10,16 @@ function formatDisplayDate(dateISO: string): string {
   return `${day}/${month}/${year}`;
 }
 
+function bookingHref(
+  basePath: string,
+  params: Record<string, string>,
+  rescheduleAppointmentId?: string,
+): string {
+  const query = new URLSearchParams(params);
+  if (rescheduleAppointmentId) query.set('reschedule', rescheduleAppointmentId);
+  return `${basePath}?${query.toString()}`;
+}
+
 export function SlotPicker({
   basePath,
   monthISO,
@@ -17,6 +27,7 @@ export function SlotPicker({
   employeeName,
   slots,
   selectedSlot,
+  rescheduleAppointmentId,
 }: {
   basePath: string;
   monthISO: string;
@@ -24,10 +35,11 @@ export function SlotPicker({
   employeeName: string;
   slots: string[];
   selectedSlot?: string;
+  rescheduleAppointmentId?: string;
 }) {
   const { copy } = useLanguage();
   const displayDate = formatDisplayDate(dateISO);
-  const waitlistHref = `${basePath}?month=${monthISO}&date=${dateISO}&waitlist=1`;
+  const waitlistHref = bookingHref(basePath, { month: monthISO, date: dateISO, waitlist: '1' }, rescheduleAppointmentId);
 
   return (
     <section className="flex flex-col gap-4 rounded-2xl border border-[var(--line)] bg-white p-6">
@@ -72,7 +84,7 @@ export function SlotPicker({
             {slots.map((slot) => (
               <Link
                 key={slot}
-                href={`${basePath}?month=${monthISO}&date=${dateISO}&slot=${slot}`}
+                href={bookingHref(basePath, { month: monthISO, date: dateISO, slot }, rescheduleAppointmentId)}
                 scroll={false}
                 className={`rounded-xl border px-4 py-2 text-sm font-semibold ${
                   slot === selectedSlot

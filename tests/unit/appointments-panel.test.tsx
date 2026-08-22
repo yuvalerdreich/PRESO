@@ -1,9 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+const push = vi.fn();
 const refresh = vi.fn();
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn(), refresh }),
+  useRouter: () => ({ push, refresh }),
 }));
 
 import { AppointmentsPanel } from '@/components/client/appointments-panel';
@@ -29,6 +30,9 @@ function loadFixture(): { appointments: ClientAppointment[]; waitlistEntries: Cl
     appointments: [
       {
         id: '2a0e4e0e-8f5c-4a1e-9a3f-1c0b2d3e4f50',
+        businessId: 'business-zohar',
+        employeeId: 'employee-zohar',
+        serviceId: 'service-haircut',
         businessName: 'Studio Zohar - מספרת זוהר',
         employeeName: 'זוהר לוי',
         serviceName: 'תספורת ועיצוב שיער',
@@ -73,6 +77,7 @@ function renderPanel(appointments: ClientAppointment[], waitlistEntries: ClientW
 
 describe('appointments panel', () => {
   beforeEach(() => {
+    push.mockClear();
     refresh.mockClear();
   });
 
@@ -93,6 +98,17 @@ describe('appointments panel', () => {
     expect(screen.getByRole('dialog', { name: 'Cancel this appointment?' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('opens the same provider and service in reschedule mode', () => {
+    const { appointments, waitlistEntries } = loadFixture();
+    renderPanel(appointments, waitlistEntries);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reschedule appointment' }));
+
+    expect(push).toHaveBeenCalledWith(
+      `/b/${appointments[0].businessId}/e/${appointments[0].employeeId}/s/${appointments[0].serviceId}?reschedule=${appointments[0].id}`,
+    );
   });
 
   /**
