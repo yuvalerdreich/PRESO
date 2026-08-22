@@ -5,7 +5,17 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
 }));
 
+// The bell's NotificationsProvider opens a real Supabase Realtime channel on mount; stub the
+// browser client so that's a no-op here rather than reaching for env vars this test never sets.
+vi.mock('@/lib/supabase/client', () => ({
+  createClient: () => ({
+    channel: () => ({ on: () => ({ subscribe: () => ({}) }) }),
+    removeChannel: () => {},
+  }),
+}));
+
 import { AuthModalProvider } from '@/components/common/auth-modal-provider';
+import { NotificationsProvider } from '@/components/common/notifications-provider';
 import { ProfileSettingsProvider } from '@/components/common/profile-settings-provider';
 import { PublicHeader } from '@/components/common/public-header';
 import { LanguageProvider } from '@/lib/i18n/language-provider';
@@ -15,9 +25,11 @@ function renderHeader(currentUser?: { fullName: string } | null) {
   return render(
     <LanguageProvider initialLocale="en">
       <AuthModalProvider>
-        <ProfileSettingsProvider initialLocation="" initialDateOfBirth="" accountType="CLIENT">
-          <PublicHeader currentUser={currentUser} />
-        </ProfileSettingsProvider>
+        <NotificationsProvider profileId="test-profile" initialNotifications={[]} initialUnreadCount={0}>
+          <ProfileSettingsProvider initialLocation="" initialDateOfBirth="" accountType="CLIENT">
+            <PublicHeader currentUser={currentUser} />
+          </ProfileSettingsProvider>
+        </NotificationsProvider>
       </AuthModalProvider>
     </LanguageProvider>,
   );

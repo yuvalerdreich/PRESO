@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { PresoLogo } from '@/components/common/preso-logo';
 import { useAuthModal } from '@/components/common/auth-modal-context';
+import { NotificationBell } from '@/components/common/notification-bell';
 import { useProfileSettings } from '@/components/common/profile-settings-context';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import { createClient } from '@/lib/supabase/client';
@@ -40,6 +41,7 @@ export function PublicHeader({
         <div className="flex items-center gap-3">
           {currentUser ? (
             <div className="flex items-center gap-3">
+              <NotificationBell />
               <button
                 type="button"
                 onClick={openProfileSettings}

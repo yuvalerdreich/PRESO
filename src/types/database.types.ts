@@ -43,6 +43,7 @@ export type Database = {
           created_by: string
           employee_id: string
           id: string
+          reminder_sent_at: string | null
           service_id: string
           slot: unknown
           status: Database["public"]["Enums"]["appointment_status"]
@@ -55,6 +56,7 @@ export type Database = {
           created_by: string
           employee_id: string
           id?: string
+          reminder_sent_at?: string | null
           service_id: string
           slot: unknown
           status: Database["public"]["Enums"]["appointment_status"]
@@ -67,6 +69,7 @@ export type Database = {
           created_by?: string
           employee_id?: string
           id?: string
+          reminder_sent_at?: string | null
           service_id?: string
           slot?: unknown
           status?: Database["public"]["Enums"]["appointment_status"]
@@ -982,6 +985,7 @@ export type Database = {
           created_by: string
           employee_id: string
           id: string
+          reminder_sent_at: string | null
           service_id: string
           slot: unknown
           status: Database["public"]["Enums"]["appointment_status"]
@@ -1013,6 +1017,7 @@ export type Database = {
           created_by: string
           employee_id: string
           id: string
+          reminder_sent_at: string | null
           service_id: string
           slot: unknown
           status: Database["public"]["Enums"]["appointment_status"]
@@ -1040,6 +1045,7 @@ export type Database = {
           created_by: string
           employee_id: string
           id: string
+          reminder_sent_at: string | null
           service_id: string
           slot: unknown
           status: Database["public"]["Enums"]["appointment_status"]
@@ -1061,6 +1067,7 @@ export type Database = {
           created_by: string
           employee_id: string
           id: string
+          reminder_sent_at: string | null
           service_id: string
           slot: unknown
           status: Database["public"]["Enums"]["appointment_status"]
@@ -1108,6 +1115,7 @@ export type Database = {
           created_by: string
           employee_id: string
           id: string
+          reminder_sent_at: string | null
           service_id: string
           slot: unknown
           status: Database["public"]["Enums"]["appointment_status"]
@@ -1230,6 +1238,7 @@ export type Database = {
           created_by: string
           employee_id: string
           id: string
+          reminder_sent_at: string | null
           service_id: string
           slot: unknown
           status: Database["public"]["Enums"]["appointment_status"]
@@ -1256,6 +1265,7 @@ export type Database = {
           created_by: string
           employee_id: string
           id: string
+          reminder_sent_at: string | null
           service_id: string
           slot: unknown
           status: Database["public"]["Enums"]["appointment_status"]
@@ -1269,6 +1279,12 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      sweep_appointment_reminders: {
+        Args: never
+        Returns: {
+          reminded: number
+        }[]
+      }
       sweep_waitlist_expiry: {
         Args: never
         Returns: {
@@ -1298,6 +1314,7 @@ export type Database = {
         | "APPOINTMENT_CANCELLED"
         | "APPOINTMENT_RESCHEDULED"
         | "WAITLIST_MATCHED"
+        | "APPOINTMENT_REMINDER"
       profile_status: "ACTIVE" | "SUSPENDED"
       report_status: "OPEN" | "RESOLVED" | "DISMISSED"
       report_target_type: "BUSINESS" | "PROFILE" | "APPOINTMENT"
@@ -1454,6 +1471,7 @@ export const Constants = {
         "APPOINTMENT_CANCELLED",
         "APPOINTMENT_RESCHEDULED",
         "WAITLIST_MATCHED",
+        "APPOINTMENT_REMINDER",
       ],
       profile_status: ["ACTIVE", "SUSPENDED"],
       report_status: ["OPEN", "RESOLVED", "DISMISSED"],

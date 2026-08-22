@@ -38,6 +38,28 @@ export const markNotificationRead = action(
 );
 
 /** Marking the whole list read from the bell — same single writable column, applied in bulk. */
+/**
+ * Dismissing a notification outright (the bell's per-row "x", and a click on the row itself —
+ * TECHNICAL_DESIGN.md §12.x). `0032_notification_delete.sql` is what makes this legal: the
+ * original RLS design shipped with no DELETE policy at all ("no purge job in the MVP"), which was
+ * about server-side retention, not a user dismissing their own notification.
+ */
+export const deleteNotification = action(
+  'deleteNotification',
+  z.object({ id: uuid }),
+  async (input) => {
+    await requireSession();
+    const supabase = await createClient();
+
+    const { error } = await supabase.from('notifications').delete().eq('id', input.id);
+    if (error) throw error;
+
+    revalidatePath('/me/notifications');
+
+    return { id: input.id };
+  },
+);
+
 export const markAllNotificationsRead = action(
   'markAllNotificationsRead',
   z.object({}).default({}),

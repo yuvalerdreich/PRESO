@@ -30,6 +30,7 @@ export function BusinessProfile({
   isAuthenticated = true,
   authRequired = false,
   rescheduleAppointmentId,
+  claimWaitlistEntryId,
 }: {
   business: BusinessProfileType;
   category?: Category;
@@ -46,6 +47,8 @@ export function BusinessProfile({
   authRequired?: boolean;
   /** Keeps the booking flow in reschedule mode for this existing appointment. */
   rescheduleAppointmentId?: string;
+  /** Reached from a WAITLIST_MATCHED notification — confirming claims this entry instead of an ordinary booking. */
+  claimWaitlistEntryId?: string;
 }) {
   const { copy, direction } = useLanguage();
   const pathname = usePathname();
@@ -183,6 +186,7 @@ export function BusinessProfile({
                 dateISO={slots.dateISO}
                 time={slots.selectedSlot}
                 rescheduleAppointmentId={rescheduleAppointmentId}
+                claimWaitlistEntryId={claimWaitlistEntryId}
               />
             );
           })()

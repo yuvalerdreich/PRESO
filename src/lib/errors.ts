@@ -19,7 +19,7 @@ export type AppErrorCode =
   | 'GONE' // 410 — waitlist match expired
   | 'UNPROCESSABLE' // 422 — well-formed but not a legal state transition
   | 'RATE_LIMITED' // 429
-  | 'UPSTREAM' // 502 — Resend, Storage
+  | 'UPSTREAM' // 502 — Storage
   | 'UNAVAILABLE' // 503 — a dependency this endpoint needs is unconfigured (§12.58)
   | 'INTERNAL'; // 500
 

@@ -36,6 +36,7 @@ export function BookingConfirmDialog({
   dateISO,
   time,
   rescheduleAppointmentId,
+  claimWaitlistEntryId,
 }: {
   closeHref: string;
   employeeId: string;
@@ -50,6 +51,8 @@ export function BookingConfirmDialog({
   time: string;
   /** When supplied, confirming atomically replaces this appointment instead of creating a second one. */
   rescheduleAppointmentId?: string;
+  /** When supplied, confirming claims this waitlist entry instead of an ordinary booking. */
+  claimWaitlistEntryId?: string;
 }) {
   const { copy, direction } = useLanguage();
   const router = useRouter();
@@ -68,14 +71,22 @@ export function BookingConfirmDialog({
 
     try {
       const startsAt = `${dateISO}T${time}:00`;
-      const response = await fetch(rescheduleAppointmentId ? `/api/appointments/${rescheduleAppointmentId}` : '/api/appointments', {
-        method: rescheduleAppointmentId ? 'PATCH' : 'POST',
+      const endpoint = claimWaitlistEntryId
+        ? `/api/waitlist/${claimWaitlistEntryId}/claim`
+        : rescheduleAppointmentId
+          ? `/api/appointments/${rescheduleAppointmentId}`
+          : '/api/appointments';
+      const method = claimWaitlistEntryId ? 'POST' : rescheduleAppointmentId ? 'PATCH' : 'POST';
+      const body = claimWaitlistEntryId
+        ? { employeeId, serviceId, startsAt }
+        : rescheduleAppointmentId
+          ? { action: 'reschedule', startsAt }
+          : { employeeId, serviceId, startsAt };
+
+      const response = await fetch(endpoint, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(
-          rescheduleAppointmentId
-            ? { action: 'reschedule', startsAt }
-            : { employeeId, serviceId, startsAt },
-        ),
+        body: JSON.stringify(body),
       });
 
       if (!response.ok) {

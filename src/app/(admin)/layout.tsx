@@ -2,11 +2,13 @@ import { redirect } from 'next/navigation';
 
 import { AccountSidebar } from '@/components/common/account-sidebar';
 import { AuthModalProvider } from '@/components/common/auth-modal-provider';
+import { NotificationsProvider } from '@/components/common/notifications-provider';
 import { ProfileSettingsProvider } from '@/components/common/profile-settings-provider';
 import { PublicHeader } from '@/components/common/public-header';
 import { AppError } from '@/lib/errors';
 import { requireAdmin } from '@/server/guards';
 import { listClientAppointments } from '@/server/queries/appointments';
+import { countUnread, listNotifications } from '@/server/queries/notifications';
 
 /**
  * Shared admin-console chrome and authorization boundary. Every route in this group requires an
@@ -23,23 +25,29 @@ export default async function AdminLayout({ children }: LayoutProps<'/'>) {
     throw error;
   }
 
-  const appointments = await listClientAppointments();
+  const [appointments, notifications, unreadCount] = await Promise.all([
+    listClientAppointments(),
+    listNotifications(),
+    countUnread(),
+  ]);
 
   return (
     <AuthModalProvider>
-      <ProfileSettingsProvider
-        initialLocation={profile.location ?? ''}
-        initialDateOfBirth={profile.date_of_birth ?? ''}
-        accountType={profile.account_type}
-      >
-        <div className="flex min-h-full flex-col">
-          <PublicHeader currentUser={{ fullName: profile.full_name }} />
-          <div className="flex flex-1">
-            <AccountSidebar appointments={appointments} accountType={profile.account_type} />
-            <main className="min-w-0 flex-1">{children}</main>
+      <NotificationsProvider profileId={profile.id} initialNotifications={notifications} initialUnreadCount={unreadCount}>
+        <ProfileSettingsProvider
+          initialLocation={profile.location ?? ''}
+          initialDateOfBirth={profile.date_of_birth ?? ''}
+          accountType={profile.account_type}
+        >
+          <div className="flex min-h-full flex-col">
+            <PublicHeader currentUser={{ fullName: profile.full_name }} />
+            <div className="flex flex-1">
+              <AccountSidebar appointments={appointments} accountType={profile.account_type} />
+              <main className="min-w-0 flex-1">{children}</main>
+            </div>
           </div>
-        </div>
-      </ProfileSettingsProvider>
+        </ProfileSettingsProvider>
+      </NotificationsProvider>
     </AuthModalProvider>
   );
 }

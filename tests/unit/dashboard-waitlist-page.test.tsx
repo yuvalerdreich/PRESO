@@ -2,7 +2,6 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { DashboardWaitlistPage } from '@/components/business/dashboard-waitlist-page';
-import { renderNotificationEmail } from '@/lib/email/templates';
 import { LanguageProvider } from '@/lib/i18n/language-provider';
 import type { DashboardWaitlistEntry } from '@/types/domain';
 
@@ -78,44 +77,5 @@ describe('business waitlist screen', () => {
     expect(
       screen.getByRole('heading', { name: 'Nobody is on the waiting list right now.' }),
     ).toBeInTheDocument();
-  });
-});
-
-describe('waitlist email', () => {
-  const payload = {
-    businessName: 'Studio Zohar',
-    serviceName: 'Haircut',
-    startsAt: '2026-08-25T06:00:00.000Z',
-    timezone: 'Asia/Jerusalem',
-    claimExpiresAt: '2026-08-25T07:00:00.000Z',
-  };
-
-  it('renders the freed slot in the business’s timezone, not the server’s', () => {
-    const message = renderNotificationEmail('WAITLIST_MATCHED', payload, 'client@example.com');
-
-    expect(message).not.toBeNull();
-    expect(message!.subject).toContain('Studio Zohar');
-    // 06:00 UTC is 09:00 in Jerusalem — the zone comes from the payload for exactly this reason.
-    expect(message!.text).toContain('2026-08-25 09:00');
-    expect(message!.html).toContain('dir="rtl"');
-  });
-
-  it('says plainly that the slot is not being held', () => {
-    const message = renderNotificationEmail('WAITLIST_MATCHED', payload, 'client@example.com');
-
-    // Every eligible client gets this same email at the same moment; the first to confirm wins.
-    expect(message!.text).toContain('בו-זמנית');
-    expect(message!.text).toMatch(/מי שיאשר ראשון/);
-  });
-
-  it('escapes payload text rather than interpolating it into the HTML', () => {
-    const message = renderNotificationEmail(
-      'WAITLIST_MATCHED',
-      { ...payload, businessName: '<script>alert(1)</script>' },
-      'client@example.com',
-    );
-
-    expect(message!.html).not.toContain('<script>');
-    expect(message!.html).toContain('&lt;script&gt;');
   });
 });

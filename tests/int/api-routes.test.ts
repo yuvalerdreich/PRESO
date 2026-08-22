@@ -689,8 +689,8 @@ describe('cancelling notifies the whole waiting list at once — §6.7, §12.15'
     // inside the cancelling transaction, so they share one now() — there is no queue and no order.
     expect(new Set((notified ?? []).map((row) => row.created_at)).size).toBe(1);
 
-    // The payload is what the email is rendered from (`lib/email/templates.ts`), so it has to carry
-    // the freed instant and the zone to render it in.
+    // The payload is what the notification bell renders from (`lib/notifications/format.ts`), so
+    // it has to carry the freed instant and the zone to render it in.
     const payload = (notified ?? [])[0].payload as Record<string, unknown>;
     expect(payload).toMatchObject({ serviceId: SERVICE_ZOHAR_HAIRCUT, timezone: 'Asia/Jerusalem' });
     expect(new Date(String(payload.startsAt)).toISOString()).toBe(new Date(startsAt).toISOString());
