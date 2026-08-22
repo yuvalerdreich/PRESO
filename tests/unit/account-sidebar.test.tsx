@@ -30,10 +30,11 @@ function appointment(overrides: Partial<ClientAppointment>): ClientAppointment {
 function renderSidebar(
   appointments: ClientAppointment[],
   accountType?: Database['public']['Enums']['account_type'],
+  isAuthenticated?: boolean,
 ) {
   return render(
     <LanguageProvider initialLocale="en">
-      <AccountSidebar appointments={appointments} accountType={accountType} />
+      <AccountSidebar appointments={appointments} accountType={accountType} isAuthenticated={isAuthenticated} />
     </LanguageProvider>,
   );
 }
@@ -53,6 +54,17 @@ describe('account sidebar', () => {
     expect(nav.querySelectorAll('a, button')).toHaveLength(2);
     expect(
       screen.queryByRole('link', { name: translations.en.sidebar.businessDashboard }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows a signed-out visitor only the home entry', () => {
+    renderSidebar([], undefined, false);
+
+    const nav = screen.getByRole('navigation', { name: translations.en.sidebar.title });
+    expect(screen.getByRole('link', { name: translations.en.sidebar.home })).toBeInTheDocument();
+    expect(nav.querySelectorAll('a, button')).toHaveLength(1);
+    expect(
+      screen.queryByRole('link', { name: translations.en.sidebar.openAppointments }),
     ).not.toBeInTheDocument();
   });
 
