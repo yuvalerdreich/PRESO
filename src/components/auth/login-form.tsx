@@ -12,7 +12,19 @@ import { useLanguage } from '@/lib/i18n/language-provider';
 import { createClient } from '@/lib/supabase/client';
 import { loginInput, type LoginInput } from '@/lib/validation/identity';
 
-export function LoginForm({ next, suspended }: { next?: string; suspended?: boolean }) {
+export function LoginForm({
+  next,
+  suspended,
+  onForgotPassword,
+  onSignup,
+}: {
+  next?: string;
+  suspended?: boolean;
+  /** Used by the header modal to keep password recovery in the same dialog. */
+  onForgotPassword?: () => void;
+  /** Used by the header modal to keep registration in the same dialog. */
+  onSignup?: () => void;
+}) {
   const { copy } = useLanguage();
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(suspended ? copy.auth.suspendedAccount : null);
@@ -100,9 +112,19 @@ export function LoginForm({ next, suspended }: { next?: string; suspended?: bool
           {errors.password ? <span className="text-xs text-red-600">{errors.password.message}</span> : null}
         </label>
 
-        <Link href="/forgot-password" className="self-end text-xs font-medium text-[var(--brand)] hover:underline">
-          {copy.auth.forgotPasswordLink}
-        </Link>
+        {onForgotPassword ? (
+          <button
+            type="button"
+            onClick={onForgotPassword}
+            className="self-end text-xs font-medium text-[var(--brand)] hover:underline"
+          >
+            {copy.auth.forgotPasswordLink}
+          </button>
+        ) : (
+          <Link href="/forgot-password" className="self-end text-xs font-medium text-[var(--brand)] hover:underline">
+            {copy.auth.forgotPasswordLink}
+          </Link>
+        )}
 
         {serverError ? <p className="text-sm text-red-600">{serverError}</p> : null}
 
@@ -117,9 +139,15 @@ export function LoginForm({ next, suspended }: { next?: string; suspended?: bool
 
       <p className="text-center text-sm text-[var(--muted)]">
         {copy.auth.noAccountYet}{' '}
-        <Link href="/signup" className="font-medium text-[var(--brand)] hover:underline">
-          {copy.auth.signupLink}
-        </Link>
+        {onSignup ? (
+          <button type="button" onClick={onSignup} className="font-medium text-[var(--brand)] hover:underline">
+            {copy.auth.signupLink}
+          </button>
+        ) : (
+          <Link href="/signup" className="font-medium text-[var(--brand)] hover:underline">
+            {copy.auth.signupLink}
+          </Link>
+        )}
       </p>
     </div>
   );

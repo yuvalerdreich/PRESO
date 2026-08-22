@@ -9,7 +9,7 @@ import { useLanguage } from '@/lib/i18n/language-provider';
 import { createClient } from '@/lib/supabase/client';
 import { forgotPasswordInput, type ForgotPasswordInput } from '@/lib/validation/identity';
 
-export function ForgotPasswordForm() {
+export function ForgotPasswordForm({ onBackToLogin }: { onBackToLogin?: () => void }) {
   const { copy } = useLanguage();
   const [sent, setSent] = useState(false);
 
@@ -34,9 +34,15 @@ export function ForgotPasswordForm() {
       <div className="flex flex-col gap-4 text-center">
         <h1 className="text-xl font-bold text-[var(--foreground)]">{copy.auth.checkYourEmailTitle}</h1>
         <p className="text-sm text-[var(--muted)]">{copy.auth.checkYourEmailBody}</p>
-        <Link href="/login" className="text-sm font-medium text-[var(--brand)] hover:underline">
-          {copy.auth.backToLogin}
-        </Link>
+        {onBackToLogin ? (
+          <button type="button" onClick={onBackToLogin} className="text-sm font-medium text-[var(--brand)] hover:underline">
+            {copy.auth.backToLogin}
+          </button>
+        ) : (
+          <Link href="/login" className="text-sm font-medium text-[var(--brand)] hover:underline">
+            {copy.auth.backToLogin}
+          </Link>
+        )}
       </div>
     );
   }
@@ -69,9 +75,15 @@ export function ForgotPasswordForm() {
         </button>
       </form>
 
-      <Link href="/login" className="text-center text-sm font-medium text-[var(--brand)] hover:underline">
-        {copy.auth.backToLogin}
-      </Link>
+      {onBackToLogin ? (
+        <button type="button" onClick={onBackToLogin} className="text-center text-sm font-medium text-[var(--brand)] hover:underline">
+          {copy.auth.backToLogin}
+        </button>
+      ) : (
+        <Link href="/login" className="text-center text-sm font-medium text-[var(--brand)] hover:underline">
+          {copy.auth.backToLogin}
+        </Link>
+      )}
     </div>
   );
 }

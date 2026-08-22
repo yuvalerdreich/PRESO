@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/navigation', () => ({
@@ -36,11 +36,45 @@ describe('public header', () => {
     expect(screen.queryByText(translations.en.sidebar.appointments)).not.toBeInTheDocument();
   });
 
-  it('shows a sign-in link when no one is logged in', () => {
+  it('opens the sign-in modal when no one is logged in', () => {
     renderHeader();
 
-    expect(screen.getByRole('link', { name: translations.en.header.signIn })).toHaveAttribute('href', '/login');
+    fireEvent.click(screen.getByRole('button', { name: translations.en.header.signIn }));
+
+    expect(screen.getByRole('dialog', { name: translations.en.auth.loginTitle })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: translations.en.common.close }));
+    expect(screen.queryByRole('dialog', { name: translations.en.auth.loginTitle })).not.toBeInTheDocument();
     expect(screen.queryByText(translations.en.header.logout)).not.toBeInTheDocument();
+  });
+
+  it('keeps password recovery inside the sign-in modal', () => {
+    renderHeader();
+
+    fireEvent.click(screen.getByRole('button', { name: translations.en.header.signIn }));
+    fireEvent.click(screen.getByRole('button', { name: translations.en.auth.forgotPasswordLink }));
+
+    expect(screen.getByRole('dialog', { name: translations.en.auth.forgotTitle })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: translations.en.auth.forgotTitle })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: translations.en.auth.backToLogin }));
+    expect(screen.getByRole('dialog', { name: translations.en.auth.loginTitle })).toBeInTheDocument();
+  });
+
+  it('keeps registration inside the sign-in modal', () => {
+    renderHeader();
+
+    fireEvent.click(screen.getByRole('button', { name: translations.en.header.signIn }));
+    fireEvent.click(screen.getByRole('button', { name: translations.en.auth.signupLink }));
+
+    expect(screen.getByRole('dialog', { name: translations.en.auth.signupTitle })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: translations.en.auth.signupTitle })).toBeInTheDocument();
+
+    fireEvent.click(
+      within(screen.getByRole('dialog', { name: translations.en.auth.signupTitle })).getByRole('button', {
+        name: translations.en.auth.loginLink,
+      }),
+    );
+    expect(screen.getByRole('dialog', { name: translations.en.auth.loginTitle })).toBeInTheDocument();
   });
 
   it('shows a greeting and a logout button instead of sign-in when a user is logged in', () => {
