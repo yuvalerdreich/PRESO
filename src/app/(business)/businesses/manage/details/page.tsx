@@ -2,8 +2,8 @@ import { redirect } from 'next/navigation';
 
 import { DashboardDetailsPage } from '@/components/business/dashboard-details-page';
 // `business-entry`'s `listCategories`, not `discovery`'s: this is the flat `{id, slug, name}` the
-// create wizard's own category picker uses, where discovery's carries a `LocalizedText` name for
-// the public chips.
+// create wizard's own category picker uses — discovery's also carries `icon`, for the public
+// chips.
 import { listCategories } from '@/server/queries/business-entry';
 import { getCurrentBusinessDashboard } from '@/server/queries/dashboard';
 

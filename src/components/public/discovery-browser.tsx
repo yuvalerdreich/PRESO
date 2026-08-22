@@ -41,7 +41,7 @@ export function DiscoveryBrowser({
    */
   blockedBusinessId?: string;
 }) {
-  const { copy, locale } = useLanguage();
+  const { copy } = useLanguage();
   const [query, setQuery] = useState(initialQuery);
   const [area, setArea] = useState(initialArea);
   const [blockedDismissed, setBlockedDismissed] = useState(false);
@@ -51,8 +51,8 @@ export function DiscoveryBrowser({
     : undefined;
 
   const filtered = useMemo(
-    () => filterBusinesses(businesses, { query, area, categories, locale }),
-    [businesses, query, area, categories, locale],
+    () => filterBusinesses(businesses, { query, area, categories }),
+    [businesses, query, area, categories],
   );
 
   const searchApplied = query.trim().length > 0 || area.length > 0;

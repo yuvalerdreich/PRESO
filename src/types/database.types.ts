@@ -337,16 +337,19 @@ export type Database = {
       }
       categories: {
         Row: {
+          icon: string
           id: string
           name: string
           slug: string
         }
         Insert: {
+          icon?: string
           id?: string
           name: string
           slug: string
         }
         Update: {
+          icon?: string
           id?: string
           name?: string
           slug?: string

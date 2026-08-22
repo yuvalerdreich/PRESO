@@ -1,4 +1,3 @@
-import { categoryPresentation } from '@/lib/i18n/categories';
 import { createClient } from '@/lib/supabase/server';
 import type { BusinessSearchQuery } from '@/lib/validation/search';
 import { getNextAvailable } from '@/server/queries/availability';
@@ -10,6 +9,7 @@ import type {
   BusinessSearchResultItem,
   BusinessSummary,
   Category,
+  CategoryIconId,
   EmployeeListItem,
   EmployeeSummary,
   ServiceSummary,
@@ -28,16 +28,31 @@ import type {
  * from search without anything here filtering on `status` (§6.9).
  */
 
+// The finite set of Lucide components category-chips.tsx actually renders (types/domain.ts's
+// CategoryIconId). Not a per-category override — every row goes through the same check — just a
+// guard against `categories.icon` (0028_categories_db_driven.sql) holding something the UI has no
+// component for, the same way a malformed status would fall back rather than crash.
+const CATEGORY_ICON_IDS = new Set<CategoryIconId>([
+  'graduation-cap',
+  'stethoscope',
+  'dumbbell',
+  'sparkles',
+  'scissors',
+]);
+const DEFAULT_CATEGORY_ICON: CategoryIconId = 'sparkles';
+
 export async function listCategories(): Promise<Category[]> {
   const supabase = await createClient();
 
-  const { data, error } = await supabase.from('categories').select('id, name, slug').order('name');
+  const { data, error } = await supabase.from('categories').select('id, name, slug, icon').order('name');
   if (error) throw error;
 
-  return (data ?? []).map((row) => {
-    const { icon, name } = categoryPresentation(row.slug, row.name);
-    return { id: row.id, slug: row.slug, icon, name };
-  });
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    icon: CATEGORY_ICON_IDS.has(row.icon as CategoryIconId) ? (row.icon as CategoryIconId) : DEFAULT_CATEGORY_ICON,
+  }));
 }
 
 /**

@@ -4,14 +4,19 @@
 -- sequential PostgREST calls. These assertions are about the invariants, not the happy path:
 -- what must be impossible, and what error each refusal raises, since §8.2 maps them by name.
 begin;
-select plan(18);
+select plan(19);
 
 set local role postgres;
 insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-0000000000c1', 'founder-roster@test.local', '{"account_type":"BUSINESS","full_name":"Roster Founder"}'::jsonb),
   ('00000000-0000-0000-0000-0000000000c2', 'staff-roster@test.local',   '{"account_type":"BUSINESS","full_name":"Roster Staff"}'::jsonb),
   ('00000000-0000-0000-0000-0000000000c3', 'joiner-roster@test.local',  '{"account_type":"BUSINESS","full_name":"Roster Joiner"}'::jsonb),
-  ('00000000-0000-0000-0000-0000000000c4', 'client-roster@test.local',  '{"account_type":"CLIENT","full_name":"Roster Client"}'::jsonb);
+  ('00000000-0000-0000-0000-0000000000c4', 'client-roster@test.local',  '{"account_type":"CLIENT","full_name":"Roster Client"}'::jsonb),
+  ('00000000-0000-0000-0000-0000000000c9', 'admin-roster@test.local',   '{"account_type":"CLIENT","full_name":"Roster Admin"}'::jsonb);
+
+-- account_type is not selectable at sign-up (§6.8 rules 1-2); provision this one the only
+-- sanctioned way, direct SQL, same as production admins.
+update profiles set account_type = 'ADMIN' where id = '00000000-0000-0000-0000-0000000000c9';
 
 insert into categories (id, name, slug) values
   ('00000000-0000-0000-0000-0000000000c5', 'Roster Cat', 'roster-cat');
@@ -51,6 +56,14 @@ select throws_ok(
        '2 Roster St', 'Tel Aviv', '+972500000022') $$,
   '42501', 'insufficient_privilege',
   'a CLIENT account cannot open a business, even though the RPC bypasses RLS'
+);
+
+-- §5 / §12.63: an ADMIN carries every BUSINESS-portal permission, opening a business included.
+set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000c9","role":"authenticated"}';
+select lives_ok(
+  $$ select create_business_with_owner('Admin Shop', '00000000-0000-0000-0000-0000000000c5',
+       '3 Roster St', 'Tel Aviv', '+972500000023') $$,
+  'an ADMIN account can also open a business (§12.63)'
 );
 
 -- ---------------------------------------------------------------------------

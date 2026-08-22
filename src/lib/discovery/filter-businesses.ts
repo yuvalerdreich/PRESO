@@ -1,5 +1,4 @@
 import type { BusinessSummary, Category } from '@/types/domain';
-import type { Locale } from '@/lib/i18n/types';
 
 /**
  * The home page's search, run in the browser over the already-fetched grid — the same shape as
@@ -15,16 +14,11 @@ import type { Locale } from '@/lib/i18n/types';
  */
 export function filterBusinesses(
   businesses: BusinessSummary[],
-  {
-    query,
-    area,
-    categories,
-    locale,
-  }: { query: string; area: string; categories: Category[]; locale: Locale },
+  { query, area, categories }: { query: string; area: string; categories: Category[] },
 ): BusinessSummary[] {
   const normalizedQuery = query.trim().toLocaleLowerCase();
   const normalizedArea = area.trim().toLocaleLowerCase();
-  const categoryNameById = new Map(categories.map((category) => [category.id, category.name[locale]]));
+  const categoryNameById = new Map(categories.map((category) => [category.id, category.name]));
 
   return businesses.filter((business) => {
     if (normalizedArea && business.area.trim().toLocaleLowerCase() !== normalizedArea) return false;

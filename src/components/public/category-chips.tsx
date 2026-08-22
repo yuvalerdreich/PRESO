@@ -33,7 +33,7 @@ export function CategoryChips({
   selectedCategoryId: string | null;
   onSelect: (categoryId: string | null) => void;
 }) {
-  const { copy, locale } = useLanguage();
+  const { copy } = useLanguage();
 
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -58,7 +58,7 @@ export function CategoryChips({
             aria-pressed={active}
             className={chipClassName(active)}
           >
-            <span>{category.name[locale]}</span>
+            <span>{category.name}</span>
             <Icon className="h-4 w-4" aria-hidden="true" />
           </button>
         );
