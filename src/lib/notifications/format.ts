@@ -82,6 +82,37 @@ export function formatNotification(
     return { title, meta, when, note, status: null, href };
   }
 
+  if (type === 'APPOINTMENT_RESCHEDULED') {
+    // The one type composed as a full sentence rather than title+meta+when: it names the
+    // appointment being changed, which is exactly what a business-initiated reschedule needs to
+    // tell the client ("your appointment at X for Y was updated") — the row's usual date/time
+    // line would otherwise show the *new* time, leaving the notification unable to say which
+    // appointment it is about. `reschedule_appointment()` (0007_fn_booking.sql) already stores
+    // `previousStartsAt` on the payload for exactly this.
+    const composedTitle = copy.notifications.rescheduledMessage
+      .replace('{business}', text(payload.businessName))
+      .replace('{service}', text(payload.serviceName))
+      .replace('{employee}', text(payload.employeeName))
+      .replace('{when}', formatInstant(payload.previousStartsAt, payload.timezone) ?? '');
+
+    return { title: composedTitle, meta: null, when: null, note: null, status: null, href: APPOINTMENTS_HREF };
+  }
+
+  if (type === 'APPOINTMENT_CANCELLED') {
+    // Same composed-sentence shape as APPOINTMENT_RESCHEDULED above, naming the cancelled
+    // appointment directly rather than relying on a separate meta/when line. Unlike a reschedule
+    // there is no "previous" time — `{when}` is the appointment's own `startsAt`, which
+    // `on_appointment_cancelled()` (0009_triggers.sql) already carries on every cancellation
+    // path (`cancel_appointment()`, `reject_appointment()`, and reschedule's cancel half).
+    const composedTitle = copy.notifications.cancelledMessage
+      .replace('{business}', text(payload.businessName))
+      .replace('{service}', text(payload.serviceName))
+      .replace('{employee}', text(payload.employeeName))
+      .replace('{when}', formatInstant(payload.startsAt, payload.timezone) ?? '');
+
+    return { title: composedTitle, meta: null, when: null, note: null, status: null, href: APPOINTMENTS_HREF };
+  }
+
   if (type === 'APPOINTMENT_REJECTED') {
     const reason = text(payload.reason);
     return {

@@ -246,6 +246,34 @@ export const translations = {
         unnamedClient: 'לקוח/ה ללא שם',
         noPhone: 'לא נמסר מספר טלפון',
         inactiveEmployee: 'לא פעיל/ה',
+        reschedule: {
+          confirmTitle: 'עדכון מועד התור',
+          confirmDescription:
+            'האם אתה בטוח/ה שברצונך לעדכן את מועד התור של {client} לטיפול "{service}", שנקבע ל-{date} בשעה {time}? הלקוח/ה יקבל/תקבל הודעה על השינוי.',
+          confirmYes: 'כן, אני בטוח/ה',
+          confirmNo: 'ביטול',
+          calendarTitle: 'בחירת מועד חדש לתור',
+          calendarSubtitle: 'זמינות עבור {employee} · {service}',
+          loadingSlots: 'טוען שעות פנויות…',
+          selectDatePrompt: 'בחר/י תאריך פנוי בלוח השנה שלמעלה',
+          noAvailability: 'לא נמצאו שעות פנויות בחודש זה עבור עובד/ת זה ושירות זה.',
+          noSlotsForDate: 'אין שעות פנויות בתאריך זה',
+          confirmSlot: 'קביעת המועד החדש',
+          confirmingSlot: 'מעדכן…',
+          successToast: 'התור עודכן והלקוח/ה קיבל/ה הודעה על כך',
+          errorGeneric: 'לא ניתן היה לעדכן את התור. נסו שוב.',
+        },
+        cancelDialog: {
+          action: 'ביטול תור',
+          confirmTitle: 'ביטול התור',
+          confirmDescription:
+            'האם אתה בטוח/ה שברצונך לבטל את התור של {client} לטיפול "{service}", שנקבע ל-{date} בשעה {time}? הלקוח/ה יקבל/תקבל הודעה על הביטול.',
+          confirmYes: 'כן, בטלו את התור',
+          cancelling: 'מבטל…',
+          confirmNo: 'השאירו את התור',
+          successToast: 'התור בוטל בהצלחה והלקוח/ה קיבל/ה הודעה על כך',
+          errorGeneric: 'לא ניתן היה לבטל את התור. נסו שוב.',
+        },
       },
       // `/businesses/manage/staff` — the roster and the join queue on one screen.
       staff: {
@@ -538,6 +566,10 @@ export const translations = {
       reasonPrefix: 'סיבה:',
       joinApproved: 'הבקשה אושרה',
       joinRejected: 'הבקשה נדחתה',
+      // `APPOINTMENT_RESCHEDULED`/`APPOINTMENT_CANCELLED` are composed as full sentences rather
+      // than title+meta+when — see the comments on `formatNotification`'s branches for each.
+      rescheduledMessage: 'התור שלך ל{business} עבור {service} עם {employee} ב{when} עודכן',
+      cancelledMessage: 'התור שלך ל{business} עבור {service} עם {employee} ב{when} בוטל',
       typeTitles: {
         APPOINTMENT_REMINDER: 'תזכורת לתור קרוב',
         APPOINTMENT_CREATED: 'נקבע תור חדש',
@@ -915,6 +947,34 @@ export const translations = {
         unnamedClient: 'Unnamed client',
         noPhone: 'No phone number provided',
         inactiveEmployee: 'Inactive',
+        reschedule: {
+          confirmTitle: 'Update the appointment time',
+          confirmDescription:
+            'Are you sure you want to update {client}’s appointment for "{service}", currently set for {date} at {time}? The client will be notified of the change.',
+          confirmYes: 'Yes, I’m sure',
+          confirmNo: 'Cancel',
+          calendarTitle: 'Choose a new time for the appointment',
+          calendarSubtitle: 'Availability for {employee} · {service}',
+          loadingSlots: 'Loading available hours…',
+          selectDatePrompt: 'Pick an available date on the calendar above',
+          noAvailability: 'No available hours this month for this staff member and service.',
+          noSlotsForDate: 'No available hours on this date',
+          confirmSlot: 'Set the new time',
+          confirmingSlot: 'Updating…',
+          successToast: 'The appointment was updated and the client was notified',
+          errorGeneric: 'Could not update the appointment. Please try again.',
+        },
+        cancelDialog: {
+          action: 'Cancel appointment',
+          confirmTitle: 'Cancel the appointment',
+          confirmDescription:
+            'Are you sure you want to cancel {client}’s appointment for "{service}", set for {date} at {time}? The client will be notified of the cancellation.',
+          confirmYes: 'Yes, cancel the appointment',
+          cancelling: 'Cancelling…',
+          confirmNo: 'Keep the appointment',
+          successToast: 'The appointment was cancelled and the client was notified',
+          errorGeneric: 'Could not cancel the appointment. Please try again.',
+        },
       },
       staff: {
         rosterTitle: 'Team members and their roles in the business ({count})',
@@ -1205,6 +1265,8 @@ export const translations = {
       reasonPrefix: 'Reason:',
       joinApproved: 'Request approved',
       joinRejected: 'Request declined',
+      rescheduledMessage: 'Your appointment at {business} for {service} with {employee} on {when} was updated',
+      cancelledMessage: 'Your appointment at {business} for {service} with {employee} on {when} was cancelled',
       typeTitles: {
         APPOINTMENT_REMINDER: 'Upcoming appointment reminder',
         APPOINTMENT_CREATED: 'New appointment booked',

@@ -356,6 +356,7 @@ export type DashboardAppointment = {
   employeeName: string;
   clientName: string;
   clientPhone: string | null;
+  serviceId: string;
   serviceName: string;
   dateISO: string;
   time: string;
