@@ -444,6 +444,7 @@ export const translations = {
       owned: 'בבעלותי',
       activeStaff: 'כעובד/ת פעיל/ה',
       pending: 'בקשות ממתינות',
+      pendingStaffRequests: '{count} בקשות הצטרפות של עובדים ממתינות',
       resultCount: 'נמצאו {count} עסקים משויכים',
       emptyTitle: 'לא נמצאו עסקים משויכים',
       emptyDescription: 'עדיין אין עסק בחשבון שלך. אפשר לפתוח עסק חדש או להצטרף לעסק קיים.',
@@ -456,6 +457,7 @@ export const translations = {
       awaitingApproval: 'הבקשה ממתינה להחלטת בעל/ת העסק',
       inactivePosition: 'לא פעיל',
       manage: 'ניהול העסק',
+      manageRequests: 'ניהול בקשות',
     },
     createBusiness: {
       title: 'פתיחת עסק חדש במערכת',
@@ -1104,6 +1106,7 @@ export const translations = {
       owned: 'Owned by me',
       activeStaff: 'Active staff',
       pending: 'Pending requests',
+      pendingStaffRequests: '{count} pending staff join requests',
       resultCount: '{count} linked businesses found',
       emptyTitle: 'No businesses linked yet',
       emptyDescription: 'There is no business on this account yet. Open a new business or join an existing one.',
@@ -1116,6 +1119,7 @@ export const translations = {
       awaitingApproval: 'Waiting for the owner to decide on your request',
       inactivePosition: 'Inactive',
       manage: 'Manage business',
+      manageRequests: 'Manage requests',
     },
     createBusiness: {
       title: 'Open a new business',

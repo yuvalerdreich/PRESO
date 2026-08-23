@@ -147,7 +147,26 @@ export async function listMyBusinesses(): Promise<MyBusiness[]> {
   if (employmentsError) throw employmentsError;
   if (requestsError) throw requestsError;
 
-  const employed = ((employments ?? []) as unknown as MyBusinessRow[]).flatMap((row) => {
+  const employmentRows = (employments ?? []) as unknown as MyBusinessRow[];
+  const ownedBusinessIds = employmentRows.flatMap((row) =>
+    row.businesses?.owner_profile_id === user.id ? [row.businesses.id] : [],
+  );
+  const { data: incomingRequests, error: incomingRequestsError } =
+    ownedBusinessIds.length > 0
+      ? await supabase
+          .from('join_requests')
+          .select('business_id')
+          .eq('status', 'PENDING')
+          .in('business_id', ownedBusinessIds)
+      : { data: [], error: null };
+  if (incomingRequestsError) throw incomingRequestsError;
+
+  const incomingRequestCounts = new Map<string, number>();
+  for (const request of incomingRequests ?? []) {
+    incomingRequestCounts.set(request.business_id, (incomingRequestCounts.get(request.business_id) ?? 0) + 1);
+  }
+
+  const employed = employmentRows.flatMap((row) => {
     const business = row.businesses;
     if (!business) return [];
 
@@ -162,6 +181,7 @@ export async function listMyBusinesses(): Promise<MyBusiness[]> {
         photoUrl: resolvePhotoUrl(supabase, business.photo_paths),
         employeeCount: business.employees?.[0]?.count ?? 0,
         relation: business.owner_profile_id === user.id ? ('OWNER' as const) : ('STAFF' as const),
+        pendingJoinRequestCount: business.owner_profile_id === user.id ? (incomingRequestCounts.get(business.id) ?? 0) : 0,
         positionTitle: row.position_title,
         employeeStatus: row.status,
       },
@@ -183,6 +203,7 @@ export async function listMyBusinesses(): Promise<MyBusiness[]> {
         photoUrl: resolvePhotoUrl(supabase, business.photo_paths),
         employeeCount: business.employees?.[0]?.count ?? 0,
         relation: 'PENDING' as const,
+        pendingJoinRequestCount: 0,
         positionTitle: null,
         employeeStatus: null,
       },
