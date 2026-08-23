@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { BriefcaseBusiness, Building2, Clock, MapPin, Plus, UserPlus, Users } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { CreateBusinessDialog } from '@/components/business/create-business-dialog';
 import { JoinBusinessDialog } from '@/components/business/join-business-dialog';
@@ -24,10 +25,12 @@ import {
   cardTitle,
   surfaceCard,
 } from '@/components/common/card-styles';
+import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { EmptyState } from '@/components/common/empty-state';
+import { ErrorDialog } from '@/components/common/error-dialog';
 import { PanelHero } from '@/components/common/panel-hero';
 import { useLanguage } from '@/lib/i18n/language-provider';
-import { selectBusinessForManagement } from '@/server/actions/business';
+import { deleteBusiness, selectBusinessForManagement } from '@/server/actions/business';
 import type { BusinessCategory, JoinableBusiness, MyBusiness, MyBusinessRelation } from '@/types/domain';
 
 type BusinessFilter = 'all' | 'owned' | 'staff' | 'pending';
@@ -191,6 +194,12 @@ function BusinessCard({ business }: { business: MyBusiness }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
+  // Three states: closed, asking for confirmation, or refused because upcoming appointments
+  // exist. `delete_business()` (0034_fn_delete_business.sql) is the one thing that decides which
+  // of the last two applies — this only routes its answer to the right dialog.
+  const [deleteStage, setDeleteStage] = useState<'idle' | 'confirm' | 'blocked'>('idle');
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // `/businesses/manage/**` has no `businessId` in its URL and its layout cannot read one from a
   // search param either (Next.js layouts don't receive them), so this is how "which business" is
   // decided when more than one card can open it (§12.64). `selectBusinessForManagement` sets the
@@ -203,6 +212,32 @@ function BusinessCard({ business }: { business: MyBusiness }) {
         router.push(business.pendingJoinRequestCount > 0 ? '/businesses/manage/staff' : '/businesses/manage');
       }
     });
+  }
+
+  async function confirmDelete() {
+    if (isDeleting) return;
+    setIsDeleting(true);
+
+    const result = await deleteBusiness({ businessId: business.businessId });
+
+    setIsDeleting(false);
+
+    if (result.ok) {
+      toast.success(copy.myBusinesses.deleteSuccessToast);
+      setDeleteStage('idle');
+      router.refresh();
+      return;
+    }
+
+    // `business_has_appointments` is the only UNPROCESSABLE this action can raise — it is refused,
+    // not failed, so it gets the dedicated blocked dialog rather than a toast (§12.56's own
+    // reasoning: an error is answered on the screen that raised it).
+    if (result.error.code === 'UNPROCESSABLE') {
+      setDeleteStage('blocked');
+      return;
+    }
+
+    toast.error(result.error.message || copy.myBusinesses.deleteErrorGeneric);
   }
 
   const relationLabel = {
@@ -291,7 +326,44 @@ function BusinessCard({ business }: { business: MyBusiness }) {
             {business.pendingJoinRequestCount > 0 ? copy.myBusinesses.manageRequests : copy.myBusinesses.manage}
           </button>
         ) : null}
+        {business.relation === 'OWNER' ? (
+          <button
+            type="button"
+            onClick={() => setDeleteStage('confirm')}
+            // `relative z-10`, not just `relative`: the manage button's `cardStretchedLink` (above)
+            // stretches an invisible `::after` over the *whole* card via `position: absolute`, which
+            // paints above any plain in-flow sibling regardless of DOM order (§12.59's card-styles
+            // note documents the same gotcha the other way round). An explicit z-index — not merely
+            // `relative`'s z-index:auto — is what reliably keeps this button clickable over it.
+            aria-label={[copy.myBusinesses.deleteBusiness, business.name].join(' — ')}
+            className={`${actionButton} ${cardAction} relative z-10`}
+          >
+            {copy.myBusinesses.deleteBusiness}
+          </button>
+        ) : null}
       </div>
+
+      {deleteStage === 'confirm' ? (
+        <ConfirmDialog
+          title={copy.myBusinesses.deleteConfirmTitle}
+          description={copy.myBusinesses.deleteConfirmDescription.replace('{name}', business.name)}
+          confirmLabel={copy.myBusinesses.deleteConfirmYes}
+          cancelLabel={copy.myBusinesses.deleteConfirmNo}
+          closeLabel={copy.common.close}
+          pending={isDeleting}
+          pendingLabel={copy.myBusinesses.deleting}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteStage('idle')}
+        />
+      ) : null}
+
+      {deleteStage === 'blocked' ? (
+        <ErrorDialog
+          title={copy.myBusinesses.deleteBlockedTitle}
+          description={copy.myBusinesses.deleteBlockedDescription}
+          onClose={() => setDeleteStage('idle')}
+        />
+      ) : null}
     </article>
   );
 }

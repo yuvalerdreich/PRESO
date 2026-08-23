@@ -95,6 +95,10 @@ export type BusinessDetailsInput = z.infer<typeof businessDetailsInput>;
 export const selectBusinessInput = z.object({ businessId: uuid });
 export type SelectBusinessInput = z.infer<typeof selectBusinessInput>;
 
+/** `deleteBusiness` — the owner deleting their own business outright, from `/businesses`. */
+export const deleteBusinessInput = z.object({ businessId: uuid });
+export type DeleteBusinessInput = z.infer<typeof deleteBusinessInput>;
+
 export const hourRow = z
   .object({
     dayOfWeek,

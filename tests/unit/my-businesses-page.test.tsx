@@ -1,17 +1,20 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const pushMock = vi.fn();
+const refreshMock = vi.fn();
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: pushMock, refresh: vi.fn() }),
+  useRouter: () => ({ push: pushMock, refresh: refreshMock }),
 }));
 
 // The dialogs import server actions, which cannot execute in jsdom. Only their call signatures
 // matter to this file — the actions themselves are covered by `tests/int/`.
 const selectBusinessForManagementMock = vi.fn().mockResolvedValue({ ok: true, data: { businessId: '' } });
+const deleteBusinessMock = vi.fn();
 vi.mock('@/server/actions/business', () => ({
   createBusiness: vi.fn(),
   selectBusinessForManagement: (...args: unknown[]) => selectBusinessForManagementMock(...args),
+  deleteBusiness: (...args: unknown[]) => deleteBusinessMock(...args),
 }));
 vi.mock('@/server/actions/employee', () => ({ sendJoinRequest: vi.fn() }));
 
@@ -98,6 +101,11 @@ function renderPage(businesses: MyBusiness[] = myBusinesses) {
 }
 
 describe('my businesses page', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+
   it('lists the caller’s real businesses with counts derived from the rows', () => {
     renderPage();
 
@@ -131,6 +139,47 @@ describe('my businesses page', () => {
       expect(selectBusinessForManagementMock).toHaveBeenCalledWith({ businessId: 'business-glow' }),
     );
     await waitFor(() => expect(pushMock).toHaveBeenCalledWith('/businesses/manage'));
+  });
+
+  it('offers deletion only on a business the caller owns', () => {
+    renderPage();
+
+    expect(screen.getByRole('button', { name: 'Delete business — Studio Zohar' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Delete business — Glow Clinic/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Delete business — Barber Bros/ })).not.toBeInTheDocument();
+  });
+
+  it('deletes the business after confirming, and refreshes the list', async () => {
+    deleteBusinessMock.mockResolvedValueOnce({ ok: true, data: { businessId: 'business-zohar' } });
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete business — Studio Zohar' }));
+    expect(screen.getByRole('heading', { name: 'Are you sure you want to delete this business?' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, delete the business' }));
+
+    await waitFor(() => expect(deleteBusinessMock).toHaveBeenCalledWith({ businessId: 'business-zohar' }));
+    await waitFor(() => expect(refreshMock).toHaveBeenCalled());
+    expect(
+      screen.queryByRole('heading', { name: 'Are you sure you want to delete this business?' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows a blocking dialog instead of deleting when the business still has upcoming appointments', async () => {
+    deleteBusinessMock.mockResolvedValueOnce({
+      ok: false,
+      error: { code: 'UNPROCESSABLE', message: 'nope' },
+    });
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete business — Studio Zohar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, delete the business' }));
+
+    await waitFor(() => expect(screen.getByText("This business can't be deleted")).toBeInTheDocument());
+    expect(
+      screen.getByText("This business can't be deleted because it still has upcoming appointments."),
+    ).toBeInTheDocument();
+    expect(refreshMock).not.toHaveBeenCalled();
   });
 
   it('filters by relation', () => {

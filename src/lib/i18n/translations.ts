@@ -486,6 +486,17 @@ export const translations = {
       inactivePosition: 'לא פעיל',
       manage: 'ניהול העסק',
       manageRequests: 'ניהול בקשות',
+      deleteBusiness: 'מחיקת עסק',
+      deleteConfirmTitle: 'האם אתה בטוח שברצונך למחוק את העסק?',
+      deleteConfirmDescription:
+        '"{name}" וכל הנתונים המשויכים אליו — אנשי צוות, טיפולים, שעות עבודה ורשימות המתנה — יימחקו לצמיתות מכל רישומי האפליקציה. לא ניתן לבטל פעולה זו.',
+      deleteConfirmYes: 'כן, מחיקת העסק',
+      deleteConfirmNo: 'ביטול',
+      deleting: 'מוחק...',
+      deleteBlockedTitle: 'לא ניתן למחוק עסק זה',
+      deleteBlockedDescription: 'לא ניתן למחוק עסק זה מכיוון שיש לך תורים עתידיים בעסק',
+      deleteErrorGeneric: 'אירעה שגיאה במחיקת העסק. נסו שוב.',
+      deleteSuccessToast: 'העסק נמחק בהצלחה',
     },
     createBusiness: {
       title: 'פתיחת עסק חדש במערכת',
@@ -570,6 +581,7 @@ export const translations = {
       // than title+meta+when — see the comments on `formatNotification`'s branches for each.
       rescheduledMessage: 'התור שלך ל{business} עבור {service} עם {employee} ב{when} עודכן',
       cancelledMessage: 'התור שלך ל{business} עבור {service} עם {employee} ב{when} בוטל',
+      businessDeletedMessage: 'העסק {business} נמחק על ידי הבעלים והפך ללא זמין',
       typeTitles: {
         APPOINTMENT_REMINDER: 'תזכורת לתור קרוב',
         APPOINTMENT_CREATED: 'נקבע תור חדש',
@@ -580,6 +592,7 @@ export const translations = {
         JOIN_REQUEST_RECEIVED: 'התקבלה בקשת הצטרפות לצוות',
         JOIN_REQUEST_DECIDED: 'בקשת ההצטרפות שלך נענתה',
         WAITLIST_MATCHED: 'התפנה תור עבורך',
+        BUSINESS_DELETED: 'עסק נמחק',
       },
     },
     admin: {
@@ -1182,6 +1195,17 @@ export const translations = {
       inactivePosition: 'Inactive',
       manage: 'Manage business',
       manageRequests: 'Manage requests',
+      deleteBusiness: 'Delete business',
+      deleteConfirmTitle: 'Are you sure you want to delete this business?',
+      deleteConfirmDescription:
+        '"{name}" and everything tied to it — staff, services, hours and waiting lists — will be permanently deleted from every app record. This cannot be undone.',
+      deleteConfirmYes: 'Yes, delete the business',
+      deleteConfirmNo: 'Cancel',
+      deleting: 'Deleting...',
+      deleteBlockedTitle: "This business can't be deleted",
+      deleteBlockedDescription: "This business can't be deleted because it still has upcoming appointments.",
+      deleteErrorGeneric: 'Something went wrong deleting this business. Please try again.',
+      deleteSuccessToast: 'The business was deleted',
     },
     createBusiness: {
       title: 'Open a new business',
@@ -1267,6 +1291,7 @@ export const translations = {
       joinRejected: 'Request declined',
       rescheduledMessage: 'Your appointment at {business} for {service} with {employee} on {when} was updated',
       cancelledMessage: 'Your appointment at {business} for {service} with {employee} on {when} was cancelled',
+      businessDeletedMessage: '{business} was deleted by its owner and is no longer available',
       typeTitles: {
         APPOINTMENT_REMINDER: 'Upcoming appointment reminder',
         APPOINTMENT_CREATED: 'New appointment booked',
@@ -1277,6 +1302,7 @@ export const translations = {
         JOIN_REQUEST_RECEIVED: 'New team join request',
         JOIN_REQUEST_DECIDED: 'Your join request was decided',
         WAITLIST_MATCHED: 'A spot opened up for you',
+        BUSINESS_DELETED: 'Business deleted',
       },
     },
     admin: {

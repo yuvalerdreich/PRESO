@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server';
 import {
   businessDetailsInput,
   createBusinessInput,
+  deleteBusinessInput,
   selectBusinessInput,
   setOperatingHoursInput,
 } from '@/lib/validation/business';
@@ -190,4 +191,33 @@ export const setOperatingHours = action('setOperatingHours', setOperatingHoursIn
   revalidatePath(`/b/${input.businessId}`);
 
   return { businessId: input.businessId, rows: input.rows.length };
+});
+
+/**
+ * Requested change, superseding 0010_rls.sql's businesses policy comment ("no DELETE policy —
+ * §4.1: 'not offered', suspension replaces deletion"; see the updated ARCHITECTURE.md/
+ * TECHNICAL_DESIGN.md). Owner-only, unlike the rest of this module's §12.1 "any ACTIVE employee"
+ * axis — deleting the whole business is roster-management-adjacent, the one class of decision
+ * §12.1 kept owner-exclusive.
+ *
+ * All the real work — the owner check, the future-appointments refusal, the cascade, and
+ * notifying the rest of the staff — happens inside `delete_business()` (0034_fn_delete_business.sql),
+ * the same "one write path through a security-definer RPC" shape §2 already uses for
+ * `appointments`. A future, non-cancelled appointment anywhere in the business raises
+ * `business_has_appointments`, which `fromPostgresError()` maps to a 422 the UI shows as a
+ * blocking `ErrorDialog` rather than the confirmation prompt.
+ */
+export const deleteBusiness = action('deleteBusiness', deleteBusinessInput, async (input) => {
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc('delete_business', { p_business_id: input.businessId });
+  if (error) throw error;
+
+  revalidatePath('/businesses');
+  revalidatePath('/businesses/manage');
+  revalidatePath(`/b/${input.businessId}`);
+  // The business no longer shows on the discovery grid either.
+  revalidatePath('/');
+
+  return { businessId: input.businessId };
 });
