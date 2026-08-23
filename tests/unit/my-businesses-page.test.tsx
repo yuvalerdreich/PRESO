@@ -16,7 +16,11 @@ vi.mock('@/server/actions/business', () => ({
   selectBusinessForManagement: (...args: unknown[]) => selectBusinessForManagementMock(...args),
   deleteBusiness: (...args: unknown[]) => deleteBusinessMock(...args),
 }));
-vi.mock('@/server/actions/employee', () => ({ sendJoinRequest: vi.fn() }));
+const removeEmployeeMock = vi.fn();
+vi.mock('@/server/actions/employee', () => ({
+  sendJoinRequest: vi.fn(),
+  removeEmployee: (...args: unknown[]) => removeEmployeeMock(...args),
+}));
 
 import { MyBusinessesPage } from '@/components/business/my-businesses-page';
 import { LanguageProvider } from '@/lib/i18n/language-provider';
@@ -178,6 +182,47 @@ describe('my businesses page', () => {
     await waitFor(() => expect(screen.getByText("This business can't be deleted")).toBeInTheDocument());
     expect(
       screen.getByText("This business can't be deleted because it still has upcoming appointments."),
+    ).toBeInTheDocument();
+    expect(refreshMock).not.toHaveBeenCalled();
+  });
+
+  it('offers leaving only on a business the caller works at as staff, not owns or is pending on', () => {
+    renderPage();
+
+    expect(screen.getByRole('button', { name: 'Leave business — Glow Clinic' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Leave business — Studio Zohar/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Leave business — Barber Bros/ })).not.toBeInTheDocument();
+  });
+
+  it('leaves the business after confirming, using the employee row as the id', async () => {
+    removeEmployeeMock.mockResolvedValueOnce({ ok: true, data: { employeeId: 'employee-2', retired: false } });
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Leave business — Glow Clinic' }));
+    expect(screen.getByRole('heading', { name: 'Are you sure you want to leave this business?' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, leave the business' }));
+
+    await waitFor(() => expect(removeEmployeeMock).toHaveBeenCalledWith({ employeeId: 'employee-2' }));
+    await waitFor(() => expect(refreshMock).toHaveBeenCalled());
+    expect(
+      screen.queryByRole('heading', { name: 'Are you sure you want to leave this business?' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows a blocking dialog instead of leaving when the caller still has upcoming appointments', async () => {
+    removeEmployeeMock.mockResolvedValueOnce({
+      ok: false,
+      error: { code: 'UNPROCESSABLE', message: 'nope' },
+    });
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Leave business — Glow Clinic' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Yes, leave the business' }));
+
+    await waitFor(() => expect(screen.getByText("You can't leave this business")).toBeInTheDocument());
+    expect(
+      screen.getByText("You can't leave this business because you still have upcoming appointments."),
     ).toBeInTheDocument();
     expect(refreshMock).not.toHaveBeenCalled();
   });

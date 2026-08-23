@@ -708,6 +708,57 @@ describe('join requests and roster — the founder’s exclusive powers (§6.8 r
     expect(removed).toMatchObject({ ok: true, data: { retired: false } });
   });
 
+  it('lets a non-owner staff member remove their own position (§12.75 — leaving)', async () => {
+    const owner = await createTestUser('BUSINESS');
+    createdUserIds.push(owner.id);
+    const staff = await createTestUser('BUSINESS');
+    createdUserIds.push(staff.id);
+
+    state.client = await signIn(owner.email);
+    const { data: category } = await admin.from('categories').select('id').eq('slug', 'lessons').single();
+    const created = await createBusiness({
+      name: 'Self Leave Studio',
+      categoryId: category!.id,
+      address: '3 Solo Lane',
+      area: 'Haifa',
+      phone: '04-1234569',
+    });
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+
+    state.client = await signIn(staff.email);
+    expect((await sendJoinRequest({ businessId: created.data.businessId })).ok).toBe(true);
+
+    state.client = await signIn(owner.email);
+    const { data: request } = await admin
+      .from('join_requests')
+      .select('id')
+      .eq('profile_id', staff.id)
+      .single();
+    const decided = await decideJoinRequest({ id: request!.id, decision: 'APPROVED', positionTitle: 'Assistant' });
+    expect(decided.ok).toBe(true);
+
+    const { data: employee } = await admin
+      .from('employees')
+      .select('id')
+      .eq('business_id', created.data.businessId)
+      .eq('profile_id', staff.id)
+      .single();
+
+    // The staff member removes *themselves* — not the owner acting on their behalf.
+    state.client = await signIn(staff.email);
+    expect(await removeEmployee({ employeeId: employee!.id })).toMatchObject({
+      ok: true,
+      data: { retired: false },
+    });
+
+    const { count: remaining } = await admin
+      .from('employees')
+      .select('id', { count: 'exact', head: true })
+      .eq('id', employee!.id);
+    expect(remaining).toBe(0);
+  });
+
   it('reports a duplicate open request as CONFLICT, via the partial unique index', async () => {
     const joiner = await createTestUser('BUSINESS');
     createdUserIds.push(joiner.id);
@@ -722,7 +773,7 @@ describe('join requests and roster — the founder’s exclusive powers (§6.8 r
     await admin.from('join_requests').delete().eq('profile_id', joiner.id);
   });
 
-  it('refuses to remove the last employee (§8.2’s last_employee → 422)', async () => {
+  it('refuses to let the owner remove their own position this way (§12.75 — FORBIDDEN, not last_employee)', async () => {
     const owner = await createTestUser('BUSINESS');
     createdUserIds.push(owner.id);
     state.client = await signIn(owner.email);
@@ -744,7 +795,65 @@ describe('join requests and roster — the founder’s exclusive powers (§6.8 r
       .eq('business_id', created.data.businessId)
       .single();
 
+    // Used to reach `last_employee` (422) — the owner being their own business's sole employee.
+    // Since 0035_fn_remove_employee_self_leave.sql (§12.75), the owner cannot remove their own
+    // position through this RPC at all, regardless of remaining staff — `delete_business()` is
+    // their equivalent — so this is refused one step earlier, as FORBIDDEN.
     expect(await removeEmployee({ employeeId: employee!.id })).toMatchObject({
+      ok: false,
+      error: { code: 'FORBIDDEN' },
+    });
+  });
+
+  it('still refuses to empty the roster on a genuine self-leave (§8.2’s last_employee → 422)', async () => {
+    const owner = await createTestUser('BUSINESS');
+    createdUserIds.push(owner.id);
+    const joiner = await createTestUser('BUSINESS');
+    createdUserIds.push(joiner.id);
+
+    state.client = await signIn(owner.email);
+    const { data: category } = await admin.from('categories').select('id').eq('slug', 'lessons').single();
+    const created = await createBusiness({
+      name: 'Last Leaver Studio',
+      categoryId: category!.id,
+      address: '2 Solo Lane',
+      area: 'Haifa',
+      phone: '04-1234568',
+    });
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+
+    state.client = await signIn(joiner.email);
+    expect((await sendJoinRequest({ businessId: created.data.businessId })).ok).toBe(true);
+
+    state.client = await signIn(owner.email);
+    const { data: request } = await admin
+      .from('join_requests')
+      .select('id')
+      .eq('profile_id', joiner.id)
+      .single();
+    const decided = await decideJoinRequest({ id: request!.id, decision: 'APPROVED', positionTitle: 'Staff' });
+    expect(decided.ok).toBe(true);
+
+    const { data: ownerEmployee } = await admin
+      .from('employees')
+      .select('id')
+      .eq('business_id', created.data.businessId)
+      .eq('profile_id', owner.id)
+      .single();
+    // Only reachable state left for last_employee to fire on a self-leave: the owner's own
+    // position is separately made INACTIVE, leaving the joiner as the sole ACTIVE employee.
+    expect((await setEmployeeStatus({ employeeId: ownerEmployee!.id, status: 'INACTIVE' })).ok).toBe(true);
+
+    const { data: staffEmployee } = await admin
+      .from('employees')
+      .select('id')
+      .eq('business_id', created.data.businessId)
+      .eq('profile_id', joiner.id)
+      .single();
+
+    state.client = await signIn(joiner.email);
+    expect(await removeEmployee({ employeeId: staffEmployee!.id })).toMatchObject({
       ok: false,
       error: { code: 'UNPROCESSABLE' },
     });

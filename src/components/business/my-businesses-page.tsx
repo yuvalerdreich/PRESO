@@ -31,6 +31,7 @@ import { ErrorDialog } from '@/components/common/error-dialog';
 import { PanelHero } from '@/components/common/panel-hero';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import { deleteBusiness, selectBusinessForManagement } from '@/server/actions/business';
+import { removeEmployee } from '@/server/actions/employee';
 import type { BusinessCategory, JoinableBusiness, MyBusiness, MyBusinessRelation } from '@/types/domain';
 
 type BusinessFilter = 'all' | 'owned' | 'staff' | 'pending';
@@ -200,6 +201,13 @@ function BusinessCard({ business }: { business: MyBusiness }) {
   const [deleteStage, setDeleteStage] = useState<'idle' | 'confirm' | 'blocked'>('idle');
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Same three-state shape as delete, for a STAFF card leaving the business it doesn't own
+  // (§12.75) — `removeEmployee` is the owner-facing action reused for self-service here;
+  // `remove_employee()` (0017, broadened by 0035) is what actually tells "the owner removing
+  // someone else" and "an employee removing themselves" apart and enforces which is allowed.
+  const [leaveStage, setLeaveStage] = useState<'idle' | 'confirm' | 'blocked'>('idle');
+  const [isLeaving, setIsLeaving] = useState(false);
+
   // `/businesses/manage/**` has no `businessId` in its URL and its layout cannot read one from a
   // search param either (Next.js layouts don't receive them), so this is how "which business" is
   // decided when more than one card can open it (§12.64). `selectBusinessForManagement` sets the
@@ -238,6 +246,35 @@ function BusinessCard({ business }: { business: MyBusiness }) {
     }
 
     toast.error(result.error.message || copy.myBusinesses.deleteErrorGeneric);
+  }
+
+  async function confirmLeave() {
+    if (isLeaving) return;
+    setIsLeaving(true);
+
+    // `business.key` is the `employees.id` for a STAFF (and OWNER) card — see `MyBusiness`'s doc
+    // comment — so no extra lookup is needed to name which position is leaving.
+    const result = await removeEmployee({ employeeId: business.key });
+
+    setIsLeaving(false);
+
+    if (result.ok) {
+      toast.success(copy.myBusinesses.leaveSuccessToast);
+      setLeaveStage('idle');
+      router.refresh();
+      return;
+    }
+
+    // Realistically only `employee_has_appointments` (§6.9) — `last_employee` would require the
+    // business's own owner to already be an inactive position, which self-leave cannot produce on
+    // its own — but both are UNPROCESSABLE, so both get the same blocked dialog rather than a toast,
+    // same reasoning as `confirmDelete` above.
+    if (result.error.code === 'UNPROCESSABLE') {
+      setLeaveStage('blocked');
+      return;
+    }
+
+    toast.error(result.error.message || copy.myBusinesses.leaveErrorGeneric);
   }
 
   const relationLabel = {
@@ -341,6 +378,17 @@ function BusinessCard({ business }: { business: MyBusiness }) {
             {copy.myBusinesses.deleteBusiness}
           </button>
         ) : null}
+        {business.relation === 'STAFF' ? (
+          <button
+            type="button"
+            onClick={() => setLeaveStage('confirm')}
+            // Same `relative z-10` reasoning as the delete button above.
+            aria-label={[copy.myBusinesses.leaveBusiness, business.name].join(' — ')}
+            className={`${actionButton} ${cardAction} relative z-10`}
+          >
+            {copy.myBusinesses.leaveBusiness}
+          </button>
+        ) : null}
       </div>
 
       {deleteStage === 'confirm' ? (
@@ -362,6 +410,28 @@ function BusinessCard({ business }: { business: MyBusiness }) {
           title={copy.myBusinesses.deleteBlockedTitle}
           description={copy.myBusinesses.deleteBlockedDescription}
           onClose={() => setDeleteStage('idle')}
+        />
+      ) : null}
+
+      {leaveStage === 'confirm' ? (
+        <ConfirmDialog
+          title={copy.myBusinesses.leaveConfirmTitle}
+          description={copy.myBusinesses.leaveConfirmDescription.replace('{name}', business.name)}
+          confirmLabel={copy.myBusinesses.leaveConfirmYes}
+          cancelLabel={copy.myBusinesses.leaveConfirmNo}
+          closeLabel={copy.common.close}
+          pending={isLeaving}
+          pendingLabel={copy.myBusinesses.leaving}
+          onConfirm={confirmLeave}
+          onCancel={() => setLeaveStage('idle')}
+        />
+      ) : null}
+
+      {leaveStage === 'blocked' ? (
+        <ErrorDialog
+          title={copy.myBusinesses.leaveBlockedTitle}
+          description={copy.myBusinesses.leaveBlockedDescription}
+          onClose={() => setLeaveStage('idle')}
         />
       ) : null}
     </article>
