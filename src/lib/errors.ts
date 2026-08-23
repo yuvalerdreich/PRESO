@@ -191,6 +191,16 @@ export function fromPostgresError(error: unknown): AppError {
       error,
     );
   }
+  // Same family as `employee_has_appointments`, one level up — delete_business() (0034) refuses
+  // while any employee of the business still has a future, non-cancelled appointment.
+  if (message.includes('business_has_appointments')) {
+    return new AppError(
+      'UNPROCESSABLE',
+      'This business still has upcoming appointments. They must be resolved before it can be deleted.',
+      undefined,
+      error,
+    );
+  }
   if (message.includes('match_expired')) {
     return new AppError('GONE', 'This offer has expired and the time was released.', undefined, error);
   }

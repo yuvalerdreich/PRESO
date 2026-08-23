@@ -98,6 +98,18 @@ export function formatNotification(
     return { title: composedTitle, meta: null, when: null, note: null, status: null, href: APPOINTMENTS_HREF };
   }
 
+  if (type === 'BUSINESS_DELETED') {
+    // Same composed-sentence shape as APPOINTMENT_CANCELLED below: the row has to name the
+    // business itself, since by the time this notification exists the `employees` row that would
+    // otherwise supply a `businessName` via the usual meta line is already gone with it.
+    const composedTitle = copy.notifications.businessDeletedMessage.replace(
+      '{business}',
+      text(payload.businessName),
+    );
+
+    return { title: composedTitle, meta: null, when: null, note: null, status: null, href: BUSINESSES_HREF };
+  }
+
   if (type === 'APPOINTMENT_CANCELLED') {
     // Same composed-sentence shape as APPOINTMENT_RESCHEDULED above, naming the cancelled
     // appointment directly rather than relying on a separate meta/when line. Unlike a reschedule

@@ -100,16 +100,22 @@ export const setEmployeeStatus = action('setEmployeeStatus', employeeStatusInput
 
 /**
  * §6.9's two refusals — the last employee, and an employee with future appointments — are both
- * raised by `remove_employee()` (0017) rather than checked here. Counting in application code
- * and then deleting is a race: two concurrent removals can each see "2 remaining" and both
- * succeed, emptying the roster. §8.2's table already anticipated this by listing
- * `raise 'last_employee'` as a database error.
+ * raised by `remove_employee()` (0017, broadened for self-service by 0035 — §12.75) rather than
+ * checked here. Counting in application code and then deleting is a race: two concurrent removals
+ * can each see "2 remaining" and both succeed, emptying the roster. §8.2's table already
+ * anticipated this by listing `raise 'last_employee'` as a database error.
  *
  * `retired` distinguishes the two outcomes the RPC can have. An employee who has ever held an
  * appointment cannot be hard-deleted — `appointments.employee_id` is `on delete restrict` so
  * history survives (§6.9) — so their position is set `INACTIVE` instead. The UI should say
  * "removed from the roster" either way, but the flag is there because the two are genuinely
  * different: a retired position still exists and still anchors past bookings.
+ *
+ * Two callers, same action and the same RPC underneath, distinguished only by who `input.employeeId`
+ * belongs to: the owner removing someone else from `/businesses/manage/staff`, or — since §12.75 —
+ * a staff member removing their own position ("leaving") from `/businesses`. `remove_employee()`
+ * itself is what tells the two apart and enforces which is allowed; nothing here needs to know
+ * which case it is.
  */
 export const removeEmployee = action('removeEmployee', removeEmployeeInput, async (input) => {
   const supabase = await createClient();
@@ -126,6 +132,7 @@ export const removeEmployee = action('removeEmployee', removeEmployeeInput, asyn
   if (error) throw error;
 
   revalidatePath('/businesses/manage/staff');
+  revalidatePath('/businesses');
   if (employee) revalidatePath(`/b/${employee.business_id}`);
 
   return { employeeId: input.employeeId, retired: retired ?? false };

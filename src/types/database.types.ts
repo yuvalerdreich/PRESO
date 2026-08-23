@@ -1190,6 +1190,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      delete_business: { Args: { p_business_id: string }; Returns: undefined }
       get_available_slots: {
         Args: {
           p_employee_id: string
@@ -1315,6 +1316,7 @@ export type Database = {
         | "APPOINTMENT_RESCHEDULED"
         | "WAITLIST_MATCHED"
         | "APPOINTMENT_REMINDER"
+        | "BUSINESS_DELETED"
       profile_status: "ACTIVE" | "SUSPENDED"
       report_status: "OPEN" | "RESOLVED" | "DISMISSED"
       report_target_type: "BUSINESS" | "PROFILE" | "APPOINTMENT"
@@ -1472,6 +1474,7 @@ export const Constants = {
         "APPOINTMENT_RESCHEDULED",
         "WAITLIST_MATCHED",
         "APPOINTMENT_REMINDER",
+        "BUSINESS_DELETED",
       ],
       profile_status: ["ACTIVE", "SUSPENDED"],
       report_status: ["OPEN", "RESOLVED", "DISMISSED"],

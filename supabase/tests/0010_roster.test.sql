@@ -133,10 +133,15 @@ select lives_ok(
   'the founder can remove a second employee'
 );
 
+-- Since §12.75 (0035_fn_remove_employee_self_leave.sql) this is refused one step earlier than it
+-- used to be: the founder removing *themselves* is `insufficient_privilege` unconditionally now,
+-- not only when they happen to be the last active employee — see 0013_leave_business.test.sql for
+-- a scenario that still reaches `last_employee` for real (a non-owner leaving while the founder's
+-- own position happens to be inactive).
 select throws_ok(
   $$ select remove_employee((select id from employees where profile_id = '00000000-0000-0000-0000-0000000000c1')) $$,
-  'P0001', 'last_employee',
-  'the last employee cannot be removed — §8.2 maps last_employee to 422'
+  '42501', 'insufficient_privilege',
+  'the founder cannot remove their own position this way — delete_business() (§12.74) is the owner''s equivalent'
 );
 
 select is(
