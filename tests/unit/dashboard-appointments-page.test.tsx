@@ -45,6 +45,7 @@ const appointments: DashboardAppointment[] = [
     employeeName: 'Zohar Levi',
     clientName: 'Dana Cohen',
     clientPhone: '054-1112233',
+    serviceId: 'service-haircut',
     serviceName: 'Haircut',
     dateISO: '2026-08-19',
     time: '09:00',
@@ -56,10 +57,23 @@ const appointments: DashboardAppointment[] = [
     employeeName: 'Noa Golan',
     clientName: 'Amit Bar',
     clientPhone: null,
+    serviceId: 'service-colouring',
     serviceName: 'Colouring',
     dateISO: '2026-08-19',
     time: '11:30',
     status: 'PENDING',
+  },
+  {
+    id: 'appointment-3',
+    employeeId: 'employee-zohar',
+    employeeName: 'Zohar Levi',
+    clientName: 'Roi Katz',
+    clientPhone: '050-9998877',
+    serviceId: 'service-haircut',
+    serviceName: 'Haircut',
+    dateISO: '2026-08-19',
+    time: '13:00',
+    status: 'CANCELLED',
   },
 ];
 
@@ -81,12 +95,18 @@ describe('business appointment diary', () => {
     ).toBeInTheDocument();
 
     const list = screen.getByRole('list');
-    expect(within(list).getAllByRole('listitem')).toHaveLength(2);
+    expect(within(list).getAllByRole('listitem')).toHaveLength(3);
     expect(screen.getByText('Dana Cohen')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '054-1112233' })).toHaveAttribute('href', 'tel:054-1112233');
     expect(screen.getByText('No phone number provided')).toBeInTheDocument();
-    expect(screen.getByText('Confirmed')).toBeInTheDocument();
-    expect(screen.getByText('Pending approval')).toBeInTheDocument();
+
+    // A live (PENDING/CONFIRMED) row trades its status badge for cancel/reschedule actions.
+    expect(screen.getAllByRole('button', { name: 'Cancel appointment' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'Reschedule appointment' })).toHaveLength(2);
+    // A cancelled row keeps neither action — the badge is its only way of saying what happened.
+    expect(screen.getByText('Cancelled')).toBeInTheDocument();
+    expect(screen.queryByText('Confirmed')).not.toBeInTheDocument();
+    expect(screen.queryByText('Pending approval')).not.toBeInTheDocument();
   });
 
   it('navigates rather than filtering when the display date changes', () => {
@@ -130,9 +150,10 @@ describe('business appointment diary', () => {
     fireEvent.change(screen.getByLabelText(/Station . staff filter/), {
       target: { value: 'employee-zohar' },
     });
-    expect(screen.getAllByRole('listitem')).toHaveLength(1);
+    // Zohar's own two rows (one live, one cancelled) survive the filter; Noa's does not.
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
 
     fireEvent.change(screen.getByLabelText(/Station . staff filter/), { target: { value: '' } });
-    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    expect(screen.getAllByRole('listitem')).toHaveLength(3);
   });
 });

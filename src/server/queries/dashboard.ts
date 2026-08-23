@@ -367,7 +367,7 @@ export async function listDashboardAppointments(
   let query = supabase
     .from('appointments')
     .select(
-      `id, employee_id, client_profile_id, slot, status,
+      `id, employee_id, client_profile_id, service_id, slot, status,
        services(name),
        employees(businesses(timezone)),
        employee_public_profiles(full_name)`,
@@ -400,6 +400,7 @@ export async function listDashboardAppointments(
       employeeName: (row.employee_public_profiles as { full_name: string | null } | null)?.full_name ?? '',
       clientName: client?.fullName ?? '',
       clientPhone: client?.phone ?? null,
+      serviceId: row.service_id,
       serviceName: (row.services as { name: string } | null)?.name ?? '',
       dateISO: toDateISO(startsAt, timezone),
       time: toTimeHHmm(startsAt, timezone),

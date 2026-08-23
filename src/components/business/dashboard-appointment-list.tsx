@@ -1,8 +1,10 @@
 'use client';
 
-import { CalendarDays, Clock, Phone, Scissors } from 'lucide-react';
+import { useState } from 'react';
+import { CalendarClock, CalendarDays, Clock, Phone, Scissors, XCircle } from 'lucide-react';
 
 import { AppointmentStatusBadge } from '@/components/common/appointment-status-badge';
+import { actionButton } from '@/components/common/button-styles';
 import {
   cardHoverLift,
   cardMetaIcon,
@@ -13,6 +15,8 @@ import {
   surfaceCard,
 } from '@/components/common/card-styles';
 import { EmptyState } from '@/components/common/empty-state';
+import { CancelAppointmentDialog } from '@/components/business/cancel-appointment-dialog';
+import { RescheduleAppointmentDialog } from '@/components/business/reschedule-appointment-dialog';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import type { DashboardAppointment } from '@/types/domain';
 
@@ -36,6 +40,8 @@ export function DashboardAppointmentList({
   dateISO: string;
 }) {
   const { copy } = useLanguage();
+  const [rescheduleTarget, setRescheduleTarget] = useState<DashboardAppointment | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<DashboardAppointment | null>(null);
 
   if (appointments.length === 0) {
     return (
@@ -48,19 +54,48 @@ export function DashboardAppointmentList({
   }
 
   return (
-    <ul className="flex flex-col gap-3">
-      {appointments.map((appointment) => (
-        <li key={appointment.id}>
-          <AppointmentRow appointment={appointment} />
-        </li>
-      ))}
-    </ul>
+    <>
+      <ul className="flex flex-col gap-3">
+        {appointments.map((appointment) => (
+          <li key={appointment.id}>
+            <AppointmentRow
+              appointment={appointment}
+              onReschedule={() => setRescheduleTarget(appointment)}
+              onCancel={() => setCancelTarget(appointment)}
+            />
+          </li>
+        ))}
+      </ul>
+
+      {rescheduleTarget ? (
+        <RescheduleAppointmentDialog
+          appointment={rescheduleTarget}
+          onClose={() => setRescheduleTarget(null)}
+        />
+      ) : null}
+
+      {cancelTarget ? (
+        <CancelAppointmentDialog appointment={cancelTarget} onClose={() => setCancelTarget(null)} />
+      ) : null}
+    </>
   );
 }
 
-function AppointmentRow({ appointment }: { appointment: DashboardAppointment }) {
+function AppointmentRow({
+  appointment,
+  onReschedule,
+  onCancel,
+}: {
+  appointment: DashboardAppointment;
+  onReschedule: () => void;
+  onCancel: () => void;
+}) {
   const { copy } = useLanguage();
   const isCancelled = appointment.status === 'CANCELLED';
+  // §6.3/§6.4 steps 2 (cancel_appointment/reschedule_appointment) both only accept
+  // PENDING/CONFIRMED — matches that guard here so neither button offers a transition the RPC
+  // would refuse.
+  const isActionable = appointment.status === 'PENDING' || appointment.status === 'CONFIRMED';
 
   return (
     <article
@@ -97,9 +132,35 @@ function AppointmentRow({ appointment }: { appointment: DashboardAppointment }) 
         </div>
       </div>
 
-      {/* Only the status here: every row on the screen shares the selected day, so repeating the
-          date per row would say nothing the header above the list hasn't already said. */}
-      <AppointmentStatusBadge status={appointment.status} />
+      {/* No date here: every row on the screen shares the selected day, so repeating it per row
+          would say nothing the header above the list hasn't already said. An actionable row
+          trades its status badge for the two actions themselves — cancel/reschedule already say
+          "this is live"; a cancelled row has neither action, so it keeps the badge as its only
+          way of saying what happened to it (§6.9's dimmed-but-listed history). */}
+      <div className="flex shrink-0 flex-col items-end gap-2">
+        {isActionable ? (
+          <>
+            <button
+              type="button"
+              onClick={onCancel}
+              className={`${actionButton} rounded-full px-3.5 py-2 text-xs`}
+            >
+              <XCircle className="h-3.5 w-3.5" aria-hidden="true" />
+              {copy.dashboard.diary.cancelDialog.action}
+            </button>
+            <button
+              type="button"
+              onClick={onReschedule}
+              className={`${actionButton} rounded-full px-3.5 py-2 text-xs`}
+            >
+              <CalendarClock className="h-3.5 w-3.5" aria-hidden="true" />
+              {copy.appointments.reschedule}
+            </button>
+          </>
+        ) : (
+          <AppointmentStatusBadge status={appointment.status} />
+        )}
+      </div>
     </article>
   );
 }

@@ -37,6 +37,49 @@ describe('formatNotification', () => {
     }
   });
 
+  it('composes the reschedule message from the previous start time, not the new one', () => {
+    const formatted = formatNotification(
+      'APPOINTMENT_RESCHEDULED',
+      {
+        businessName: 'Studio Zohar',
+        serviceName: 'Haircut',
+        employeeName: 'Noa Golan',
+        startsAt: '2026-08-26T06:00:00.000Z',
+        previousStartsAt: '2026-08-25T06:00:00.000Z',
+        timezone: 'Asia/Jerusalem',
+      },
+      copy,
+    );
+
+    expect(formatted.title).toBe(
+      'Your appointment at Studio Zohar for Haircut with Noa Golan on 2026-08-25 09:00 was updated',
+    );
+    expect(formatted.meta).toBeNull();
+    expect(formatted.when).toBeNull();
+    expect(formatted.href).toBe('/me/appointments');
+  });
+
+  it('composes the cancellation message from the appointment\'s own start time', () => {
+    const formatted = formatNotification(
+      'APPOINTMENT_CANCELLED',
+      {
+        businessName: 'Studio Zohar',
+        serviceName: 'Haircut',
+        employeeName: 'Noa Golan',
+        startsAt: '2026-08-25T06:00:00.000Z',
+        timezone: 'Asia/Jerusalem',
+      },
+      copy,
+    );
+
+    expect(formatted.title).toBe(
+      'Your appointment at Studio Zohar for Haircut with Noa Golan on 2026-08-25 09:00 was cancelled',
+    );
+    expect(formatted.meta).toBeNull();
+    expect(formatted.when).toBeNull();
+    expect(formatted.href).toBe('/me/appointments');
+  });
+
   it('surfaces the rejection reason as a note, on top of the /me/appointments link', () => {
     const formatted = formatNotification('APPOINTMENT_REJECTED', { reason: 'Fully booked' }, copy);
 
