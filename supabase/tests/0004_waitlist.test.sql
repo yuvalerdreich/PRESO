@@ -2,7 +2,7 @@
 -- (TECHNICAL_DESIGN.md §6.7, §12.31) — the same scenarios verified by hand while building
 -- 0008_fn_waitlist.sql.
 begin;
-select plan(17);
+select plan(18);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-0000000000e1', 'owner-wl@test.local', '{"account_type":"BUSINESS","full_name":"Owner E"}'::jsonb),
@@ -63,6 +63,11 @@ select is((select status::text from waitlist_entries where id = '00000000-0000-0
 select is(
   (select payload->>'serviceId' from notifications where type = 'WAITLIST_MATCHED' and payload->>'waitlistEntryId' = '00000000-0000-0000-0000-0000000000ec'),
   '00000000-0000-0000-0000-0000000000ea', 'the WAITLIST_MATCHED notification carries serviceId (§12.31)'
+);
+select is(
+  (select payload->>'businessId' from notifications where type = 'WAITLIST_MATCHED' and payload->>'waitlistEntryId' = '00000000-0000-0000-0000-0000000000ec'),
+  '00000000-0000-0000-0000-0000000000e7',
+  'the WAITLIST_MATCHED notification carries businessId, so the bell can link to the booking screen'
 );
 
 -- sweep: W3 (still ACTIVE) has to_ts in the past -> EXPIRED

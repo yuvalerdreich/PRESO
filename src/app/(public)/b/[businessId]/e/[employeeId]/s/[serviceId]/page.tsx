@@ -45,6 +45,10 @@ export default async function ServiceAvailabilityPage({
   const selectedSlot = typeof search.slot === 'string' ? search.slot : undefined;
   const waitlistOpen = search.waitlist === '1';
   const rescheduleAppointmentId = typeof search.reschedule === 'string' ? search.reschedule : undefined;
+  // Set when reached from a WAITLIST_MATCHED notification (`lib/notifications/format.ts`) — routes
+  // confirming through `claim_waitlist_entry()` instead of the ordinary booking RPC, so the entry
+  // closes as CLAIMED immediately rather than sitting MATCHED until the next nightly sweep.
+  const claimWaitlistEntryId = typeof search.claim === 'string' ? search.claim : undefined;
 
   const [
     isAuthenticated,
@@ -110,6 +114,7 @@ export default async function ServiceAvailabilityPage({
       slots={{ dateISO, selectedSlot, times: daySlots }}
       waitlistOpen={waitlistOpen}
       rescheduleAppointmentId={rescheduleAppointmentId}
+      claimWaitlistEntryId={claimWaitlistEntryId}
     />
   );
 }

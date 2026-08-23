@@ -2,7 +2,7 @@
 -- setting `role` + `request.jwt.claims` the way auth.uid()/auth.role() read them. The same
 -- scenarios verified by hand while building the migration.
 begin;
-select plan(17);
+select plan(19);
 
 set local role postgres;
 insert into auth.users (id, email, raw_user_meta_data) values
@@ -93,6 +93,33 @@ select throws_ok(
   format($f$ update notifications set type = 'WAITLIST_MATCHED' where id = '%s' $f$, (select id from t_notif)),
   '42501', null, 'tampering with a notification''s type is blocked by the protective trigger'
 );
+
+-- notifications_delete (0032): own row only, admin all — same shape as notifications_update.
+-- The existence checks below run as `postgres` (RLS bypassed) rather than as either
+-- authenticated party, because notifications_select is itself own-row-only: checking "does the
+-- row still exist" as d4 or d1 would just re-hit the SELECT policy and read 0 regardless of
+-- whether the DELETE actually happened, which isn't what either assertion is about.
+set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000d4","role":"authenticated"}';
+delete from notifications where id = (select id from t_notif);
+
+set local role postgres;
+reset request.jwt.claims;
+select is(
+  (select count(*)::int from notifications where id = (select id from t_notif)), 1,
+  'an unrelated user''s delete on someone else''s notification is silently filtered'
+);
+
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-0000000000d1","role":"authenticated"}';
+delete from notifications where id = (select id from t_notif);
+
+set local role postgres;
+reset request.jwt.claims;
+select is(
+  (select count(*)::int from notifications where id = (select id from t_notif)), 0,
+  'a user can delete their own notification'
+);
+set local role authenticated;
 
 -- 14-15. audit_log: admin-only read
 set local role postgres;

@@ -1,13 +1,16 @@
 import { AccountSidebar } from '@/components/common/account-sidebar';
 import { AppointmentsPanelProvider } from '@/components/common/appointments-panel-provider';
 import { AuthModalProvider } from '@/components/common/auth-modal-provider';
+import { NotificationsProvider } from '@/components/common/notifications-provider';
 import { ProfileSettingsProvider } from '@/components/common/profile-settings-provider';
 import { PublicHeader } from '@/components/common/public-header';
 import { listClientAppointments, listClientWaitlistEntries } from '@/server/queries/appointments';
+import { countUnread, listNotifications } from '@/server/queries/notifications';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/types/database.types';
 
 type CurrentUser = {
+  id: string;
   fullName: string;
   location: string;
   dateOfBirth: string;
@@ -15,33 +18,46 @@ type CurrentUser = {
 };
 
 export default async function PublicLayout({ children }: LayoutProps<'/'>) {
-  const [appointments, waitlistEntries, currentUser] = await Promise.all([
+  const currentUser = await getCurrentUser();
+
+  const [appointments, waitlistEntries, notifications, unreadCount] = await Promise.all([
     listClientAppointments(),
     listClientWaitlistEntries(),
-    getCurrentUser(),
+    currentUser ? listNotifications() : Promise.resolve([]),
+    currentUser ? countUnread() : Promise.resolve(0),
   ]);
+
+  const chrome = (
+    <AppointmentsPanelProvider appointments={appointments} waitlistEntries={waitlistEntries}>
+      <ProfileSettingsProvider
+        initialLocation={currentUser?.location ?? ''}
+        initialDateOfBirth={currentUser?.dateOfBirth ?? ''}
+        accountType={currentUser?.accountType ?? 'CLIENT'}
+      >
+        <div className="flex min-h-full flex-col">
+          <PublicHeader currentUser={currentUser ? { fullName: currentUser.fullName } : null} />
+          <div className="flex flex-1">
+            <AccountSidebar
+              appointments={appointments}
+              accountType={currentUser?.accountType}
+              isAuthenticated={currentUser !== null}
+            />
+            <main className="min-w-0 flex-1">{children}</main>
+          </div>
+        </div>
+      </ProfileSettingsProvider>
+    </AppointmentsPanelProvider>
+  );
 
   return (
     <AuthModalProvider>
-      <AppointmentsPanelProvider appointments={appointments} waitlistEntries={waitlistEntries}>
-        <ProfileSettingsProvider
-          initialLocation={currentUser?.location ?? ''}
-          initialDateOfBirth={currentUser?.dateOfBirth ?? ''}
-          accountType={currentUser?.accountType ?? 'CLIENT'}
-        >
-          <div className="flex min-h-full flex-col">
-            <PublicHeader currentUser={currentUser ? { fullName: currentUser.fullName } : null} />
-            <div className="flex flex-1">
-              <AccountSidebar
-                appointments={appointments}
-                accountType={currentUser?.accountType}
-                isAuthenticated={currentUser !== null}
-              />
-              <main className="min-w-0 flex-1">{children}</main>
-            </div>
-          </div>
-        </ProfileSettingsProvider>
-      </AppointmentsPanelProvider>
+      {currentUser ? (
+        <NotificationsProvider profileId={currentUser.id} initialNotifications={notifications} initialUnreadCount={unreadCount}>
+          {chrome}
+        </NotificationsProvider>
+      ) : (
+        chrome
+      )}
     </AuthModalProvider>
   );
 }
@@ -61,6 +77,7 @@ async function getCurrentUser(): Promise<CurrentUser | null> {
   if (!profile) return null;
 
   return {
+    id: user.id,
     fullName: profile.full_name,
     location: profile.location ?? '',
     dateOfBirth: profile.date_of_birth ?? '',
