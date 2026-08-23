@@ -17,6 +17,7 @@ export function LoginForm({
   suspended,
   onForgotPassword,
   onSignup,
+  onSuccess,
 }: {
   next?: string;
   suspended?: boolean;
@@ -24,6 +25,8 @@ export function LoginForm({
   onForgotPassword?: () => void;
   /** Used by the header modal to keep registration in the same dialog. */
   onSignup?: () => void;
+  /** Closes the shared auth modal once password sign-in has completed successfully. */
+  onSuccess?: () => void;
 }) {
   const { copy } = useLanguage();
   const router = useRouter();
@@ -70,6 +73,7 @@ export function LoginForm({
       return;
     }
 
+    onSuccess?.();
     router.push(next ?? getDefaultDestination());
     router.refresh();
   }
