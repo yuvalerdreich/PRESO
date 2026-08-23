@@ -125,6 +125,8 @@ export const translations = {
       successTitle: 'נוספת לרשימת ההמתנה בהצלחה',
       successDescription: 'נעדכן אתכם ברגע שיתפנה תור בטווח שביקשתם.',
       errorTitle: 'ההצטרפות לרשימת ההמתנה נכשלה. נסו שוב בעוד רגע.',
+      existingSlotsWarningTitle: 'כבר יש שעות פנויות בטווח שבחרת',
+      existingSlotsWarningDescription: 'אין צורך להצטרף לרשימת המתנה — אפשר לקבוע תור ישירות באחת השעות הפנויות הבאות:',
     },
     bookingConfirm: {
       title: 'אישור קביעת תור',
@@ -854,6 +856,8 @@ export const translations = {
       successTitle: 'Added to the waitlist',
       successDescription: 'We will let you know as soon as a slot opens up in the range you asked for.',
       errorTitle: 'Could not join the waitlist. Try again in a moment.',
+      existingSlotsWarningTitle: 'There are already open hours in the range you chose',
+      existingSlotsWarningDescription: 'No need to join the waitlist — you can book directly at one of the following open times:',
     },
     bookingConfirm: {
       title: 'Confirm your appointment',
