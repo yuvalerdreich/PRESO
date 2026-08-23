@@ -64,16 +64,22 @@ export function MyBusinessesPage({
       all: businesses.length,
       owned: businesses.filter((business) => business.relation === 'OWNER').length,
       staff: businesses.filter((business) => business.relation === 'STAFF').length,
-      pending: businesses.filter((business) => business.relation === 'PENDING').length,
+      pending:
+        businesses.filter((business) => business.relation === 'PENDING').length +
+        businesses.reduce((total, business) => total + business.pendingJoinRequestCount, 0),
     }),
     [businesses],
   );
 
   const visibleBusinesses = useMemo(
     () =>
-      businesses.filter(
-        (business) => activeFilter === 'all' || business.relation === FILTER_RELATION[activeFilter],
-      ),
+      businesses.filter((business) => {
+        if (activeFilter === 'all') return true;
+        if (activeFilter === 'pending') {
+          return business.relation === 'PENDING' || business.pendingJoinRequestCount > 0;
+        }
+        return business.relation === FILTER_RELATION[activeFilter];
+      }),
     [businesses, activeFilter],
   );
 
@@ -193,7 +199,9 @@ function BusinessCard({ business }: { business: MyBusiness }) {
   function openManage() {
     startTransition(async () => {
       const result = await selectBusinessForManagement({ businessId: business.businessId });
-      if (result.ok) router.push('/businesses/manage');
+      if (result.ok) {
+        router.push(business.pendingJoinRequestCount > 0 ? '/businesses/manage/staff' : '/businesses/manage');
+      }
     });
   }
 
@@ -254,6 +262,15 @@ function BusinessCard({ business }: { business: MyBusiness }) {
             {copy.myBusinesses.awaitingApproval}
           </span>
         )}
+        {business.pendingJoinRequestCount > 0 ? (
+          <span className="flex items-center gap-2 text-amber-700">
+            <Clock className="h-4 w-4 shrink-0" aria-hidden="true" />
+            {copy.myBusinesses.pendingStaffRequests.replace(
+              '{count}',
+              String(business.pendingJoinRequestCount),
+            )}
+          </span>
+        ) : null}
       </div>
 
       <div className="mt-auto flex flex-wrap gap-2 pt-1">
@@ -265,10 +282,13 @@ function BusinessCard({ business }: { business: MyBusiness }) {
             // Same reasoning as the discovery card: several cards carry this identical label, so the
             // accessible name has to name the business. The stretched `::after` is what gives the
             // pointer cursor something real underneath it over the whole card.
-            aria-label={`${copy.myBusinesses.manage} — ${business.name}`}
+            aria-label={[
+              business.pendingJoinRequestCount > 0 ? copy.myBusinesses.manageRequests : copy.myBusinesses.manage,
+              business.name,
+            ].join(' — ')}
             className={`${actionButton} ${cardAction} ${cardStretchedLink}`}
           >
-            {copy.myBusinesses.manage}
+            {business.pendingJoinRequestCount > 0 ? copy.myBusinesses.manageRequests : copy.myBusinesses.manage}
           </button>
         ) : null}
       </div>
