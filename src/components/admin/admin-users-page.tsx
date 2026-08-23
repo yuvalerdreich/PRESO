@@ -80,7 +80,6 @@ export function AdminUsersPage({ users, currentUserId }: { users: AdminUser[]; c
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-7 px-4 py-7 sm:px-6 lg:px-10 lg:py-10">
       <PanelHero
         title={copy.admin.users.title}
-        badge={copy.admin.users.badge}
         description={copy.admin.users.description}
         icon={Users}
       >
