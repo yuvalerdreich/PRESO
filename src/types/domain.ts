@@ -272,6 +272,8 @@ export type MyBusiness = {
   categoryName: string;
   photoUrl: string;
   employeeCount: number;
+  /** Open staff applications to this business; populated only for its owner. */
+  pendingJoinRequestCount: number;
   relation: MyBusinessRelation;
   /** The caller's own position title; null while the request is still pending. */
   positionTitle: string | null;

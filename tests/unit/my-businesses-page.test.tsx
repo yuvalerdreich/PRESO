@@ -50,6 +50,7 @@ const myBusinesses: MyBusiness[] = [
     categoryName: 'Hair and beauty',
     photoUrl: '',
     employeeCount: 2,
+    pendingJoinRequestCount: 1,
     relation: 'OWNER',
     positionTitle: 'Owner',
     employeeStatus: 'ACTIVE',
@@ -63,6 +64,7 @@ const myBusinesses: MyBusiness[] = [
     categoryName: 'Health and wellness',
     photoUrl: '',
     employeeCount: 3,
+    pendingJoinRequestCount: 0,
     relation: 'STAFF',
     positionTitle: 'Aesthetician',
     employeeStatus: 'ACTIVE',
@@ -76,6 +78,7 @@ const myBusinesses: MyBusiness[] = [
     categoryName: 'Hair and beauty',
     photoUrl: '',
     employeeCount: 2,
+    pendingJoinRequestCount: 0,
     relation: 'PENDING',
     positionTitle: null,
     employeeStatus: null,
@@ -103,14 +106,16 @@ describe('my businesses page', () => {
     expect(screen.getByRole('tab', { name: /all\s*3/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /owned by me\s*1/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /active staff\s*1/i })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /pending requests\s*1/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /pending requests\s*2/i })).toBeInTheDocument();
 
     // The pending row has no position yet — approval is what creates the employees row (§6.8).
     expect(screen.getByText('Waiting for the owner to decide on your request')).toBeInTheDocument();
     // …and therefore no manage control, unlike the two approved ones. It is named after its
     // business — it is stretched over the whole card, and three identical "Manage business"
     // buttons would name nothing.
-    expect(screen.getAllByRole('button', { name: /^Manage business —/ })).toHaveLength(2);
+    expect(screen.getByText('1 pending staff join requests')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Manage requests — Studio Zohar' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Manage business — Glow Clinic' })).toBeInTheDocument();
   });
 
   // §12.64 — with more than one manageable business, "Manage business" cannot just be a link to a
@@ -120,10 +125,10 @@ describe('my businesses page', () => {
   it('records which business was chosen before opening the dashboard', async () => {
     renderPage();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Manage business — Studio Zohar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Manage business — Glow Clinic' }));
 
     await waitFor(() =>
-      expect(selectBusinessForManagementMock).toHaveBeenCalledWith({ businessId: 'business-zohar' }),
+      expect(selectBusinessForManagementMock).toHaveBeenCalledWith({ businessId: 'business-glow' }),
     );
     await waitFor(() => expect(pushMock).toHaveBeenCalledWith('/businesses/manage'));
   });
@@ -140,6 +145,23 @@ describe('my businesses page', () => {
     expect(screen.getByText('3 linked businesses found')).toBeInTheDocument();
     expect(screen.getByText('Glow Clinic')).toBeInTheDocument();
     expect(screen.getByText('Studio Zohar')).toBeInTheDocument();
+  });
+
+  it('shows an owned business in pending requests when staff are waiting to join', async () => {
+    renderPage();
+
+    fireEvent.click(screen.getByRole('tab', { name: /pending requests/i }));
+
+    expect(screen.getByText('Studio Zohar')).toBeInTheDocument();
+    expect(screen.getByText('Barber Bros')).toBeInTheDocument();
+    expect(screen.queryByText('Glow Clinic')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Manage requests — Studio Zohar' }));
+
+    await waitFor(() =>
+      expect(selectBusinessForManagementMock).toHaveBeenCalledWith({ businessId: 'business-zohar' }),
+    );
+    await waitFor(() => expect(pushMock).toHaveBeenCalledWith('/businesses/manage/staff'));
   });
 
   it('shows the empty state only when the account has no businesses at all', () => {
