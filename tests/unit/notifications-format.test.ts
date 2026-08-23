@@ -69,8 +69,22 @@ describe('formatNotification', () => {
     expect(formatted.href).toBeNull();
   });
 
-  it('never links JOIN_REQUEST_* notifications anywhere — no screen was built for them', () => {
-    expect(formatNotification('JOIN_REQUEST_RECEIVED', {}, copy).href).toBeNull();
-    expect(formatNotification('JOIN_REQUEST_DECIDED', {}, copy).href).toBeNull();
+  it('links both JOIN_REQUEST_* notifications to /businesses', () => {
+    expect(formatNotification('JOIN_REQUEST_RECEIVED', {}, copy).href).toBe('/businesses');
+    expect(formatNotification('JOIN_REQUEST_DECIDED', { decision: 'APPROVED' }, copy).href).toBe('/businesses');
+  });
+
+  it('shows the join-request outcome in the row itself, not only after a click', () => {
+    const approved = formatNotification('JOIN_REQUEST_DECIDED', { decision: 'APPROVED' }, copy);
+    expect(approved.status).toEqual({ label: copy.notifications.joinApproved, tone: 'success' });
+
+    const rejected = formatNotification('JOIN_REQUEST_DECIDED', { decision: 'REJECTED' }, copy);
+    expect(rejected.status).toEqual({ label: copy.notifications.joinRejected, tone: 'error' });
+  });
+
+  it('carries no status for any other notification type', () => {
+    expect(formatNotification('JOIN_REQUEST_RECEIVED', {}, copy).status).toBeNull();
+    expect(formatNotification('APPOINTMENT_CONFIRMED', {}, copy).status).toBeNull();
+    expect(formatNotification('WAITLIST_MATCHED', {}, copy).status).toBeNull();
   });
 });

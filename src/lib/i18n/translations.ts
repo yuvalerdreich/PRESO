@@ -536,6 +536,8 @@ export const translations = {
       close: 'סגירה',
       claimBy: 'ניתן לאשר עד',
       reasonPrefix: 'סיבה:',
+      joinApproved: 'הבקשה אושרה',
+      joinRejected: 'הבקשה נדחתה',
       typeTitles: {
         APPOINTMENT_REMINDER: 'תזכורת לתור קרוב',
         APPOINTMENT_CREATED: 'נקבע תור חדש',
@@ -1201,6 +1203,8 @@ export const translations = {
       close: 'Close',
       claimBy: 'You can confirm until',
       reasonPrefix: 'Reason:',
+      joinApproved: 'Request approved',
+      joinRejected: 'Request declined',
       typeTitles: {
         APPOINTMENT_REMINDER: 'Upcoming appointment reminder',
         APPOINTMENT_CREATED: 'New appointment booked',

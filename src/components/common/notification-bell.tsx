@@ -129,6 +129,15 @@ function NotificationRow({ item, onClose }: { item: NotificationItem; onClose: (
         </p>
         {formatted.meta ? <p className="mt-0.5 truncate text-xs text-[var(--muted)]">{formatted.meta}</p> : null}
         {formatted.when ? <p className="mt-0.5 text-xs text-[var(--muted)]">{formatted.when}</p> : null}
+        {formatted.status ? (
+          <p
+            className={`mt-0.5 text-xs font-semibold ${
+              formatted.status.tone === 'success' ? 'text-emerald-600' : 'text-rose-600'
+            }`}
+          >
+            {formatted.status.label}
+          </p>
+        ) : null}
         {formatted.note ? <p className="mt-0.5 text-xs font-medium text-amber-600">{formatted.note}</p> : null}
       </div>
     </div>

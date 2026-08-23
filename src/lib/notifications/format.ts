@@ -17,6 +17,8 @@ export type FormattedNotification = {
   when: string | null;
   /** Only set for WAITLIST_MATCHED today — the one type where waiting doesn't hold the slot. */
   note: string | null;
+  /** Only set for JOIN_REQUEST_DECIDED — the outcome, shown in the row itself before any click. */
+  status: { label: string; tone: 'success' | 'error' } | null;
   href: string | null;
 };
 
@@ -38,6 +40,16 @@ const APPOINTMENT_TYPES: NotificationType[] = [
  * `(client)/me`), and only one of them provides that context.
  */
 const APPOINTMENTS_HREF = '/me/appointments';
+
+/**
+ * `/businesses` — "my businesses" — is where both join-request notification types send the caller.
+ * Deliberately not a deeper link into a specific business's staff screen for JOIN_REQUEST_RECEIVED
+ * (the business owner's side): reaching `/businesses/manage/staff` directly depends on which
+ * business the "current business" cookie currently points to (`selectBusinessForManagement`,
+ * §12.64), and a caller who owns or works at more than one business could land on the wrong one's
+ * roster. `/businesses` is always correct and lets them pick.
+ */
+const BUSINESSES_HREF = '/businesses';
 
 export function formatNotification(
   type: NotificationType,
@@ -67,7 +79,7 @@ export function formatNotification(
     const claimExpiresAt = formatInstant(payload.claimExpiresAt, payload.timezone);
     const note = claimExpiresAt ? `${copy.notifications.claimBy} ${claimExpiresAt}` : null;
 
-    return { title, meta, when, note, href };
+    return { title, meta, when, note, status: null, href };
   }
 
   if (type === 'APPOINTMENT_REJECTED') {
@@ -77,12 +89,29 @@ export function formatNotification(
       meta,
       when,
       note: reason ? `${copy.notifications.reasonPrefix} ${reason}` : null,
+      status: null,
       href: APPOINTMENTS_HREF,
     };
   }
 
+  if (type === 'JOIN_REQUEST_DECIDED') {
+    const decision = text(payload.decision);
+    const status =
+      decision === 'APPROVED'
+        ? { label: copy.notifications.joinApproved, tone: 'success' as const }
+        : decision === 'REJECTED'
+          ? { label: copy.notifications.joinRejected, tone: 'error' as const }
+          : null;
+
+    return { title, meta, when, note: null, status, href: BUSINESSES_HREF };
+  }
+
+  if (type === 'JOIN_REQUEST_RECEIVED') {
+    return { title, meta, when, note: null, status: null, href: BUSINESSES_HREF };
+  }
+
   const href = APPOINTMENT_TYPES.includes(type) ? APPOINTMENTS_HREF : null;
-  return { title, meta, when, note: null, href };
+  return { title, meta, when, note: null, status: null, href };
 }
 
 function metaLine(payload: Payload): string | null {
