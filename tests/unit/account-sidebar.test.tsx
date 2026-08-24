@@ -44,14 +44,15 @@ describe('account sidebar', () => {
     pathname.current = '/';
   });
 
-  it('shows a client exactly two entries ג€” home and my appointments', () => {
+  it('shows a client exactly three entries — home, my appointments and report a problem', () => {
     renderSidebar([]);
 
     const nav = screen.getByRole('navigation', { name: translations.en.sidebar.title });
     expect(screen.getByText(translations.en.sidebar.title)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: translations.en.sidebar.home })).toHaveAttribute('href', '/');
     expect(screen.getByText(translations.en.sidebar.appointments)).toBeInTheDocument();
-    expect(nav.querySelectorAll('a, button')).toHaveLength(2);
+    expect(screen.getByText(translations.en.sidebar.reportIssue)).toBeInTheDocument();
+    expect(nav.querySelectorAll('a, button')).toHaveLength(3);
     expect(
       screen.queryByRole('link', { name: translations.en.sidebar.businessDashboard }),
     ).not.toBeInTheDocument();
@@ -110,6 +111,19 @@ describe('account sidebar', () => {
       '/businesses',
     );
     expect(screen.queryByRole('link', { name: translations.en.sidebar.businessDashboard })).not.toBeInTheDocument();
+  });
+
+  it('adds user and report management entries for an admin account', () => {
+    renderSidebar([], 'ADMIN');
+
+    expect(screen.getByRole('link', { name: translations.en.sidebar.manageUsers })).toHaveAttribute(
+      'href',
+      '/admin/users',
+    );
+    expect(screen.getByRole('link', { name: translations.en.sidebar.manageReports })).toHaveAttribute(
+      'href',
+      '/admin/reports',
+    );
   });
 
   it('keeps My Businesses lit while inside business management', () => {
