@@ -44,7 +44,7 @@ export function CreateBusinessDialog({
 }) {
   const { copy } = useLanguage();
   const router = useRouter();
-  const [services, setServices] = useState<ServiceDraft[]>([{ id: 1, name: '', price: '', duration: '45' }]);
+  const [services, setServices] = useState<ServiceDraft[]>([{ id: 1, name: '', price: '', duration: '' }]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -210,7 +210,7 @@ export function CreateBusinessDialog({
                   onClick={() =>
                     setServices((current) => [
                       ...current,
-                      { id: Math.max(0, ...current.map((s) => s.id)) + 1, name: '', price: '', duration: '45' },
+                      { id: Math.max(0, ...current.map((s) => s.id)) + 1, name: '', price: '', duration: '' },
                     ])
                   }
                   className={`${actionTextButton} text-sm`}
