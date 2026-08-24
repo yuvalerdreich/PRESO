@@ -9,7 +9,6 @@ import {
   createBusinessInput,
   deleteBusinessInput,
   selectBusinessInput,
-  setOperatingHoursInput,
 } from '@/lib/validation/business';
 import { action } from '@/server/action';
 import { requireEmployeeOf, requireSession } from '@/server/guards';
@@ -153,44 +152,6 @@ export const updateBusinessDetails = action('updateBusinessDetails', businessDet
   revalidatePath('/');
 
   return { businessId: input.businessId };
-});
-
-/**
- * Replace-all, not a per-row edit (§4.5). The delete and the insert are two statements and
- * therefore not atomic, which is a deliberate trade rather than an oversight: the worst outcome
- * is a business with no hours for a moment, which yields no bookable slots — availability is
- * derived, so nothing is corrupted and re-saving fixes it. Compare `createBusiness` above, where
- * the intermediate state would violate a stated rule and so had to become an RPC.
- *
- * §7.2: this invalidates availability for **every** employee of the business, since business
- * hours are the outer boundary every window is intersected against (§6.1 step 6).
- */
-export const setOperatingHours = action('setOperatingHours', setOperatingHoursInput, async (input) => {
-  await requireEmployeeOf(input.businessId);
-  const supabase = await createClient();
-
-  const { error: deleteError } = await supabase
-    .from('business_hours')
-    .delete()
-    .eq('business_id', input.businessId);
-  if (deleteError) throw deleteError;
-
-  if (input.rows.length > 0) {
-    const { error: insertError } = await supabase.from('business_hours').insert(
-      input.rows.map((row) => ({
-        business_id: input.businessId,
-        day_of_week: row.dayOfWeek,
-        opens_at: row.opensAt,
-        closes_at: row.closesAt,
-      })),
-    );
-    if (insertError) throw insertError;
-  }
-
-  revalidatePath('/businesses/manage/hours');
-  revalidatePath(`/b/${input.businessId}`);
-
-  return { businessId: input.businessId, rows: input.rows.length };
 });
 
 /**

@@ -150,13 +150,11 @@ export const deleteAvailabilityRule = action(
 
 /**
  * `/businesses/manage/hours` — the employee's own recurring weekly pattern, replace-all across the
- * whole week in one save (§12.67). The same shape `setOperatingHours` uses for `business_hours`, one
- * level down: this replaces every `WEEKLY_WINDOW` row for the acting employee, not the business.
+ * whole week in one save (§12.67). This replaces every `WEEKLY_WINDOW` row for the acting employee.
  *
- * Replace-all, not a per-row edit, for the same reason `setOperatingHours` is: the delete and the
- * insert are two statements and therefore not atomic, and the worst intermediate outcome is a
- * moment with no recurring pattern at all — which yields no bookable slots for that gap, not
- * corrupted data. Re-saving fixes it.
+ * Replace-all, not a per-row edit: the delete and the insert are two statements and therefore not
+ * atomic, and the worst intermediate outcome is a moment with no recurring pattern at all — which
+ * yields no bookable slots for that gap, not corrupted data. Re-saving fixes it.
  */
 export const setWeeklyAvailability = action(
   'setWeeklyAvailability',

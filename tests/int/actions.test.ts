@@ -21,9 +21,7 @@ const state = vi.hoisted(() => ({ client: null as unknown as SupabaseClient<Data
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => state.client }));
 vi.mock('next/cache', () => ({ revalidatePath: () => {}, revalidateTag: () => {} }));
 
-const { createBusiness, setOperatingHours, updateBusinessDetails } = await import(
-  '@/server/actions/business'
-);
+const { createBusiness, updateBusinessDetails } = await import('@/server/actions/business');
 const { decideJoinRequest, removeEmployee, sendJoinRequest, setEmployeeStatus } = await import(
   '@/server/actions/employee'
 );
@@ -297,9 +295,12 @@ describe('business details and hours — §12.1 lets any ACTIVE employee edit', 
     expect(data!.name).not.toBe('Hijacked');
   });
 
-  it('opening hours are what make a business bookable at all', async () => {
-    state.client = await signIn('zohar@demo.local');
-
+  it('business_hours plays no part in what is bookable — only the employee’s own windows do', async () => {
+    // §12.x / 0038_availability_drop_business_hours.sql — business_hours used to be the outer
+    // boundary get_available_slots() intersected every window against, but its editor was removed
+    // with no replacement (§12.67), which left the engine gated by rows nobody could see or clear.
+    // This proves the fix: neither clearing business_hours nor shrinking it to almost nothing
+    // changes what the employee's own weekly window offers.
     const { data: original } = await admin
       .from('business_hours')
       .select('day_of_week, opens_at, closes_at')
@@ -319,54 +320,32 @@ describe('business details and hours — §12.1 lets any ACTIVE employee edit', 
       ).data ?? [];
 
     try {
-      // No opening hours at all is the state every business opened through the wizard was in until
-      // this screen existed: `business_hours ∩ employee windows` is empty, so the staff member's
-      // shifts offer nothing on any day.
-      expect(await setOperatingHours({ businessId: STUDIO_ZOHAR, rows: [] })).toMatchObject({ ok: true });
-      expect(await slotsNow()).toHaveLength(0);
+      const before = await slotsNow();
+      expect(before.length).toBeGreaterThan(0);
 
-      // Open every day wide, and the same shifts start producing slots — nothing else changed.
-      const openWeek = await setOperatingHours({
-        businessId: STUDIO_ZOHAR,
-        rows: [0, 1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({
-          dayOfWeek,
-          opensAt: '08:00',
-          closesAt: '20:00',
+      // No business_hours rows at all — the state every business opened through the wizard is in,
+      // and what any business is left with now that nothing writes to the table.
+      await admin.from('business_hours').delete().eq('business_id', STUDIO_ZOHAR);
+      expect(await slotsNow()).toHaveLength(before.length);
+
+      // A business_hours row that would have clipped almost everything, were it still consulted.
+      await admin.from('business_hours').insert(
+        [0, 1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({
+          business_id: STUDIO_ZOHAR,
+          day_of_week: dayOfWeek,
+          opens_at: '00:00',
+          closes_at: '00:01',
         })),
-      });
-      expect(openWeek).toMatchObject({ ok: true, data: { rows: 7 } });
-      expect((await slotsNow()).length).toBeGreaterThan(0);
+      );
+      expect(await slotsNow()).toHaveLength(before.length);
     } finally {
-      // Replace-all, so the seed's own hours have to go back the same way.
-      await setOperatingHours({
-        businessId: STUDIO_ZOHAR,
-        rows: (original ?? []).map((row) => ({
-          dayOfWeek: row.day_of_week,
-          opensAt: row.opens_at.slice(0, 5),
-          closesAt: row.closes_at.slice(0, 5),
-        })),
-      });
+      await admin.from('business_hours').delete().eq('business_id', STUDIO_ZOHAR);
+      if (original && original.length > 0) {
+        await admin.from('business_hours').insert(
+          original.map((row) => ({ business_id: STUDIO_ZOHAR, day_of_week: row.day_of_week, opens_at: row.opens_at, closes_at: row.closes_at })),
+        );
+      }
     }
-  });
-
-  it('rejects overlapping windows on the same day before touching the database', async () => {
-    state.client = await signIn('zohar@demo.local');
-
-    const result = await setOperatingHours({
-      businessId: STUDIO_ZOHAR,
-      rows: [
-        { dayOfWeek: 1, opensAt: '09:00', closesAt: '14:00' },
-        { dayOfWeek: 1, opensAt: '13:00', closesAt: '20:00' },
-      ],
-    });
-
-    expect(result).toMatchObject({ ok: false, error: { code: 'VALIDATION' } });
-    // The replace-all delete must not have run.
-    const { count } = await admin
-      .from('business_hours')
-      .select('id', { count: 'exact', head: true })
-      .eq('business_id', STUDIO_ZOHAR);
-    expect(count).toBe(6);
   });
 });
 

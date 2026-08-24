@@ -96,10 +96,10 @@ const shift = z
   });
 
 /**
- * `setWeeklyAvailability` (§12.67) — a replace-all payload for one employee's `WEEKLY_WINDOW` rows,
- * the same shape `setOperatingHoursInput` uses for `business_hours`. Overlap is server-only for the
- * same reason: no single-row `CHECK` can express a cross-row constraint, and split shifts are legal
- * and intended (an employee working 09:00–13:00 and 16:00–20:00 on the same weekday).
+ * `setWeeklyAvailability` (§12.67) — a replace-all payload for one employee's `WEEKLY_WINDOW` rows.
+ * Overlap is server-only: no single-row `CHECK` can express a cross-row constraint, and split
+ * shifts are legal and intended (an employee working 09:00–13:00 and 16:00–20:00 on the same
+ * weekday).
  */
 export const weeklyRuleRow = z
   .object({

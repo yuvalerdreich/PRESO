@@ -5,7 +5,6 @@ import {
   getCurrentBusinessDashboard,
   getCurrentEmployment,
   listAvailabilityRules,
-  listBusinessHours,
   listDashboardEmployees,
   listDashboardServices,
 } from '@/server/queries/dashboard';
@@ -26,10 +25,9 @@ export default async function DashboardHoursRoute({ searchParams }: PageProps<'/
   const business = await getCurrentBusinessDashboard();
   if (!business) redirect('/businesses');
 
-  const [employees, employment, businessHours, services] = await Promise.all([
+  const [employees, employment, services] = await Promise.all([
     listDashboardEmployees(business.id),
     getCurrentEmployment(),
-    listBusinessHours(business.id),
     listDashboardServices(business.id),
   ]);
 
@@ -53,7 +51,6 @@ export default async function DashboardHoursRoute({ searchParams }: PageProps<'/
       employees={employees}
       selectedEmployee={selectedEmployee}
       rules={rules}
-      businessHours={businessHours}
       services={employeeServices}
       timezone={business.timezone}
       currentEmployeeId={employment?.employeeId ?? null}

@@ -13,7 +13,6 @@ import {
 import { resolvePhotoUrl } from '@/server/queries/shared';
 import type {
   AvailabilityRule,
-  BusinessHourRow,
   DashboardAppointment,
   DashboardBusiness,
   DashboardEmployee,
@@ -613,26 +612,6 @@ export async function listJoinRequests(businessId: string): Promise<JoinRequestS
       createdAt: row.created_at,
     };
   });
-}
-
-export async function listBusinessHours(businessId: string): Promise<BusinessHourRow[]> {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from('business_hours')
-    .select('id, day_of_week, opens_at, closes_at')
-    .eq('business_id', businessId)
-    .order('day_of_week')
-    .order('opens_at');
-  if (error) throw error;
-
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    dayOfWeek: row.day_of_week,
-    // Postgres renders `time` as HH:MM:SS; the forms and the DDL both work in HH:mm.
-    opensAt: row.opens_at.slice(0, 5),
-    closesAt: row.closes_at.slice(0, 5),
-  }));
 }
 
 export async function listAvailabilityRules(employeeId: string): Promise<AvailabilityRule[]> {
