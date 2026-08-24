@@ -11,7 +11,16 @@ import { useLanguage } from '@/lib/i18n/language-provider';
 import { createClient } from '@/lib/supabase/client';
 import { signupInput, type SignupInput } from '@/lib/validation/identity';
 
-export function SignupForm({ next, onLogin }: { next?: string; onLogin?: () => void }) {
+export function SignupForm({
+  next,
+  onLogin,
+  onSuccess,
+}: {
+  next?: string;
+  onLogin?: () => void;
+  /** Receives whether Supabase created an active session for the newly registered user. */
+  onSuccess?: (hasSession: boolean) => void;
+}) {
   const { copy } = useLanguage();
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -55,7 +64,12 @@ export function SignupForm({ next, onLogin }: { next?: string; onLogin?: () => v
       return;
     }
 
-    if (values.accountType === 'BUSINESS') {
+    const hasSession = Boolean(signUpData.session);
+    onSuccess?.(hasSession);
+
+    // Without a session, protected onboarding would redirect to a full-page login. The modal
+    // provider keeps the visitor on the public destination and reopens its login view instead.
+    if (hasSession && values.accountType === 'BUSINESS') {
       router.push('/onboarding');
     } else {
       router.push(next ?? '/');

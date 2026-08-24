@@ -60,7 +60,17 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
           ) : authView === 'forgot-password' ? (
             <ForgotPasswordForm onBackToLogin={() => setAuthView('login')} />
           ) : (
-            <SignupForm onLogin={() => setAuthView('login')} />
+            <SignupForm
+              next={next}
+              onLogin={() => setAuthView('login')}
+              onSuccess={(hasSession) => {
+                if (hasSession) {
+                  close();
+                } else {
+                  openLogin(next);
+                }
+              }}
+            />
           )}
         </Modal>
       ) : null}
