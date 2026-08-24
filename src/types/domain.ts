@@ -461,7 +461,10 @@ export type AdminBusiness = {
 export type ReportSummary = {
   id: string;
   targetType: ReportTargetType;
-  targetId: string;
+  /** `null` for a GENERAL report — it has no target (TECHNICAL_DESIGN.md §12.76). */
+  targetId: string | null;
+  /** A human-readable name for `targetId`, resolved per `targetType`; `null` for GENERAL. */
+  targetLabel: string | null;
   reporterName: string;
   description: string;
   status: ReportStatus;

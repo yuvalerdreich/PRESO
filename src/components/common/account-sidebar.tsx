@@ -1,9 +1,10 @@
 'use client';
 
-import { Building2, CalendarDays, Home, Users, type LucideIcon } from 'lucide-react';
+import { Building2, CalendarDays, Home, LifeBuoy, Users, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import { ReportIssueButton } from '@/components/common/report-issue-button';
 import { countUpcomingAppointments } from '@/lib/appointments/classify';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import type { ClientAppointment } from '@/types/domain';
@@ -12,11 +13,12 @@ import type { Database } from '@/types/database.types';
 type AccountType = Database['public']['Enums']['account_type'];
 
 /**
- * The primary navigation menu. A CLIENT sees exactly two entries — home and
- * "my appointments"; a BUSINESS account additionally gets its dashboard.
- * "My appointments" is a button, not a link: it opens the shared
- * AppointmentsPanel modal in place, the same surface the booking thank-you
- * screen opens (TECHNICAL_DESIGN.md §12.33).
+ * The primary navigation menu. A CLIENT sees home, "my appointments" and the report-a-problem
+ * button; a BUSINESS account additionally gets its dashboard; an ADMIN additionally gets user and
+ * report management (§12.76). "My appointments" is a button, not a link: it opens the shared
+ * AppointmentsPanel modal in place, the same surface the booking thank-you screen opens
+ * (TECHNICAL_DESIGN.md §12.33). The report-a-problem button (`ReportIssueButton`) is the same
+ * shape — it opens its own modal in place rather than navigating anywhere.
  */
 export function AccountSidebar({
   appointments,
@@ -41,13 +43,14 @@ export function AccountSidebar({
   // stays lit the whole time you are in there — a prefix, not an exact match. Leaving it dark made
   // the portal look like a place outside the site's own navigation.
   const businessesActive = pathname === '/businesses' || pathname.startsWith('/businesses/');
-  const manageUsersActive = pathname === '/admin' || pathname.startsWith('/admin/');
+  const manageUsersActive = pathname.startsWith('/admin/users');
+  const manageReportsActive = pathname.startsWith('/admin/reports');
 
   // The aside is always a side column — it never stacks above the content at
   // narrow widths (devtools open, small viewport); it scrolls internally instead.
   return (
     <aside className="sticky top-0 h-dvh w-56 shrink-0 overflow-y-auto border-e border-[var(--line)] bg-[var(--surface)] sm:w-64 lg:w-72">
-      <nav aria-label={copy.sidebar.title} className="flex flex-col gap-2 px-3 py-6 sm:px-4">
+      <nav aria-label={copy.sidebar.title} className="flex min-h-full flex-col gap-2 px-3 py-6 sm:px-4">
         <span className="px-4 pb-1 text-xs font-medium text-[var(--muted)]">{copy.sidebar.title}</span>
 
         <Link href="/" aria-current={homeActive ? 'page' : undefined} className={itemClassName(homeActive)}>
@@ -97,6 +100,19 @@ export function AccountSidebar({
             <span>{copy.sidebar.manageUsers}</span>
           </Link>
         ) : null}
+
+        {isAuthenticated && accountType === 'ADMIN' ? (
+          <Link
+            href="/admin/reports"
+            aria-current={manageReportsActive ? 'page' : undefined}
+            className={itemClassName(manageReportsActive)}
+          >
+            <ItemIcon icon={LifeBuoy} isActive={manageReportsActive} />
+            <span>{copy.sidebar.manageReports}</span>
+          </Link>
+        ) : null}
+
+        {isAuthenticated ? <ReportIssueButton /> : null}
       </nav>
     </aside>
   );

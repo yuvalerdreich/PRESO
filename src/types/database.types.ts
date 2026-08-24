@@ -656,7 +656,7 @@ export type Database = {
           reporter_profile_id: string
           resolution_note: string | null
           status: Database["public"]["Enums"]["report_status"]
-          target_id: string
+          target_id: string | null
           target_type: Database["public"]["Enums"]["report_target_type"]
         }
         Insert: {
@@ -666,7 +666,7 @@ export type Database = {
           reporter_profile_id: string
           resolution_note?: string | null
           status?: Database["public"]["Enums"]["report_status"]
-          target_id: string
+          target_id?: string | null
           target_type: Database["public"]["Enums"]["report_target_type"]
         }
         Update: {
@@ -676,7 +676,7 @@ export type Database = {
           reporter_profile_id?: string
           resolution_note?: string | null
           status?: Database["public"]["Enums"]["report_status"]
-          target_id?: string
+          target_id?: string | null
           target_type?: Database["public"]["Enums"]["report_target_type"]
         }
         Relationships: [
@@ -1319,7 +1319,7 @@ export type Database = {
         | "BUSINESS_DELETED"
       profile_status: "ACTIVE" | "SUSPENDED"
       report_status: "OPEN" | "RESOLVED" | "DISMISSED"
-      report_target_type: "BUSINESS" | "PROFILE" | "APPOINTMENT"
+      report_target_type: "BUSINESS" | "PROFILE" | "APPOINTMENT" | "GENERAL"
       service_status: "ACTIVE" | "INACTIVE"
       waitlist_status: "ACTIVE" | "MATCHED" | "CLAIMED" | "EXPIRED"
     }
@@ -1478,7 +1478,7 @@ export const Constants = {
       ],
       profile_status: ["ACTIVE", "SUSPENDED"],
       report_status: ["OPEN", "RESOLVED", "DISMISSED"],
-      report_target_type: ["BUSINESS", "PROFILE", "APPOINTMENT"],
+      report_target_type: ["BUSINESS", "PROFILE", "APPOINTMENT", "GENERAL"],
       service_status: ["ACTIVE", "INACTIVE"],
       waitlist_status: ["ACTIVE", "MATCHED", "CLAIMED", "EXPIRED"],
     },
