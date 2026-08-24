@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { availabilityRuleInput } from '@/lib/validation/availability';
+import { availabilityRuleInput, setWeeklyAvailabilityInput } from '@/lib/validation/availability';
 import { createAppointmentInput, patchAppointmentInput } from '@/lib/validation/booking';
-import { businessDetailsInput, setOperatingHoursInput } from '@/lib/validation/business';
+import { businessDetailsInput } from '@/lib/validation/business';
 import { availabilityQuery, businessSearchQuery, parseSearchParams } from '@/lib/validation/search';
 import { serviceInput } from '@/lib/validation/service';
 import { waitlistEntryInput } from '@/lib/validation/waitlist';
@@ -50,23 +50,26 @@ describe('businessDetailsInput — §9.2', () => {
   });
 });
 
-describe('setOperatingHoursInput — §9.3, the cross-row rule no CHECK can express', () => {
-  const hours = (rows: Array<{ dayOfWeek: number; opensAt: string; closesAt: string }>) =>
-    setOperatingHoursInput.safeParse({ businessId: UUID_A, rows });
+describe('setWeeklyAvailabilityInput — §9.3, the cross-row rule no CHECK can express', () => {
+  const hours = (rows: Array<{ dayOfWeek: number; startsAt: string; endsAt: string }>) =>
+    setWeeklyAvailabilityInput.safeParse({
+      employeeId: UUID_A,
+      rows: rows.map((row) => ({ ...row, serviceId: null })),
+    });
 
   it('accepts split shifts on one day (§12.19)', () => {
     expect(
       hours([
-        { dayOfWeek: 1, opensAt: '09:00', closesAt: '13:00' },
-        { dayOfWeek: 1, opensAt: '16:00', closesAt: '20:00' },
+        { dayOfWeek: 1, startsAt: '09:00', endsAt: '13:00' },
+        { dayOfWeek: 1, startsAt: '16:00', endsAt: '20:00' },
       ]).success,
     ).toBe(true);
   });
 
   it('rejects two overlapping windows on the same day', () => {
     const result = hours([
-      { dayOfWeek: 1, opensAt: '09:00', closesAt: '14:00' },
-      { dayOfWeek: 1, opensAt: '13:00', closesAt: '20:00' },
+      { dayOfWeek: 1, startsAt: '09:00', endsAt: '14:00' },
+      { dayOfWeek: 1, startsAt: '13:00', endsAt: '20:00' },
     ]);
 
     expect(result.success).toBe(false);
@@ -76,8 +79,8 @@ describe('setOperatingHoursInput — §9.3, the cross-row rule no CHECK can expr
   it('lets the same clock hours coexist on different days', () => {
     expect(
       hours([
-        { dayOfWeek: 1, opensAt: '09:00', closesAt: '17:00' },
-        { dayOfWeek: 2, opensAt: '09:00', closesAt: '17:00' },
+        { dayOfWeek: 1, startsAt: '09:00', endsAt: '17:00' },
+        { dayOfWeek: 2, startsAt: '09:00', endsAt: '17:00' },
       ]).success,
     ).toBe(true);
   });
@@ -85,14 +88,14 @@ describe('setOperatingHoursInput — §9.3, the cross-row rule no CHECK can expr
   it('treats windows that merely touch as non-overlapping', () => {
     expect(
       hours([
-        { dayOfWeek: 3, opensAt: '09:00', closesAt: '13:00' },
-        { dayOfWeek: 3, opensAt: '13:00', closesAt: '17:00' },
+        { dayOfWeek: 3, startsAt: '09:00', endsAt: '13:00' },
+        { dayOfWeek: 3, startsAt: '13:00', endsAt: '17:00' },
       ]).success,
     ).toBe(true);
   });
 
   it('rejects a window that closes before it opens', () => {
-    expect(hours([{ dayOfWeek: 1, opensAt: '17:00', closesAt: '09:00' }]).success).toBe(false);
+    expect(hours([{ dayOfWeek: 1, startsAt: '17:00', endsAt: '09:00' }]).success).toBe(false);
   });
 });
 

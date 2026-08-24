@@ -13,7 +13,7 @@ import { fieldPadding, surfaceField } from '@/components/common/field-styles';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import { toDateISO } from '@/lib/time';
 import { setDaySchedule } from '@/server/actions/availability';
-import type { AvailabilityRule, BusinessHourRow, DashboardEmployee, DashboardService } from '@/types/domain';
+import type { AvailabilityRule, DashboardEmployee, DashboardService } from '@/types/domain';
 
 type Shift = { startsAt: string; endsAt: string; serviceId: string | null };
 
@@ -53,11 +53,14 @@ const PRESETS: { id: string; shifts: Shift[] }[] = [
  * `BLOCK`, because the schema's CHECK requires an EXCEPTION to carry times: "no windows at all" is
  * not expressible as one.
  *
- * A shift outside the business's own opening hours is flagged rather than silently yielding no
- * slots (`business_hours ∩ employee windows` is still the outer boundary at the engine level — only
- * the *editor* for it is gone from this screen). And a day off never cancels anything (§6.9) — the
- * notice says so, because the alternative reading ("marking a day off frees my bookings") is the
- * dangerous one.
+ * §12.x — `business_hours` no longer plays any part here, or in `get_available_slots()`
+ * (`0038_availability_drop_business_hours.sql`). It used to be the outer boundary every window was
+ * intersected against, but its editor was removed on 2026-08-21 with no replacement, which left the
+ * engine gated by rows nobody could see or clear — this screen's own "shift exceeds opening hours"
+ * warning was reporting a real constraint with no fix available anywhere in the app. The employee's
+ * own weekly pattern and date overrides are now the sole source of truth for what is bookable. A day
+ * off never cancels anything (§6.9) — the notice says so, because the alternative reading ("marking
+ * a day off frees my bookings") is the dangerous one.
  *
  * Working hours belong to the person who works them: both `setWeeklyAvailability` and
  * `setDaySchedule` refuse any `employeeId` but the caller's own and RLS re-checks it, so a
@@ -67,7 +70,6 @@ export function DashboardHoursPage({
   employees,
   selectedEmployee,
   rules,
-  businessHours,
   services,
   timezone,
   currentEmployeeId,
@@ -76,7 +78,6 @@ export function DashboardHoursPage({
   selectedEmployee: DashboardEmployee | null;
   /** Every rule of the selected employee — a date change filters these, never refetches. */
   rules: AvailabilityRule[];
-  businessHours: BusinessHourRow[];
   /** The selected employee's own ACTIVE services — what a shift can optionally be restricted to (§12.68). */
   services: DashboardService[];
   timezone: string;
@@ -144,7 +145,6 @@ export function DashboardHoursPage({
             employeeId={selectedEmployee.id}
             isEditable={isEditable}
             rules={rules}
-            businessHours={businessHours}
             services={services}
             timezone={timezone}
             dateISO={dateISO}
@@ -164,7 +164,6 @@ function DateScheduleEditor({
   employeeId,
   isEditable,
   rules,
-  businessHours,
   services,
   timezone,
   dateISO,
@@ -173,7 +172,6 @@ function DateScheduleEditor({
   employeeId: string;
   isEditable: boolean;
   rules: AvailabilityRule[];
-  businessHours: BusinessHourRow[];
   services: DashboardService[];
   timezone: string;
   dateISO: string;
@@ -186,7 +184,6 @@ function DateScheduleEditor({
   const [savedAt, setSavedAt] = useState<number | null>(null);
 
   const dayOfWeek = weekdayOf(dateISO);
-  const weekdayLabel = `${copy.dashboard.hoursScreen.weekdayPrefix} ${copy.dashboard.hoursScreen.weekdays[dayOfWeek]}`.trim();
 
   const baseline = useMemo(
     () => readDay({ rules, dateISO, dayOfWeek, timezone }),
@@ -210,7 +207,6 @@ function DateScheduleEditor({
     (total, shift) => total + Math.max(0, minutesOf(shift.endsAt) - minutesOf(shift.startsAt)),
     0,
   );
-  const dayHours = businessHours.filter((row) => row.dayOfWeek === dayOfWeek);
 
   function updateShift(index: number, patch: Partial<Shift>) {
     setDraft((current) => ({
@@ -311,14 +307,7 @@ function DateScheduleEditor({
         </div>
       </div>
 
-      <p className="text-xs leading-5 text-[var(--muted)]">
-        {copy.dashboard.hoursScreen.dateNotice}
-        {dayHours.length > 0
-          ? ` ${copy.dashboard.hoursScreen.businessHoursRange
-              .replace('{day}', weekdayLabel)
-              .replace('{range}', dayHours.map((row) => `${row.opensAt} - ${row.closesAt}`).join(', '))}`
-          : null}
-      </p>
+      <p className="text-xs leading-5 text-[var(--muted)]">{copy.dashboard.hoursScreen.dateNotice}</p>
 
       {draft.isDayOff ? (
         <p className="rounded-2xl bg-slate-50 px-4 py-4 text-sm leading-6 text-[var(--muted)]">
@@ -414,12 +403,6 @@ function DateScheduleEditor({
                       formatHours(Math.max(0, minutesOf(shift.endsAt) - minutesOf(shift.startsAt))),
                     )}
                   </span>
-
-                  {dayHours.length > 0 && isOutsideBusinessHours(shift, dayHours) ? (
-                    <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800">
-                      {copy.dashboard.hoursScreen.outsideBusinessHours}
-                    </span>
-                  ) : null}
 
                   {isEditable ? (
                     <button
@@ -531,12 +514,6 @@ function nextShift(shifts: Shift[]): Shift {
   return { startsAt: toHHmm(start), endsAt: toHHmm(Math.min(start + 240, 23 * 60 + 59)), serviceId: null };
 }
 
-function isOutsideBusinessHours(shift: Shift, dayHours: BusinessHourRow[]): boolean {
-  return !dayHours.some(
-    (row) => minutesOf(shift.startsAt) >= minutesOf(row.opensAt) && minutesOf(shift.endsAt) <= minutesOf(row.closesAt),
-  );
-}
-
 function minutesOf(timeHHmm: string): number {
   const [hours, minutes] = timeHHmm.split(':').map(Number);
   return (hours || 0) * 60 + (minutes || 0);
@@ -552,7 +529,7 @@ function formatHours(minutes: number): string {
   return Number.isInteger(hours) ? String(hours) : hours.toFixed(1);
 }
 
-/** 0 = Sunday, matching `business_hours.day_of_week`. Pure calendar arithmetic — no zone involved. */
+/** 0 = Sunday, matching `employee_availability_rules.day_of_week`. Pure calendar arithmetic — no zone involved. */
 function weekdayOf(dateISO: string): number {
   const [year, month, day] = dateISO.split('-').map(Number);
   return new Date(Date.UTC(year, month - 1, day)).getUTCDay();

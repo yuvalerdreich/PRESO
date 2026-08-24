@@ -17,7 +17,6 @@ const {
   getCurrentBusinessDashboard,
   getCurrentEmployment,
   listAvailabilityRules,
-  listBusinessHours,
   listDashboardAppointments,
   listDashboardEmployees,
   listDashboardKpis,
@@ -147,14 +146,6 @@ describe('dashboard reads (signed in as the founder)', () => {
     ]);
     expect(kpis.find((kpi) => kpi.id === 'active-staff')!.value).toBe(2);
     expect(kpis.find((kpi) => kpi.id === 'revenue')!.isMock).toBe(true);
-  });
-
-  it('returns opening hours as HH:mm, not Postgres’s HH:MM:SS', async () => {
-    const hours = await listBusinessHours(STUDIO_ZOHAR);
-
-    expect(hours).toHaveLength(6);
-    expect(hours[0].opensAt).toMatch(/^\d{2}:\d{2}$/);
-    expect(hours.map((row) => row.dayOfWeek)).toEqual([0, 1, 2, 3, 4, 5]);
   });
 
   it('returns the employee’s weekly windows', async () => {

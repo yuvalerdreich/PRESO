@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { dayOfWeek, optionalText, phone, timeHHmm, timezone, uuid } from '@/lib/validation/common';
+import { optionalText, phone, timezone, uuid } from '@/lib/validation/common';
 import { serviceInput } from '@/lib/validation/service';
 
 /**
@@ -99,48 +99,6 @@ export type SelectBusinessInput = z.infer<typeof selectBusinessInput>;
 export const deleteBusinessInput = z.object({ businessId: uuid });
 export type DeleteBusinessInput = z.infer<typeof deleteBusinessInput>;
 
-export const hourRow = z
-  .object({
-    dayOfWeek,
-    opensAt: timeHHmm,
-    closesAt: timeHHmm,
-  })
-  .refine((row) => row.closesAt > row.opensAt, {
-    message: 'Closing time must be after opening time',
-    path: ['closesAt'],
-  });
-export type HourRow = z.infer<typeof hourRow>;
-
-/**
- * `setOperatingHours` (§5.5) — a replace-all payload, not a per-row edit.
- *
- * The overlap rule is **server-only** by design (§9.3): it is a cross-row constraint, so no
- * single-row `CHECK` can express it and the database will happily accept two overlapping
- * windows on one day. Split shifts are legal and intended (§12.19 — 09:00–13:00 plus
- * 16:00–20:00), which is exactly why there is no unique index on `(business_id, day_of_week)`
- * to lean on; overlap is the only thing being rejected here, not multiplicity.
- */
-export const setOperatingHoursInput = z
-  .object({
-    businessId: uuid,
-    rows: z.array(hourRow).max(21, 'That is more windows than a week can hold'),
-  })
-  .refine(
-    ({ rows }) => {
-      for (const day of new Set(rows.map((row) => row.dayOfWeek))) {
-        const windows = rows
-          .filter((row) => row.dayOfWeek === day)
-          .sort((a, b) => a.opensAt.localeCompare(b.opensAt));
-
-        for (let i = 1; i < windows.length; i += 1) {
-          if (windows[i].opensAt < windows[i - 1].closesAt) return false;
-        }
-      }
-      return true;
-    },
-    { message: 'Two windows on the same day overlap', path: ['rows'] },
-  );
-export type SetOperatingHoursInput = z.infer<typeof setOperatingHoursInput>;
 
 /** `sendJoinRequest` / `decideJoinRequest` / roster management (§5.5, Employee module). */
 export const sendJoinRequestInput = z.object({ businessId: uuid });

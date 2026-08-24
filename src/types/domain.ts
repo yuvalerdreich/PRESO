@@ -427,13 +427,6 @@ export type AvailabilityRule = {
   serviceId: string | null;
 };
 
-export type BusinessHourRow = {
-  id: string;
-  dayOfWeek: number;
-  opensAt: string;
-  closesAt: string;
-};
-
 // ---------------------------------------------------------------------------
 // Admin console
 // ---------------------------------------------------------------------------

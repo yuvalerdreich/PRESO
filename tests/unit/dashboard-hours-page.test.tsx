@@ -17,7 +17,7 @@ vi.mock('@/server/actions/availability', () => ({
 
 import { DashboardHoursPage } from '@/components/business/dashboard-hours-page';
 import { LanguageProvider } from '@/lib/i18n/language-provider';
-import type { AvailabilityRule, BusinessHourRow, DashboardEmployee, DashboardService } from '@/types/domain';
+import type { AvailabilityRule, DashboardEmployee, DashboardService } from '@/types/domain';
 
 const TIMEZONE = 'Asia/Jerusalem';
 
@@ -35,20 +35,6 @@ const me: DashboardEmployee = {
 };
 
 const colleague: DashboardEmployee = { ...me, id: 'employee-miya', fullName: 'Miya Bar', isOwner: false };
-
-/**
- * Every weekday open 07:00–21:00, so a shift inside those hours raises no warning.
- *
- * The times are deliberately ones no shift fixture uses: the opening-hours editor renders on this
- * same screen and puts these into `<input type="time">`s of its own, so a shared value would make
- * "the shift form invented times" and "the business opens then" indistinguishable to a query.
- */
-const businessHours: BusinessHourRow[] = [0, 1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({
-  id: `hours-${dayOfWeek}`,
-  dayOfWeek,
-  opensAt: '07:00',
-  closesAt: '21:00',
-}));
 
 const weeklyRules: AvailabilityRule[] = [0, 1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({
   id: `rule-${dayOfWeek}`,
@@ -74,7 +60,6 @@ function renderHours({
         employees={[me, colleague]}
         selectedEmployee={selected}
         rules={rules}
-        businessHours={businessHours}
         services={services}
         timezone={TIMEZONE}
         currentEmployeeId={currentEmployeeId}
