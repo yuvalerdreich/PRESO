@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Bell, Calendar, Check, Clock, Moon, Sun, Sunrise, Sunset, SlidersHorizontal } from 'lucide-react';
+import { AlertTriangle, Bell, Calendar, Check, Clock, Moon, Sun, Sunrise, Sunset, SlidersHorizontal } from 'lucide-react';
 
 import { Modal } from '@/components/common/modal';
 import { readApiErrorMessage } from '@/lib/api-error';
@@ -80,6 +81,8 @@ export function WaitlistJoinModal({
   serviceName,
   servicePrice,
   dateISO,
+  availableTimes,
+  bookHref,
 }: {
   closeHref: string;
   businessId: string;
@@ -95,6 +98,15 @@ export function WaitlistJoinModal({
   serviceName: string;
   servicePrice: number;
   dateISO: string;
+  /**
+   * The already-bookable "HH:MM" times for this employee/service/date (the same list `SlotPicker`
+   * renders). A waitlist entry only ever notifies on a *future* cancellation (§6.7) — one whose
+   * requested range already contains a bookable time can never fire, since nothing is going to
+   * free up there. Used to warn before that request is ever sent, not to change what the API does.
+   */
+  availableTimes: string[];
+  /** Builds the booking-screen URL for one of `availableTimes`, so the warning can link straight to it. */
+  bookHref: (time: string) => string;
 }) {
   const { copy, direction } = useLanguage();
   const router = useRouter();
@@ -108,6 +120,16 @@ export function WaitlistJoinModal({
     router.push(closeHref, { scroll: false });
   }
 
+  const range = selected === 'manual' ? { start: manualStart, end: manualEnd } : PRESET_RANGES[selected];
+
+  /**
+   * If a bookable time already falls inside the requested range, a waitlist entry here would never
+   * fire — the matcher only re-checks a range when an appointment is *cancelled* (§6.7), and nothing
+   * needs to be cancelled for these times to be taken. Warn instead of silently accepting the entry.
+   */
+  const conflictingTimes = availableTimes.filter((time) => time >= range.start && time < range.end).sort();
+  const hasConflict = conflictingTimes.length > 0;
+
   /**
    * `POST /api/waitlist` — a real `waitlist_entries` row, which the matcher trigger (0009) then
    * considers whenever an appointment on this employee is cancelled (§6.7).
@@ -116,10 +138,8 @@ export function WaitlistJoinModal({
    * date. Same naive-datetime convention as `BookingConfirmDialog`'s `startsAt`.
    */
   async function handleConfirm() {
-    if (isSubmitting) return;
+    if (isSubmitting || hasConflict) return;
     setIsSubmitting(true);
-
-    const range = selected === 'manual' ? { start: manualStart, end: manualEnd } : PRESET_RANGES[selected];
 
     try {
       const response = await fetch('/api/waitlist', {
@@ -235,13 +255,41 @@ export function WaitlistJoinModal({
             </label>
           </div>
         ) : null}
+
+        {hasConflict ? (
+          <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4">
+            <div className="flex items-start gap-2.5">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
+              <div className="flex flex-col gap-1">
+                <span className="text-sm font-extrabold text-amber-800">
+                  {copy.waitlistJoin.existingSlotsWarningTitle}
+                </span>
+                <span className="text-sm font-medium text-amber-700">
+                  {copy.waitlistJoin.existingSlotsWarningDescription}
+                </span>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {conflictingTimes.map((time) => (
+                <Link
+                  key={time}
+                  href={bookHref(time)}
+                  scroll={false}
+                  className="rounded-xl border border-amber-400 bg-white px-4 py-2 text-sm font-semibold text-amber-800 hover:border-amber-500 hover:bg-amber-100"
+                >
+                  {time}
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <div className="flex items-center gap-3 border-t border-[var(--line)] pt-4">
         <button
           type="button"
           onClick={handleConfirm}
-          disabled={isSubmitting}
+          disabled={isSubmitting || hasConflict}
           className="flex flex-1 items-center justify-center gap-2 rounded-full bg-amber-500 px-4 py-3 text-sm font-semibold text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Bell className="h-4 w-4" aria-hidden="true" />

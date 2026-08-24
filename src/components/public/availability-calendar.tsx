@@ -125,10 +125,12 @@ export function AvailabilityCalendar({
           {cells.map((cell, i) => {
             if (!cell) return <span key={`blank-${i}`} />;
 
-            const isAvailable = available.has(cell.dateISO) && cell.dateISO >= todayISO;
+            const isFuture = cell.dateISO >= todayISO;
+            const isAvailable = isFuture && available.has(cell.dateISO);
             const isSelected = cell.dateISO === selectedDate;
 
-            if (!isAvailable) {
+            // A past date stays exactly as before: plain text, no circle, not clickable.
+            if (!isFuture) {
               return (
                 <span
                   key={cell.dateISO}
@@ -141,12 +143,31 @@ export function AvailabilityCalendar({
               );
             }
 
+            if (isAvailable) {
+              return (
+                <Link
+                  key={cell.dateISO}
+                  href={bookingHref(basePath, { month: monthISO, date: cell.dateISO }, rescheduleAppointmentId)}
+                  scroll={false}
+                  className={`flex h-9 w-9 items-center justify-center justify-self-center rounded-full bg-white text-sm font-semibold text-[var(--brand-dark)] ${
+                    isSelected ? 'ring-2 ring-amber-400' : ''
+                  }`}
+                >
+                  {cell.day}
+                </Link>
+              );
+            }
+
+            // A future date with no open slots: still clickable, but grey rather than white — it
+            // leads straight into joining the waitlist for that date (§6.7's matcher only ever
+            // fires on a cancellation, so there is nothing else to offer here).
             return (
               <Link
                 key={cell.dateISO}
-                href={bookingHref(basePath, { month: monthISO, date: cell.dateISO }, rescheduleAppointmentId)}
+                href={bookingHref(basePath, { month: monthISO, date: cell.dateISO, waitlist: '1' }, rescheduleAppointmentId)}
                 scroll={false}
-                className={`flex h-9 w-9 items-center justify-center justify-self-center rounded-full bg-white text-sm font-semibold text-[var(--brand-dark)] ${
+                aria-label={`${cell.day} — ${copy.businessProfile.joinWaitlistForDate}`}
+                className={`flex h-9 w-9 items-center justify-center justify-self-center rounded-full bg-white/25 text-sm font-semibold text-white hover:bg-white/40 ${
                   isSelected ? 'ring-2 ring-amber-400' : ''
                 }`}
               >

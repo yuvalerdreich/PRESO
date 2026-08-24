@@ -155,6 +155,15 @@ export function BusinessProfile({
                 serviceName={selectedService.name}
                 servicePrice={selectedService.price}
                 dateISO={slots.dateISO}
+                availableTimes={slots.times}
+                bookHref={(time) => {
+                  const slotParams = new URLSearchParams();
+                  if (calendar?.monthISO) slotParams.set('month', calendar.monthISO);
+                  slotParams.set('date', slots.dateISO);
+                  slotParams.set('slot', time);
+                  if (rescheduleAppointmentId) slotParams.set('reschedule', rescheduleAppointmentId);
+                  return `${basePath}?${slotParams.toString()}`;
+                }}
               />
             );
           })()

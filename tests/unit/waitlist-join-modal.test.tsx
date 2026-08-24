@@ -15,7 +15,7 @@ const businessId = 'b18f6ca9-0c44-45b8-a8d9-3e1a2c6a1001';
 const employeeId = 'c29f7db0-1d55-46c9-b9ea-4f2b3d7b2002';
 const serviceId = 'd3a08ec1-2e66-47da-cafb-5a3c4e8c3003';
 
-function renderModal() {
+function renderModal(availableTimes: string[] = []) {
   return render(
     <LanguageProvider initialLocale="en">
       <WaitlistJoinModal
@@ -28,6 +28,8 @@ function renderModal() {
         serviceName="Haircut and styling"
         servicePrice={120}
         dateISO="2026-08-27"
+        availableTimes={availableTimes}
+        bookHref={(time) => `${closeHref}&slot=${time}`}
       />
     </LanguageProvider>,
   );
@@ -139,6 +141,41 @@ describe('waitlist join modal', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: /Confirm & join the waitlist/ })).toBeEnabled());
     expect(push).not.toHaveBeenCalled();
+  });
+
+  /**
+   * A waitlist entry only ever fires on a future cancellation (§6.7) — one whose requested range
+   * already contains a bookable time can never fire, since nothing needs to free up there. The
+   * modal must warn instead of silently accepting that entry.
+   */
+  it('warns instead of submitting when a bookable time already falls in the requested range', async () => {
+    const fetchMock = stubWaitlistApi();
+    renderModal(['09:00', '10:30']);
+
+    fireEvent.click(screen.getByRole('button', { name: /Morning/ }));
+
+    expect(
+      screen.getByText('There are already open hours in the range you chose'),
+    ).toBeInTheDocument();
+    const confirmButton = screen.getByRole('button', { name: /Confirm & join the waitlist/ });
+    expect(confirmButton).toBeDisabled();
+
+    fireEvent.click(confirmButton);
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    expect(screen.getByRole('link', { name: '09:00' })).toHaveAttribute('href', `${closeHref}&slot=09:00`);
+    expect(screen.getByRole('link', { name: '10:30' })).toHaveAttribute('href', `${closeHref}&slot=10:30`);
+  });
+
+  it('does not warn when the requested range has no bookable time in it', () => {
+    renderModal(['13:00']);
+
+    fireEvent.click(screen.getByRole('button', { name: /Morning/ }));
+
+    expect(
+      screen.queryByText('There are already open hours in the range you chose'),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Confirm & join the waitlist/ })).toBeEnabled();
   });
 
   it('navigates back to closeHref on cancel', () => {
