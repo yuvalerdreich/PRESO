@@ -33,3 +33,17 @@ export const suspendInput = z.object({
   suspended: z.boolean(),
 });
 export type SuspendInput = z.infer<typeof suspendInput>;
+
+/**
+ * `/admin/users` query params. Filtering used to happen entirely in the browser over the whole
+ * roster (`filterUsers()`, now deleted) — every user's phone number rode along in the initial
+ * payload regardless of what filter was applied. These params drive `listUsers()` server-side
+ * instead, so what is shipped to the browser is bounded by the current filter, not the platform's
+ * entire user count.
+ */
+export const adminUsersQuery = z.object({
+  q: z.string().trim().max(100).optional(),
+  status: z.enum(['ACTIVE', 'SUSPENDED']).optional(),
+  role: z.enum(['CLIENT', 'BUSINESS', 'ADMIN']).optional(),
+});
+export type AdminUsersQuery = z.infer<typeof adminUsersQuery>;

@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState, useTransition } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { ChevronDown, Phone, Search, Users } from 'lucide-react';
 
 import { cardChip, surfaceCard } from '@/components/common/card-styles';
@@ -9,7 +9,6 @@ import { ConfirmDialog } from '@/components/common/confirm-dialog';
 import { EmptyState } from '@/components/common/empty-state';
 import { fieldPaddingEndIcon, fieldPaddingStartIcon, surfaceField } from '@/components/common/field-styles';
 import { PanelHero } from '@/components/common/panel-hero';
-import { filterUsers } from '@/lib/admin/filter-users';
 import { useLanguage } from '@/lib/i18n/language-provider';
 import { suspendUser } from '@/server/actions/admin';
 import type { AccountType, AdminUser, ProfileStatus } from '@/types/domain';
@@ -25,39 +24,82 @@ const STATUS_BADGE_STYLES: Record<ProfileStatus, string> = {
   SUSPENDED: 'bg-rose-50 text-rose-700',
 };
 
+const FILTER_DEBOUNCE_MS = 300;
+
 /**
- * `/admin/users` — every account in the platform, with the one lever an admin has over any of
- * them: suspend or reactivate (§4.5, `suspendUser`). Filtering is client-side over the whole
- * roster, the same in-place shape `filterBusinesses` established for discovery (§12.43) — the
- * dataset is the platform's entire user list, not something worth a server round trip per
- * keystroke.
+ * `/admin/users` — every account matching the current filter, with the one lever an admin has
+ * over any of them: suspend or reactivate (§4.5, `suspendUser`).
+ *
+ * Filtering used to happen entirely in the browser over the whole roster (`filterUsers()`) — the
+ * same in-place shape `filterBusinesses` established for discovery. That meant every user's phone
+ * number rode along in the initial payload regardless of what filter was ever applied. `status`/
+ * `role`/`q` are now URL params that drive `listUsers()` on the server (`admin/users/page.tsx`):
+ * changing a filter is a real navigation (debounced for the text field, immediate for the
+ * dropdowns), so what the browser ever holds is bounded by the current filter, not the platform's
+ * entire user count. `stats` comes from a separate `getUserStats()` count-only query so the tiles
+ * stay platform-wide even though `users` itself is now just the filtered page.
  */
-export function AdminUsersPage({ users, currentUserId }: { users: AdminUser[]; currentUserId: string }) {
+export function AdminUsersPage({
+  users,
+  stats,
+  currentUserId,
+  initialQuery = '',
+  initialStatus = '',
+  initialRole = '',
+}: {
+  users: AdminUser[];
+  stats: { total: number; active: number; clients: number; businessStaff: number };
+  currentUserId: string;
+  initialQuery?: string;
+  initialStatus?: ProfileStatus | '';
+  initialRole?: AccountType | '';
+}) {
   const { copy } = useLanguage();
   const router = useRouter();
+  const pathname = usePathname();
 
-  const [query, setQuery] = useState('');
-  const [status, setStatus] = useState<ProfileStatus | ''>('');
-  const [role, setRole] = useState<AccountType | ''>('');
+  const [query, setQuery] = useState(initialQuery);
+  const [status, setStatus] = useState<ProfileStatus | ''>(initialStatus);
+  const [role, setRole] = useState<AccountType | ''>(initialRole);
+  const [isFiltering, startFilterTransition] = useTransition();
 
   const [target, setTarget] = useState<{ user: AdminUser; suspended: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const counts = useMemo(
-    () => ({
-      businessStaff: users.filter((user) => user.accountType === 'BUSINESS').length,
-      clients: users.filter((user) => user.accountType === 'CLIENT').length,
-      active: users.filter((user) => user.status === 'ACTIVE').length,
-      total: users.length,
-    }),
-    [users],
-  );
+  function pushFilters(next: { q: string; status: ProfileStatus | ''; role: AccountType | '' }) {
+    const params = new URLSearchParams();
+    if (next.q.trim()) params.set('q', next.q.trim());
+    if (next.status) params.set('status', next.status);
+    if (next.role) params.set('role', next.role);
 
-  const visibleUsers = useMemo(
-    () => filterUsers(users, { query, status, role }),
-    [users, query, status, role],
-  );
+    const target = params.size > 0 ? `${pathname}?${params.toString()}` : pathname;
+    startFilterTransition(() => router.replace(target));
+  }
+
+  // Debounced: a text search re-runs `listUsers()` on the server on every commit, unlike the old
+  // client-side `Array.filter` — skip the very first run so mounting with `initialQuery` doesn't
+  // immediately re-navigate to the URL it was already rendered from.
+  const skipNextDebounce = useRef(true);
+  useEffect(() => {
+    if (skipNextDebounce.current) {
+      skipNextDebounce.current = false;
+      return;
+    }
+    const timeout = setTimeout(() => pushFilters({ q: query, status, role }), FILTER_DEBOUNCE_MS);
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
+
+  function handleStatusChange(value: ProfileStatus | '') {
+    setStatus(value);
+    pushFilters({ q: query, status: value, role });
+  }
+
+  function handleRoleChange(value: AccountType | '') {
+    setRole(value);
+    pushFilters({ q: query, status, role: value });
+  }
 
   function confirmSuspend() {
     if (!target) return;
@@ -84,10 +126,10 @@ export function AdminUsersPage({ users, currentUserId }: { users: AdminUser[]; c
         icon={Users}
       >
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatTile value={counts.businessStaff} label={copy.admin.users.stats.businessStaff} valueClassName="text-sky-300" />
-          <StatTile value={counts.clients} label={copy.admin.users.stats.clients} valueClassName="text-violet-300" />
-          <StatTile value={counts.active} label={copy.admin.users.stats.activeUsers} valueClassName="text-emerald-300" />
-          <StatTile value={counts.total} label={copy.admin.users.stats.totalUsers} valueClassName="text-white" />
+          <StatTile value={stats.businessStaff} label={copy.admin.users.stats.businessStaff} valueClassName="text-sky-300" />
+          <StatTile value={stats.clients} label={copy.admin.users.stats.clients} valueClassName="text-violet-300" />
+          <StatTile value={stats.active} label={copy.admin.users.stats.activeUsers} valueClassName="text-emerald-300" />
+          <StatTile value={stats.total} label={copy.admin.users.stats.totalUsers} valueClassName="text-white" />
         </div>
       </PanelHero>
 
@@ -95,7 +137,7 @@ export function AdminUsersPage({ users, currentUserId }: { users: AdminUser[]; c
         <div className="grid gap-4 sm:grid-cols-[repeat(2,minmax(0,220px))_1fr]">
           <FilterSelect
             value={status}
-            onChange={(value) => setStatus(value as ProfileStatus | '')}
+            onChange={(value) => handleStatusChange(value as ProfileStatus | '')}
             options={[
               { value: '', label: copy.admin.users.filters.statusAll },
               { value: 'ACTIVE', label: copy.admin.users.filters.statusActive },
@@ -105,7 +147,7 @@ export function AdminUsersPage({ users, currentUserId }: { users: AdminUser[]; c
 
           <FilterSelect
             value={role}
-            onChange={(value) => setRole(value as AccountType | '')}
+            onChange={(value) => handleRoleChange(value as AccountType | '')}
             options={[
               { value: '', label: copy.admin.users.filters.roleAll },
               { value: 'CLIENT', label: copy.admin.users.filters.roleClient },
@@ -130,40 +172,42 @@ export function AdminUsersPage({ users, currentUserId }: { users: AdminUser[]; c
         </div>
       </div>
 
-      {visibleUsers.length > 0 ? (
-        <div className={`${surfaceCard} overflow-x-auto p-0`}>
-          <table className="w-full min-w-[720px] text-start text-sm">
-            <thead>
-              <tr className="border-b border-[var(--line)] bg-slate-50/70 text-xs font-bold text-[var(--muted)]">
-                <th className="px-5 py-3 text-start">{copy.admin.users.table.user}</th>
-                <th className="px-5 py-3 text-start">{copy.admin.users.table.role}</th>
-                <th className="px-5 py-3 text-start">{copy.admin.users.table.contact}</th>
-                <th className="px-5 py-3 text-start">{copy.admin.users.table.status}</th>
-                <th className="px-5 py-3 text-start">{copy.admin.users.table.actions}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--line)]">
-              {visibleUsers.map((user) => (
-                <UserRow
-                  key={user.id}
-                  user={user}
-                  isSelf={user.id === currentUserId}
-                  onRequestSuspend={(suspended) => {
-                    setError(null);
-                    setTarget({ user, suspended });
-                  }}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <EmptyState
-          icon={Users}
-          title={copy.admin.users.emptyTitle}
-          description={copy.admin.users.emptyDescription}
-        />
-      )}
+      <div aria-busy={isFiltering} className={isFiltering ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
+        {users.length > 0 ? (
+          <div className={`${surfaceCard} overflow-x-auto p-0`}>
+            <table className="w-full min-w-[720px] text-start text-sm">
+              <thead>
+                <tr className="border-b border-[var(--line)] bg-slate-50/70 text-xs font-bold text-[var(--muted)]">
+                  <th className="px-5 py-3 text-start">{copy.admin.users.table.user}</th>
+                  <th className="px-5 py-3 text-start">{copy.admin.users.table.role}</th>
+                  <th className="px-5 py-3 text-start">{copy.admin.users.table.contact}</th>
+                  <th className="px-5 py-3 text-start">{copy.admin.users.table.status}</th>
+                  <th className="px-5 py-3 text-start">{copy.admin.users.table.actions}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--line)]">
+                {users.map((user) => (
+                  <UserRow
+                    key={user.id}
+                    user={user}
+                    isSelf={user.id === currentUserId}
+                    onRequestSuspend={(suspended) => {
+                      setError(null);
+                      setTarget({ user, suspended });
+                    }}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <EmptyState
+            icon={Users}
+            title={copy.admin.users.emptyTitle}
+            description={copy.admin.users.emptyDescription}
+          />
+        )}
+      </div>
 
       {target ? (
         <ConfirmDialog

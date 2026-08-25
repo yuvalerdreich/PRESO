@@ -72,7 +72,11 @@ export async function listBusinessAreas(): Promise<string[]> {
 }
 
 /**
- * The business grid on `/` and the `/search` results.
+ * The unpaginated business search — kept for its own real test coverage
+ * (`tests/int/queries-public.test.ts`) and as the simpler of the two search reads, but **no UI
+ * calls this any more**. `/` and `/search` moved to `searchBusinessesPaged()` below: this
+ * function has no `LIMIT`, so every business matching the filter travelled to the browser on
+ * every page load regardless of how many actually did.
  *
  * `q` matches the business name **and the name of anyone who works there** — §12.22 asks for the
  * owner's name specifically, and this is a deliberate superset. The owner is always an employee

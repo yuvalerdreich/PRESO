@@ -49,6 +49,9 @@ export const translations = {
       bookAction: 'קביעת תור',
       /** §12.55 — the badge on a business the viewer owns or works at. */
       yourBusiness: 'העסק שלך',
+      loadMore: 'טען עוד עסקים',
+      loadingMore: 'טוען...',
+      searchError: 'לא ניתן לטעון את תוצאות החיפוש כרגע. נסו שוב.',
       mockNotice: 'הנתונים בדף זה הם נתוני הדגמה מקומיים בלבד.',
     },
     businessProfile: {
@@ -851,6 +854,9 @@ export const translations = {
       viewBusiness: 'View business',
       bookAction: 'Book appointment',
       yourBusiness: 'Your business',
+      loadMore: 'Load more businesses',
+      loadingMore: 'Loading…',
+      searchError: 'Could not load search results right now. Please try again.',
       mockNotice: 'This page uses local demonstration data only.',
     },
     businessProfile: {

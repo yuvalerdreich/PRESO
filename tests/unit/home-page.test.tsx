@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -7,11 +8,16 @@ import { describe, expect, it, vi } from 'vitest';
  * the query module keeps this a test of *page composition*, which is what it always was: the
  * mock repository it previously depended on was doing exactly this job, just less visibly.
  * The queries themselves are covered against the real database in `tests/int/queries-public`.
+ *
+ * `DiscoveryBrowser` reads its first page from `searchBusinessesPaged()` and fetches subsequent
+ * ones client-side through `useBusinessSearch()`, so it needs a `QueryClientProvider` ancestor —
+ * without one, `useInfiniteQuery` throws rather than rendering.
  */
 vi.mock('@/server/queries/discovery', () => ({
   listCategories: async () => [],
   listBusinessAreas: async () => [],
-  searchBusinesses: async () => [],
+  searchBusinessesPaged: async () => ({ items: [], page: 1, pageSize: 20, total: 0 }),
+  getBusinessProfile: async () => null,
 }));
 
 import HomePage from '@/app/(public)/page';
@@ -24,10 +30,14 @@ import { translations } from '@/lib/i18n/translations';
  */
 describe('component test harness', () => {
   it('renders the landing page heading', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
     render(
-      <LanguageProvider initialLocale="en">
-        {await HomePage({ searchParams: Promise.resolve({}), params: Promise.resolve({}) })}
-      </LanguageProvider>,
+      <QueryClientProvider client={queryClient}>
+        <LanguageProvider initialLocale="en">
+          {await HomePage({ searchParams: Promise.resolve({}), params: Promise.resolve({}) })}
+        </LanguageProvider>
+      </QueryClientProvider>,
     );
 
     expect(

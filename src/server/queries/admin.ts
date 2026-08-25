@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { parseTstzRange, toDateISO, toTimeHHmm } from '@/lib/time';
 import { requireAdmin } from '@/server/guards';
-import type { AdminBusiness, AdminUser, ReportSummary } from '@/types/domain';
+import type { AccountType, AdminBusiness, AdminUser, ProfileStatus, ReportSummary } from '@/types/domain';
 import type { Database } from '@/types/database.types';
 
 /**
@@ -17,12 +17,33 @@ import type { Database } from '@/types/database.types';
  * and an admin console is neither.
  */
 
-export async function listUsers(options: { q?: string } = {}): Promise<AdminUser[]> {
+/**
+ * `/admin/users`, filtered server-side (`status`/`role`/`q`) rather than shipping the whole
+ * roster and filtering it in the browser (the `filterUsers()` shape this replaced). Every row
+ * still returned here carries a phone number — a legitimate need for this screen, not the
+ * minimization gap — but the point is that only rows *matching the current filter* are ever
+ * fetched or held in the browser's memory, instead of every user's phone number regardless of
+ * whether that user is even visible under the active filter.
+ *
+ * `q` matches name **and** phone (`profiles_full_name_trgm`/`profiles_phone_trgm`,
+ * `0039_admin_search_indexes.sql`) — this used to be a client-side-only capability
+ * (`filterUsers()`), so it needed a real index once it started running as a query rather than an
+ * `Array.filter`.
+ */
+export async function listUsers(
+  options: { q?: string; status?: ProfileStatus; role?: AccountType } = {},
+): Promise<AdminUser[]> {
   await requireAdmin();
   const supabase = await createClient();
 
   let query = supabase.from('profiles').select('id, full_name, phone, account_type, status, created_at');
-  if (options.q) query = query.ilike('full_name', `%${options.q}%`);
+
+  if (options.status) query = query.eq('status', options.status);
+  if (options.role) query = query.eq('account_type', options.role);
+  if (options.q) {
+    const term = `%${options.q}%`;
+    query = query.or(`full_name.ilike.${term},phone.ilike.${term}`);
+  }
 
   const { data, error } = await query.order('created_at', { ascending: false });
   if (error) throw error;
@@ -35,6 +56,40 @@ export async function listUsers(options: { q?: string } = {}): Promise<AdminUser
     status: row.status,
     createdAt: row.created_at,
   }));
+}
+
+/**
+ * Platform-wide counts for the four stat tiles on `/admin/users` — deliberately **not** derived
+ * from `listUsers()`'s result, now that call can be filtered down to a handful of rows. Counted
+ * with `head: true`, so Postgres returns a number and ships no rows, the same pattern
+ * `getDashboardNavCounts()` uses.
+ */
+export async function getUserStats(): Promise<{
+  total: number;
+  active: number;
+  clients: number;
+  businessStaff: number;
+}> {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const [total, active, clients, businessStaff] = await Promise.all([
+    supabase.from('profiles').select('id', { count: 'exact', head: true }),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('status', 'ACTIVE'),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('account_type', 'CLIENT'),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('account_type', 'BUSINESS'),
+  ]);
+
+  for (const result of [total, active, clients, businessStaff]) {
+    if (result.error) throw result.error;
+  }
+
+  return {
+    total: total.count ?? 0,
+    active: active.count ?? 0,
+    clients: clients.count ?? 0,
+    businessStaff: businessStaff.count ?? 0,
+  };
 }
 
 export async function listBusinesses(options: { q?: string } = {}): Promise<AdminBusiness[]> {

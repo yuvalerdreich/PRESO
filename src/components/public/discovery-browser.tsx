@@ -5,57 +5,62 @@ import { CalendarSearch } from 'lucide-react';
 
 import { Building2 } from 'lucide-react';
 
-import { ErrorDialog } from '@/components/common/error-dialog';
+import { ErrorDialog, ErrorNotice } from '@/components/common/error-dialog';
 import { PanelHero } from '@/components/common/panel-hero';
 import { BusinessResults } from '@/components/public/business-results';
 import { SearchForm } from '@/components/public/search-form';
-import { filterBusinesses } from '@/lib/discovery/filter-businesses';
+import { useBusinessSearch } from '@/hooks/use-business-search';
 import { useLanguage } from '@/lib/i18n/language-provider';
-import type { BusinessSummary, Category } from '@/types/domain';
+import type { BusinessSearchResult, Category, ViewerBusinessRelation } from '@/types/domain';
 
 /**
  * The whole discovery screen: hero, search controls, category chips, business grid — and the
  * search state that ties them together.
  *
- * Searching **stays on this screen** (§12.43). The grid is already fetched, so typing filters it in
- * place through `filterBusinesses()`; there is no navigation, no second results page, and no
- * round-trip per keystroke. `/search?q=…` still works as a deep link — it seeds `initialQuery` /
- * `initialArea` and then behaves exactly like the home page, including clearing back to everything.
+ * Searching **stays on this screen** (§12.43). Previously the entire business directory was
+ * fetched once and filtered in the browser (`filterBusinesses()`); now `q`/`area`/category drive
+ * real server-side pagination through `useBusinessSearch()` (`GET /api/businesses`), the same
+ * "no navigation, filters in place" feel, but bounded to one page of results at a time instead of
+ * shipping every business on every load. `/search?q=…` still works as a deep link — it seeds
+ * `initialQuery`/`initialArea` and then behaves exactly like the home page.
  */
 export function DiscoveryBrowser({
-  businesses,
   categories,
   areas,
+  initialResult,
   initialQuery = '',
   initialArea = '',
-  blockedBusinessId,
+  blockedBusiness,
 }: {
-  businesses: BusinessSummary[];
   categories: Category[];
   areas: string[];
+  /** The server component's own first page, for the exact filters below — avoids a redundant client fetch on first paint. */
+  initialResult: BusinessSearchResult;
   initialQuery?: string;
   initialArea?: string;
   /**
-   * §12.55/§12.56 — a business you own, arrived at by typing its URL. The booking route sends you
-   * here rather than rendering a page of its own, and the refusal opens over the grid.
+   * §12.55/§12.56 — a business you own, arrived at by typing its URL. Resolved independently of
+   * the (now paginated) grid, so the "you can't book your own business" dialog doesn't depend on
+   * that specific business having landed on the loaded page.
    */
-  blockedBusinessId?: string;
+  blockedBusiness?: { id: string; name: string; viewerRelation: ViewerBusinessRelation } | null;
 }) {
   const { copy } = useLanguage();
   const [query, setQuery] = useState(initialQuery);
   const [area, setArea] = useState(initialArea);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [blockedDismissed, setBlockedDismissed] = useState(false);
 
-  const blockedBusiness = blockedBusinessId
-    ? businesses.find((business) => business.id === blockedBusinessId && business.viewerRelation)
-    : undefined;
-
-  const filtered = useMemo(
-    () => filterBusinesses(businesses, { query, area, categories }),
-    [businesses, query, area, categories],
+  const categorySlug = useMemo(
+    () => (selectedCategoryId ? categories.find((category) => category.id === selectedCategoryId)?.slug ?? null : null),
+    [categories, selectedCategoryId],
   );
 
-  const searchApplied = query.trim().length > 0 || area.length > 0;
+  const search = useBusinessSearch({ q: query, area, categorySlug }, initialResult);
+  const businesses = useMemo(() => search.data?.pages.flatMap((page) => page.items) ?? [], [search.data]);
+  const total = search.data?.pages.at(-1)?.total ?? 0;
+
+  const searchApplied = query.trim().length > 0 || area.length > 0 || selectedCategoryId !== null;
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-8 sm:px-6">
@@ -69,9 +74,23 @@ export function DiscoveryBrowser({
         />
       </PanelHero>
 
-      <BusinessResults businesses={filtered} categories={categories} searchApplied={searchApplied} />
+      {search.isError ? (
+        <ErrorNotice description={copy.discovery.searchError} />
+      ) : (
+        <BusinessResults
+          businesses={businesses}
+          total={total}
+          categories={categories}
+          selectedCategoryId={selectedCategoryId}
+          onSelectCategory={setSelectedCategoryId}
+          searchApplied={searchApplied}
+          hasMore={search.hasNextPage ?? false}
+          isLoadingMore={search.isFetchingNextPage}
+          onLoadMore={() => search.fetchNextPage()}
+        />
+      )}
 
-      {blockedBusiness?.viewerRelation && !blockedDismissed ? (
+      {blockedBusiness && !blockedDismissed ? (
         <ErrorDialog
           title={copy.businessProfile.ownBusiness.title}
           description={(blockedBusiness.viewerRelation === 'OWNER'
